@@ -1,5 +1,5 @@
 import { Response } from "express";
-import User from "../models/User.model";
+import User from "../models/User.model.js";
 
 import { CustomRequest } from "../middleware/verifyJWT";
 const getUser = async (req: CustomRequest, res: Response) => {
