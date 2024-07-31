@@ -5,7 +5,7 @@ const app = express();
 import authRouter from "./routes/authRoute";
 import userRouter from "./routes/userRoute";
 import mongoose from "mongoose";
-
+import { Request, Response } from "express";
 const PORT = process.env.PORT || 2030;
 
 app.use(express.json());
@@ -15,7 +15,7 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err: any) => console.log(err));
 
-app.get("/", (req, res) => {
+app.get("/", (req: Request, res: Response) => {
   res.send("backend connected successfully");
 });
 
