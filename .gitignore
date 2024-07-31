@@ -1,9 +1,6 @@
 # Node modules
 node_modules/
 
-# Output directory
-dist/
-
 # Test files
 *.spec.ts
 *.test.ts

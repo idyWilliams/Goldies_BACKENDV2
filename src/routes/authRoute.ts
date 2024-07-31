@@ -1,4 +1,4 @@
-import { create_acct, login } from "../controllers/authController.js";
+import { create_acct, login } from "../controllers/authController";
 import express from "express";
 const router = express.Router();
 
