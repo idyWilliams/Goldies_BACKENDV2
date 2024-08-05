@@ -59,3 +59,5 @@ const createCategory = async (req: Request, res: Response) => {
     });
   }
 };
+
+export { createCategory };
