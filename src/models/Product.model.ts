@@ -1,6 +1,6 @@
 import { Schema, model, Document } from "mongoose";
 
-interface ICategory extends Document {
+interface IProduct extends Document {
   name: string;
   description: string;
   images: string[] | undefined;
@@ -13,7 +13,7 @@ interface ICategory extends Document {
   fillings: string[] | undefined;
 }
 
-const categorySchema = new Schema<ICategory>(
+const productSchema = new Schema<IProduct>(
   {
     name: { type: String, require: true },
     description: { type: String, require: true },
@@ -31,5 +31,5 @@ const categorySchema = new Schema<ICategory>(
   }
 );
 
-const Category = model<ICategory>("Category", categorySchema);
-export default Category;
+const Product = model<IProduct>("Product", productSchema);
+export default Product;

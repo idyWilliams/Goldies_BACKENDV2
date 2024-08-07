@@ -4,7 +4,7 @@ dotenv.config();
 const app = express();
 import authRouter from "./routes/authRoute";
 import userRouter from "./routes/userRoute";
-import categoryRouter from "./routes/categoryRoute";
+import productRouter from "./routes/productRoute";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 import cors from "cors";
@@ -25,6 +25,6 @@ app.get("/", (req: Request, res: Response) => {
 
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
-app.use("/api/category", categoryRouter);
+app.use("/api/product", productRouter);
 
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`));

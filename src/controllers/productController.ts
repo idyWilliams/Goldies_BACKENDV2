@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import Category from "../models/Category.model";
+import Product from "../models/Product.model";
 
-const createCategory = async (req: Request, res: Response) => {
+const createProduct = async (req: Request, res: Response) => {
   const {
     name,
     description,
@@ -33,7 +33,7 @@ const createCategory = async (req: Request, res: Response) => {
   }
 
   try {
-    const categoryDetails = await Category.create({
+    const categoryDetails = await Product.create({
       name,
       description,
       images,
@@ -60,7 +60,7 @@ const createCategory = async (req: Request, res: Response) => {
   }
 };
 
-const editCategory = async (req: Request, res: Response) => {
+const editProduct = async (req: Request, res: Response) => {
   const { categoryId } = req.params;
   const {
     name,
@@ -76,7 +76,7 @@ const editCategory = async (req: Request, res: Response) => {
   } = req.body;
 
   try {
-    const categoryDetails = await Category.findOne({ _id: categoryId });
+    const categoryDetails = await Product.findOne({ _id: categoryId });
     if (!categoryDetails) {
       return res.status(400).json({
         error: true,
@@ -110,10 +110,10 @@ const editCategory = async (req: Request, res: Response) => {
   }
 };
 
-const getCategory = async (req: Request, res: Response) => {
+const getProduct = async (req: Request, res: Response) => {
   try {
     const { categoryId } = req.params;
-    const categoryDetails = await Category.findOne({ _id: categoryId });
+    const categoryDetails = await Product.findOne({ _id: categoryId });
     if (!categoryDetails) {
       return res.status(400).json({
         error: true,
@@ -134,9 +134,9 @@ const getCategory = async (req: Request, res: Response) => {
     });
   }
 };
-const getAllCategories = async (req: Request, res: Response) => {
+const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const categoryDetails = await Category.find();
+    const categoryDetails = await Product.find();
 
     return res.json({
       error: false,
@@ -152,10 +152,10 @@ const getAllCategories = async (req: Request, res: Response) => {
   }
 };
 
-const deleteCategory = async (req: Request, res: Response) => {
+const deleteProduct = async (req: Request, res: Response) => {
   const { categoryId } = req.params;
   try {
-    const categoryDetails = await Category.deleteOne({ _id: categoryId });
+    const categoryDetails = await Product.deleteOne({ _id: categoryId });
     if (!categoryDetails) {
       return res.status(400).json({
         error: true,
@@ -176,9 +176,9 @@ const deleteCategory = async (req: Request, res: Response) => {
 };
 
 export {
-  createCategory,
-  editCategory,
-  deleteCategory,
-  getAllCategories,
-  getCategory,
+  createProduct,
+  editProduct,
+  deleteProduct,
+  getAllProducts,
+  getProduct,
 };
