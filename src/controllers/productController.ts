@@ -69,9 +69,10 @@ const editProduct = async (req: Request, res: Response) => {
     category,
     minPrice,
     maxPrice,
-    shapes,
+    subCategory,
+    productType,
     sizes,
-    fillings,
+    flavour,
     toppings,
   } = req.body;
 
@@ -90,9 +91,10 @@ const editProduct = async (req: Request, res: Response) => {
     if (category) categoryDetails.category = category;
     if (minPrice) categoryDetails.minPrice = minPrice;
     if (maxPrice) categoryDetails.maxPrice = maxPrice;
-    if (shapes) categoryDetails.shapes = shapes;
+    if (subCategory) categoryDetails.subCategory = subCategory;
     if (sizes) categoryDetails.sizes = sizes;
-    if (fillings) categoryDetails.fillings = fillings;
+    if (flavour) categoryDetails.flavour = flavour;
+    if (productType) categoryDetails.productType = productType;
     if (toppings) categoryDetails.toppings = toppings;
 
     await categoryDetails.save();
