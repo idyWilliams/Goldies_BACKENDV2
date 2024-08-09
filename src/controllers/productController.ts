@@ -61,7 +61,7 @@ const createProduct = async (req: Request, res: Response) => {
 };
 
 const editProduct = async (req: Request, res: Response) => {
-  const { categoryId } = req.params;
+  const { productId } = req.params;
   const {
     name,
     description,
@@ -77,31 +77,31 @@ const editProduct = async (req: Request, res: Response) => {
   } = req.body;
 
   try {
-    const categoryDetails = await Product.findOne({ _id: categoryId });
-    if (!categoryDetails) {
+    const productDetails = await Product.findOne({ _id: productId });
+    if (!productDetails) {
       return res.status(400).json({
         error: true,
-        message: "category not found",
+        message: "product not found",
       });
     }
 
-    if (name) categoryDetails.name = name;
-    if (description) categoryDetails.description = description;
-    if (images) categoryDetails.images = images;
-    if (category) categoryDetails.category = category;
-    if (minPrice) categoryDetails.minPrice = minPrice;
-    if (maxPrice) categoryDetails.maxPrice = maxPrice;
-    if (subCategory) categoryDetails.subCategory = subCategory;
-    if (sizes) categoryDetails.sizes = sizes;
-    if (flavour) categoryDetails.flavour = flavour;
-    if (productType) categoryDetails.productType = productType;
-    if (toppings) categoryDetails.toppings = toppings;
+    if (name) productDetails.name = name;
+    if (description) productDetails.description = description;
+    if (images) productDetails.images = images;
+    if (category) productDetails.category = category;
+    if (minPrice) productDetails.minPrice = minPrice;
+    if (maxPrice) productDetails.maxPrice = maxPrice;
+    if (subCategory) productDetails.subCategory = subCategory;
+    if (sizes) productDetails.sizes = sizes;
+    if (flavour) productDetails.flavour = flavour;
+    if (productType) productDetails.productType = productType;
+    if (toppings) productDetails.toppings = toppings;
 
-    await categoryDetails.save();
+    await productDetails.save();
     res.json({
       error: false,
-      categoryDetails,
-      message: "Category updated successfully",
+      productDetails,
+      message: "Product updated successfully",
     });
   } catch (err) {
     res.status(500).json({
@@ -114,18 +114,18 @@ const editProduct = async (req: Request, res: Response) => {
 
 const getProduct = async (req: Request, res: Response) => {
   try {
-    const { categoryId } = req.params;
-    const categoryDetails = await Product.findOne({ _id: categoryId });
-    if (!categoryDetails) {
+    const { productId } = req.params;
+    const productDetails = await Product.findOne({ _id: productId });
+    if (!productDetails) {
       return res.status(400).json({
         error: true,
-        message: "category not found",
+        message: "product not found",
       });
     }
 
     return res.json({
       error: false,
-      categoryDetails,
+      productDetails,
       message: "Category Retrieved succcessfully",
     });
   } catch (err) {
@@ -138,12 +138,12 @@ const getProduct = async (req: Request, res: Response) => {
 };
 const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const categoryDetails = await Product.find();
+    const productDetails = await Product.find();
 
     return res.json({
       error: false,
-      categoryDetails,
-      message: "All Categories Retrieved succcessfully",
+      productDetails,
+      message: "All products Retrieved successfully",
     });
   } catch (err) {
     return res.status(500).json({
@@ -155,18 +155,18 @@ const getAllProducts = async (req: Request, res: Response) => {
 };
 
 const deleteProduct = async (req: Request, res: Response) => {
-  const { categoryId } = req.params;
+  const { productId } = req.params;
   try {
-    const categoryDetails = await Product.deleteOne({ _id: categoryId });
-    if (!categoryDetails) {
+    const productDetails = await Product.deleteOne({ _id: productId });
+    if (!productDetails) {
       return res.status(400).json({
         error: true,
-        message: "category not found",
+        message: "product not found",
       });
     }
     return res.json({
       error: false,
-      message: "category deleted successfully",
+      message: "product deleted successfully",
     });
   } catch (err) {
     res.status(500).json({
