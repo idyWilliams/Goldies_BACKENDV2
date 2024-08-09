@@ -9,11 +9,13 @@ const createProduct = async (req: Request, res: Response) => {
     category,
     minPrice,
     maxPrice,
-    shapes,
+    subCategory,
+    productType,
     sizes,
-    fillings,
+    flavour,
     toppings,
   } = req.body;
+
   if (
     !name ||
     !description ||
@@ -21,9 +23,9 @@ const createProduct = async (req: Request, res: Response) => {
     !category ||
     !minPrice ||
     !maxPrice ||
-    !shapes ||
+    !productType ||
     !sizes ||
-    !fillings ||
+    !subCategory ||
     !toppings
   ) {
     return res.status(404).json({
@@ -40,9 +42,10 @@ const createProduct = async (req: Request, res: Response) => {
       category,
       minPrice,
       maxPrice,
-      shapes,
+      subCategory,
+      productType,
       sizes,
-      fillings,
+      flavour,
       toppings,
     });
 

@@ -3,8 +3,8 @@ import { model, Document, Schema } from "mongoose";
 interface subCategorySchemaI extends Document {
   name: string;
   description: string;
-  categorySlug: string;
-  images: string[] | undefined;
+  image: string;
+  status: Boolean;
 }
 
 const subCategorySchema = new Schema<subCategorySchemaI>({
@@ -13,9 +13,13 @@ const subCategorySchema = new Schema<subCategorySchemaI>({
     type: String,
     require: [true, "Please provide subCategory description"],
   },
-  images: {
-    type: Array,
+  image: {
+    type: String,
     require: [true, "Please provide sub category images"],
+  },
+  status: {
+    type: Boolean,
+    require: [true, "SubCategory status is not providedd"],
   },
 });
 
