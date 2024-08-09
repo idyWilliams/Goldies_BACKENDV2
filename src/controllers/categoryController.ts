@@ -132,7 +132,7 @@ const deleteCategory = async (req: Request, res: Response) => {
   try {
     const categoryDetails = await Category.deleteOne({ _id: categoryId });
     if (!categoryDetails) {
-      return res.status(400).json({
+      return res.status(404).json({
         error: true,
         message: "category not found",
       });

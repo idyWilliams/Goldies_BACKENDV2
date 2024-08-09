@@ -63,4 +63,78 @@ const updateSubCategory = async (req: Request, res: Response) => {
   }
 };
 
-export { createSubCategory, updateSubCategory };
+// Get all subCategory
+const getAllSubCategory = async (req: Request, res: Response) => {
+  try {
+    const subCategories = await SubCategory.find();
+    return res.status(200).json({
+      error: true,
+      subCategories,
+      message: "All sub Categories fetched successfully",
+    });
+  } catch (err) {
+    return res.status(500).json({
+      error: true,
+      err,
+      messaage: "Internal server error, Please try again",
+    });
+  }
+};
+
+// Get sub category
+const getSubCategory = async (req: Request, res: Response) => {
+  const { subCategoryId } = req.params;
+  try {
+    const subCategory = await SubCategory.findOne({ _id: subCategoryId });
+
+    if (!subCategory) {
+      return res.status(200).json({
+        error: true,
+        message: "subCategory not found, please try again with the correct ID",
+      });
+    }
+
+    return res.status(200).json({
+      error: true,
+      subCategory,
+      message: "subCategory data fetched successfully",
+    });
+  } catch (err) {
+    return res.status(500).json({
+      error: true,
+      err,
+      messaage: "Internal server error, Please try again",
+    });
+  }
+};
+
+// delete subCategory
+const deleteSubCategory = async (req: Request, res: Response) => {
+  const { subCategoryId } = req.params;
+  try {
+    const subCategory = await SubCategory.deleteOne({ _id: subCategoryId });
+    if (!subCategory) {
+      return res.status(404).json({
+        error: true,
+        message: "SubCategory not found",
+      });
+    }
+    return res.json({
+      error: false,
+      message: "category deleted successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: true,
+      err,
+      message: "Internal server Error",
+    });
+  }
+};
+
+export {
+  createSubCategory,
+  updateSubCategory,
+  getAllSubCategory,
+  getSubCategory,
+};
