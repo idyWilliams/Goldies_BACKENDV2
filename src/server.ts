@@ -5,6 +5,8 @@ const app = express();
 import authRouter from "./routes/authRoute";
 import userRouter from "./routes/userRoute";
 import productRouter from "./routes/productRoute";
+import categoryRouter from "./routes/categoryRoute";
+import subcategoryRouter from "./routes/subcategoryRoute";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 import cors from "cors";
@@ -26,5 +28,7 @@ app.get("/", (req: Request, res: Response) => {
 app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);
+app.use("/api/category", categoryRouter);
+app.use("/api/subcategory", subcategoryRouter);
 
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`));

@@ -137,4 +137,5 @@ export {
   updateSubCategory,
   getAllSubCategory,
   getSubCategory,
+  deleteSubCategory
 };
