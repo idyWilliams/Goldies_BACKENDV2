@@ -4,7 +4,7 @@ interface categorySchemaI extends Document {
   name: string;
   description: string;
   categorySlug: string;
-  images: string[] | undefined;
+  image: string;
 }
 
 const categorySchema = new Schema<categorySchemaI>({
@@ -14,7 +14,7 @@ const categorySchema = new Schema<categorySchemaI>({
     require: [true, "Please provide category description"],
   },
   categorySlug: String,
-  images: { type: Array, require: [true, "Please provide category images"] },
+  image: { type: String, require: [true, "Please provide category image"] },
 });
 
 const Category = model<categorySchemaI>("Category", categorySchema);

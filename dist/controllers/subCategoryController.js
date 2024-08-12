@@ -62,6 +62,7 @@ const updateSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
             subCategory.image = image;
         if (status)
             subCategory.status = status;
+        yield subCategory.save();
         return res.status(200).json({
             error: false,
             subCategory,
@@ -82,7 +83,7 @@ const getAllSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
     try {
         const subCategories = yield SubCategory_model_1.default.find();
         return res.status(200).json({
-            error: true,
+            error: false,
             subCategories,
             message: "All sub Categories fetched successfully",
         });
@@ -108,7 +109,7 @@ const getSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
             });
         }
         return res.status(200).json({
-            error: true,
+            error: false,
             subCategory,
             message: "subCategory data fetched successfully",
         });
@@ -135,7 +136,7 @@ const deleteSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
         }
         return res.json({
             error: false,
-            message: "category deleted successfully",
+            message: "Subcategory deleted successfully",
         });
     }
     catch (err) {

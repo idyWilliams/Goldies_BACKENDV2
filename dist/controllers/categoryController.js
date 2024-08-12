@@ -16,7 +16,7 @@ exports.deleteCategory = exports.getCategory = exports.getAllCategories = export
 const Category_model_1 = __importDefault(require("../models/Category.model"));
 //  create category
 const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, description, images, categorySlug } = req.body;
+    const { name, description, image, categorySlug } = req.body;
     if (!name)
         return res.status(200).json({
             error: true,
@@ -27,7 +27,7 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
             error: true,
             message: "Please provide category description",
         });
-    if (!images)
+    if (!image)
         return res.status(200).json({
             error: true,
             message: "Please provide category images",
@@ -36,7 +36,7 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
         const category = yield Category_model_1.default.create({
             name,
             description,
-            images,
+            image,
             categorySlug,
         });
         res.status(200).json({
@@ -57,7 +57,7 @@ exports.createCategory = createCategory;
 // update category
 const editCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { categoryId } = req.params;
-    const { name, description, images, categorySlug } = req.body;
+    const { name, description, image, categorySlug } = req.body;
     try {
         const categoryDetails = yield Category_model_1.default.findOne({ _id: categoryId });
         if (!categoryDetails)
@@ -69,8 +69,8 @@ const editCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             categoryDetails.name = name;
         if (description)
             categoryDetails.description = description;
-        if (images)
-            categoryDetails.images = images;
+        if (image)
+            categoryDetails.image = image;
         if (categorySlug)
             categoryDetails.categorySlug = categorySlug;
         yield categoryDetails.save();

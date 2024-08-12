@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 
 //  create category
 const createCategory = async (req: Request, res: Response) => {
-  const { name, description, images, categorySlug } = req.body;
+  const { name, description, image, categorySlug } = req.body;
 
   if (!name)
     return res.status(200).json({
@@ -17,7 +17,7 @@ const createCategory = async (req: Request, res: Response) => {
       message: "Please provide category description",
     });
 
-  if (!images)
+  if (!image)
     return res.status(200).json({
       error: true,
       message: "Please provide category images",
@@ -27,7 +27,7 @@ const createCategory = async (req: Request, res: Response) => {
     const category = await Category.create({
       name,
       description,
-      images,
+      image,
       categorySlug,
     });
 
@@ -49,7 +49,7 @@ const createCategory = async (req: Request, res: Response) => {
 const editCategory = async (req: Request, res: Response) => {
   const { categoryId } = req.params;
 
-  const { name, description, images, categorySlug } = req.body;
+  const { name, description, image, categorySlug } = req.body;
   try {
     const categoryDetails = await Category.findOne({ _id: categoryId });
 
@@ -61,7 +61,7 @@ const editCategory = async (req: Request, res: Response) => {
 
     if (name) categoryDetails.name = name;
     if (description) categoryDetails.description = description;
-    if (images) categoryDetails.images = images;
+    if (image) categoryDetails.image = image;
     if (categorySlug) categoryDetails.categorySlug = categorySlug;
 
     await categoryDetails.save();

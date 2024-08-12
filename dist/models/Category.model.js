@@ -8,7 +8,7 @@ const categorySchema = new mongoose_1.Schema({
         require: [true, "Please provide category description"],
     },
     categorySlug: String,
-    images: { type: Array, require: [true, "Please provide category images"] },
+    image: { type: String, require: [true, "Please provide category image"] },
 });
 const Category = (0, mongoose_1.model)("Category", categorySchema);
 exports.default = Category;

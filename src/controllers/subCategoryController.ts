@@ -49,6 +49,8 @@ const updateSubCategory = async (req: Request, res: Response) => {
     if (image) subCategory.image = image;
     if (status) subCategory.status = status;
 
+    await subCategory.save();
+
     return res.status(200).json({
       error: false,
       subCategory,
@@ -68,7 +70,7 @@ const getAllSubCategory = async (req: Request, res: Response) => {
   try {
     const subCategories = await SubCategory.find();
     return res.status(200).json({
-      error: true,
+      error: false,
       subCategories,
       message: "All sub Categories fetched successfully",
     });
@@ -95,7 +97,7 @@ const getSubCategory = async (req: Request, res: Response) => {
     }
 
     return res.status(200).json({
-      error: true,
+      error: false,
       subCategory,
       message: "subCategory data fetched successfully",
     });
@@ -121,7 +123,7 @@ const deleteSubCategory = async (req: Request, res: Response) => {
     }
     return res.json({
       error: false,
-      message: "category deleted successfully",
+      message: "Subcategory deleted successfully",
     });
   } catch (err) {
     res.status(500).json({
@@ -137,5 +139,5 @@ export {
   updateSubCategory,
   getAllSubCategory,
   getSubCategory,
-  deleteSubCategory
+  deleteSubCategory,
 };
