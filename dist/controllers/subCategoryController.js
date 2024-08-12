@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSubCategory = exports.getAllSubCategory = exports.updateSubCategory = exports.createSubCategory = void 0;
+exports.deleteSubCategory = exports.getSubCategory = exports.getAllSubCategory = exports.updateSubCategory = exports.createSubCategory = void 0;
 const SubCategory_model_1 = __importDefault(require("../models/SubCategory.model"));
 // Create SubCategories
 const createSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -146,3 +146,4 @@ const deleteSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
     }
 });
+exports.deleteSubCategory = deleteSubCategory;

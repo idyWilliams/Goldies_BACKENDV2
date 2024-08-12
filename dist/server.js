@@ -10,6 +10,8 @@ const app = (0, express_1.default)();
 const authRoute_1 = __importDefault(require("./routes/authRoute"));
 const userRoute_1 = __importDefault(require("./routes/userRoute"));
 const productRoute_1 = __importDefault(require("./routes/productRoute"));
+const categoryRoute_1 = __importDefault(require("./routes/categoryRoute"));
+const subcategoryRoute_1 = __importDefault(require("./routes/subcategoryRoute"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const cors_1 = __importDefault(require("cors"));
 const PORT = process.env.PORT || 2030;
@@ -25,4 +27,6 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoute_1.default);
 app.use("/api/user", userRoute_1.default);
 app.use("/api/product", productRoute_1.default);
+app.use("/api/category", categoryRoute_1.default);
+app.use("/api/subcategory", subcategoryRoute_1.default);
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`));
