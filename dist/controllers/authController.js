@@ -12,12 +12,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.login = exports.create_acct = void 0;
+exports.forgottenPassword = exports.login = exports.create_acct = void 0;
 const User_model_1 = __importDefault(require("../models/User.model"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 dotenv_1.default.config();
+const nodemailer_1 = __importDefault(require("nodemailer"));
 const create_acct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { firstName, lastName, email, password } = req.body;
     if (!firstName) {
@@ -60,7 +61,12 @@ const create_acct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         yield user.save();
         return res.json({
             error: false,
-            user,
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                _id: user._id,
+            },
             message: "Registration Successful",
         });
     }
@@ -108,9 +114,17 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const token = jsonwebtoken_1.default.sign({ id: user._id }, secret, {
             expiresIn: maxAge,
         });
-        return res
-            .status(200)
-            .json({ error: false, message: "Login successful", user, token });
+        return res.status(200).json({
+            error: false,
+            message: "Login successful",
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.email,
+                _id: user._id,
+            },
+            token,
+        });
     }
     catch (error) {
         console.error("Login Error:", error); // Log the error to console
@@ -122,3 +136,69 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.login = login;
+const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("Email:", process.env.EMAIL);
+    console.log("Password:", process.env.PASSWORD);
+    try {
+        const { email } = req.body;
+        const user = yield User_model_1.default.findOne({ email });
+        if (!user) {
+            return res
+                .status(404)
+                .json({ error: true, message: "Account does not exist" });
+        }
+        // Create a transporter with direct SMTP settings
+        const transporter = nodemailer_1.default.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
+            auth: {
+                user: process.env.EMAIL,
+                pass: process.env.PASSWORD,
+            },
+            tls: {
+                rejectUnauthorized: false,
+            },
+        });
+        const maxAge = 60 * 15;
+        const token = jsonwebtoken_1.default.sign({ id: user._id }, process.env.ACCESS_SECRET_TOKEN, {
+            expiresIn: maxAge,
+        });
+        const resetUrl = `https://goldies-backend.onrender.com/api/auth/reset_password/${user.email}/${user.firstName}-${user.lastName}/${token}`;
+        const emailContent = `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+      <h2 style="color: #007bff;">Password Reset Request</h2>
+      <p>You requested a password reset. Please click the link below to reset your password:</p>
+      <a 
+        href="${resetUrl}" 
+        style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px;">
+        Reset Password
+      </a>
+      <p>If you did not request this, please ignore this email.</p>
+    </div>
+  `;
+        const mailOptions = {
+            from: process.env.EMAIL,
+            to: "olatunbosunolashubomi@gmail.com",
+            subject: "Forgotten Password",
+            text: "You requested a password reset.",
+            html: emailContent,
+        };
+        const info = yield transporter.sendMail(mailOptions);
+        console.log("Message sent: %s", info.messageId);
+        return res.status(200).json({
+            error: false,
+            message: "Message sent",
+            info: info.messageId,
+        });
+    }
+    catch (error) {
+        console.error("Error sending email:", error);
+        return res.status(500).json({
+            error: true,
+            message: "Something went wrong",
+            err: error,
+        });
+    }
+});
+exports.forgottenPassword = forgottenPassword;
