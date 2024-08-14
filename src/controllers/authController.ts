@@ -146,11 +146,20 @@ const forgottenPassword = async (req: Request, res: Response) => {
   console.log("Email:", process.env.EMAIL);
   console.log("Password:", process.env.PASSWORD);
   try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ error: true, message: "Account does not exist" });
+    }
+
     // Create a transporter with direct SMTP settings
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
-      secure: true, // true for 465, false for other ports
+      secure: true,
       auth: {
         user: process.env.EMAIL,
         pass: process.env.PASSWORD,
@@ -160,12 +169,36 @@ const forgottenPassword = async (req: Request, res: Response) => {
       },
     });
 
+    const maxAge = 60 * 15;
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.ACCESS_SECRET_TOKEN as string,
+      {
+        expiresIn: maxAge,
+      }
+    );
+
+    const resetUrl = `https://goldies-backend.onrender.com/api/auth/reset_password/${user.email}/${user.firstName}-${user.lastName}/${token}`;
+
+    const emailContent = `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+      <h2 style="color: #007bff;">Password Reset Request</h2>
+      <p>You requested a password reset. Please click the link below to reset your password:</p>
+      <a 
+        href="${resetUrl}" 
+        style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px;">
+        Reset Password
+      </a>
+      <p>If you did not request this, please ignore this email.</p>
+    </div>
+  `;
+
     const mailOptions = {
       from: process.env.EMAIL,
       to: "olatunbosunolashubomi@gmail.com",
-      subject: "Goldies Team",
+      subject: "Forgotten Password",
       text: "You requested a password reset.",
-      html: "<b>You requested a password reset. URL: https://localhost:2025</b>",
+      html: emailContent,
     };
 
     const info = await transporter.sendMail(mailOptions);
