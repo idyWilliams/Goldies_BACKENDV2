@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 dotenv.config();
 import nodemailer from "nodemailer";
+import { CustomRequest } from "../middleware/verifyJWT";
 
 const create_acct = async (req: Request, res: Response) => {
   const { firstName, lastName, email, password } = req.body;
@@ -178,7 +179,7 @@ const forgottenPassword = async (req: Request, res: Response) => {
       }
     );
 
-    const resetUrl = `https://goldies-backend.onrender.com/api/auth/reset_password/${user.email}/${user.firstName}-${user.lastName}/${token}`;
+    const resetUrl = `https://goldies-frontend.vercel.app/reset_password/${token}`;
 
     const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
@@ -218,4 +219,38 @@ const forgottenPassword = async (req: Request, res: Response) => {
   }
 };
 
-export { create_acct, login, forgottenPassword };
+const resetPassword = async (req: CustomRequest, res: Response) => {
+  const user = req.id;
+  const { password } = req.body;
+  try {
+    const isUser = await User.findOne({ _id: user });
+
+    if (!isUser) {
+      return res.sendStatus(401);
+    }
+
+    if (!password) {
+      return res.status(404).json({
+        error: true,
+        message: "Please provide a pasword",
+      });
+    }
+
+    const hashedPwd = bcryptjs.hashSync(password, 10);
+    isUser.password = hashedPwd;
+    await isUser.save();
+
+    return res.status(200).json({
+      error: false,
+      message: "Password changed successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: true,
+      err: error,
+      message: "Internal server error",
+    });
+  }
+};
+
+export { create_acct, login, forgottenPassword, resetPassword };

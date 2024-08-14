@@ -13,8 +13,13 @@ const authenticateToken = (
   const authHeader = req.headers["authorization"];
 
   if (!authHeader) return res.sendStatus(401);
-  const token = authHeader.split(" ")[1];
-  if (!token) return res.sendStatus(401);
+  const token1 = authHeader.split(" ")[1];
+
+  const { token: token2 } = req.body;
+
+  let token = token1 ? token1 : token2;
+
+  if (!token1 && !token2) return res.sendStatus(401);
 
   jwt.verify(
     token,
