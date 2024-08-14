@@ -4,6 +4,7 @@ import bcryptjs from "bcryptjs";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 dotenv.config();
+import nodemailer from "nodemailer";
 
 const create_acct = async (req: Request, res: Response) => {
   const { firstName, lastName, email, password } = req.body;
@@ -57,7 +58,12 @@ const create_acct = async (req: Request, res: Response) => {
 
     return res.json({
       error: false,
-      user,
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        _id: user._id,
+      },
       message: "Registration Successful",
     });
   } catch (e) {
@@ -115,9 +121,17 @@ const login = async (req: Request, res: Response) => {
       expiresIn: maxAge,
     });
 
-    return res
-      .status(200)
-      .json({ error: false, message: "Login successful", user, token });
+    return res.status(200).json({
+      error: false,
+      message: "Login successful",
+      user: {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        _id: user._id,
+      },
+      token,
+    });
   } catch (error) {
     console.error("Login Error:", error); // Log the error to console
     return res.status(500).json({
@@ -128,4 +142,47 @@ const login = async (req: Request, res: Response) => {
   }
 };
 
-export { create_acct, login };
+const forgottenPassword = async (req: Request, res: Response) => {
+  console.log("Email:", process.env.EMAIL);
+  console.log("Password:", process.env.PASSWORD);
+  try {
+    // Create a transporter with direct SMTP settings
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true, // true for 465, false for other ports
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL,
+      to: "olatunbosunolashubomi@gmail.com",
+      subject: "Goldies Team",
+      text: "You requested a password reset.",
+      html: "<b>You requested a password reset. URL: https://localhost:2025</b>",
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Message sent: %s", info.messageId);
+    return res.status(200).json({
+      error: false,
+      message: "Message sent",
+      info: info.messageId,
+    });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return res.status(500).json({
+      error: true,
+      message: "Something went wrong",
+      err: error,
+    });
+  }
+};
+
+export { create_acct, login, forgottenPassword };
