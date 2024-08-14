@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.forgottenPassword = exports.login = exports.create_acct = void 0;
+exports.resetPassword = exports.forgottenPassword = exports.login = exports.create_acct = void 0;
 const User_model_1 = __importDefault(require("../models/User.model"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const dotenv_1 = __importDefault(require("dotenv"));
@@ -164,7 +164,7 @@ const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, functi
         const token = jsonwebtoken_1.default.sign({ id: user._id }, process.env.ACCESS_SECRET_TOKEN, {
             expiresIn: maxAge,
         });
-        const resetUrl = `https://goldies-backend.onrender.com/api/auth/reset_password/${user.email}/${user.firstName}-${user.lastName}/${token}`;
+        const resetUrl = `https://goldies-frontend.vercel.app/reset_password/${token}`;
         const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2 style="color: #007bff;">Password Reset Request</h2>
@@ -202,3 +202,34 @@ const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.forgottenPassword = forgottenPassword;
+const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = req.id;
+    const { password } = req.body;
+    try {
+        const isUser = yield User_model_1.default.findOne({ _id: user });
+        if (!isUser) {
+            return res.sendStatus(401);
+        }
+        if (!password) {
+            return res.status(404).json({
+                error: true,
+                message: "Please provide a pasword",
+            });
+        }
+        const hashedPwd = bcryptjs_1.default.hashSync(password, 10);
+        isUser.password = hashedPwd;
+        yield isUser.save();
+        return res.status(200).json({
+            error: false,
+            message: "Password changed successfully",
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            error: true,
+            err: error,
+            message: "Internal server error",
+        });
+    }
+});
+exports.resetPassword = resetPassword;
