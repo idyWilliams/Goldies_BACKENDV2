@@ -1,10 +1,21 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
+interface AdminSchemaI extends Document {
+  email: string
+  password: string
+  OTP: string
+}
 
-const AdminSchema = new Schema({
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-});
 
-const Admin = mongoose.model("Admin", AdminSchema);
+const AdminSchema = new Schema<AdminSchemaI>(
+  {
+    email: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+const Admin = mongoose.model<AdminSchemaI>("Admin", AdminSchema);
 
 export default Admin;

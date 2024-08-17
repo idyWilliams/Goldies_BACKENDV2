@@ -7,21 +7,29 @@ interface subCategorySchemaI extends Document {
   status: Boolean;
 }
 
-const subCategorySchema = new Schema<subCategorySchemaI>({
-  name: { type: String, require: [true, "Please provide a sub category name"] },
-  description: {
-    type: String,
-    require: [true, "Please provide subCategory description"],
+const subCategorySchema = new Schema<subCategorySchemaI>(
+  {
+    name: {
+      type: String,
+      require: [true, "Please provide a sub category name"],
+    },
+    description: {
+      type: String,
+      require: [true, "Please provide subCategory description"],
+    },
+    image: {
+      type: String,
+      require: [true, "Please provide sub category images"],
+    },
+    status: {
+      type: Boolean,
+      require: [true, "SubCategory status is not provided"],
+    },
   },
-  image: {
-    type: String,
-    require: [true, "Please provide sub category images"],
-  },
-  status: {
-    type: Boolean,
-    require: [true, "SubCategory status is not providedd"],
-  },
-});
+  {
+    timestamps: true,
+  }
+);
 
 const SubCategory = model<subCategorySchemaI>("SubCategory", subCategorySchema);
 export default SubCategory;

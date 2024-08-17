@@ -15,6 +15,8 @@ const categorySchema = new Schema<categorySchemaI>({
   },
   categorySlug: String,
   image: { type: String, require: [true, "Please provide category image"] },
+}, {
+  timestamps: true
 });
 
 const Category = model<categorySchemaI>("Category", categorySchema);
