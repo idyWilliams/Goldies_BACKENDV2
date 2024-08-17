@@ -7,6 +7,7 @@ import userRouter from "./routes/userRoute";
 import productRouter from "./routes/productRoute";
 import categoryRouter from "./routes/categoryRoute";
 import subcategoryRouter from "./routes/subcategoryRoute";
+import adminRouter from "./routes/adminRoute";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 import cors from "cors";
@@ -30,5 +31,6 @@ app.use("/api/user", userRouter);
 app.use("/api/product", productRouter);
 app.use("/api/category", categoryRouter);
 app.use("/api/subcategory", subcategoryRouter);
+app.use("/api/admin", adminRouter);
 
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`));
