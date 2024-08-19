@@ -168,10 +168,11 @@ const adminSignup = async (req: Request, res: Response) => {
           .status(400)
           .json({ error: true, message: "Password is incorrect" });
       }
-  
+      if(OTP) admin.OTP = OTP
+      await admin.save()
       return res.status(200).json({
        error: false,
-       message: `6 digit code as been sent to ${email}`,
+       message: `New 6 digit code as been sent to ${email}`,
       });
     }
 
