@@ -2,7 +2,10 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = require("mongoose");
 const subCategorySchema = new mongoose_1.Schema({
-    name: { type: String, require: [true, "Please provide a sub category name"] },
+    name: {
+        type: String,
+        require: [true, "Please provide a sub category name"],
+    },
     description: {
         type: String,
         require: [true, "Please provide subCategory description"],
@@ -13,8 +16,10 @@ const subCategorySchema = new mongoose_1.Schema({
     },
     status: {
         type: Boolean,
-        require: [true, "SubCategory status is not providedd"],
+        require: [true, "SubCategory status is not provided"],
     },
+}, {
+    timestamps: true,
 });
 const SubCategory = (0, mongoose_1.model)("SubCategory", subCategorySchema);
 exports.default = SubCategory;

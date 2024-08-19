@@ -7,7 +7,7 @@
     "start": "node dist/server.js",
     "build": "tsc --build",
     "dev": "nodemon src/server.ts",
-    "push": "tsc --build & git push -u origin main"
+    "push": "tsc --build & git add . & git commit -m \"Compiled code to javaScript for Deployment\" & git push -u origin main"
   },
   "author": "Derrick",
   "license": "ISC",

@@ -27,6 +27,9 @@ const mongoose_1 = __importStar(require("mongoose"));
 const AdminSchema = new mongoose_1.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    OTP: String
+}, {
+    timestamps: true,
 });
 const Admin = mongoose_1.default.model("Admin", AdminSchema);
 exports.default = Admin;

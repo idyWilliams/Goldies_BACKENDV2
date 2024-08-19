@@ -9,6 +9,8 @@ const categorySchema = new mongoose_1.Schema({
     },
     categorySlug: String,
     image: { type: String, require: [true, "Please provide category image"] },
+}, {
+    timestamps: true
 });
 const Category = (0, mongoose_1.model)("Category", categorySchema);
 exports.default = Category;
