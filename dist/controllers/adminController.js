@@ -15,8 +15,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.verifyOTP = exports.adminSignup = exports.inviteAdmin = void 0;
 const Admin_model_1 = __importDefault(require("../models/Admin.model"));
 const dotenv_1 = __importDefault(require("dotenv"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 dotenv_1.default.config();
 const nodemailer_1 = __importDefault(require("nodemailer"));
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const inviteAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email } = req.body;
     try {
@@ -78,6 +80,17 @@ function generateOtp() {
     }
     return otp;
 }
+const generateToken = (id) => {
+    const maxAge = 60 * 60 * 2;
+    const secret = process.env.ACCESS_SECRET_TOKEN;
+    if (!secret) {
+        throw new Error("Secret key is not defined in environment variables.");
+    }
+    const token = jsonwebtoken_1.default.sign({ id }, secret, {
+        expiresIn: maxAge,
+    });
+    return token;
+};
 const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
     try {
@@ -121,31 +134,38 @@ const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             html: emailContent,
         };
         const info = yield transporter.sendMail(mailOptions);
+        console.log("Message sent: %s", info.messageId);
+        if (!password) {
+            return res.status(404).json({
+                error: true,
+                message: "password is required for this process"
+            });
+        }
         if (!user) {
-            if (!password) {
-                return res.status(404).json({
-                    error: true,
-                    message: "password is required for this process"
-                });
-            }
+            const hashedPwd = bcryptjs_1.default.hashSync(password, 10);
             const admin = yield Admin_model_1.default.create({
                 email,
-                password,
+                password: hashedPwd,
                 OTP
             });
             console.log(admin);
-        }
-        else {
-            return res.status(404).json({
+            return res.status(200).json({
                 error: false,
                 message: `6 digit code as been sent to ${email}`,
             });
         }
-        console.log("Message sent: %s", info.messageId);
-        return res.status(200).json({
-            error: false,
-            message: `6 digit code as been sent to ${email}`,
-        });
+        else {
+            const passwordMatch = yield bcryptjs_1.default.compare(password, user.password);
+            if (!passwordMatch) {
+                return res
+                    .status(400)
+                    .json({ error: true, message: "Password is incorrect" });
+            }
+            return res.status(200).json({
+                error: false,
+                message: `6 digit code as been sent to ${email}`,
+            });
+        }
     }
     catch (error) {
         return res.status(500).json({
@@ -172,8 +192,11 @@ const verifyOTP = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 message: "Wrong OTP",
             });
         }
+        const token = generateToken(admin._id);
         return res.status(200).json({
             error: false,
+            admin,
+            token,
             message: `Admin Signup successful`,
         });
     }
