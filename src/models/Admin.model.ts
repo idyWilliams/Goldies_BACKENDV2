@@ -10,6 +10,7 @@ const AdminSchema = new Schema<AdminSchemaI>(
   {
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    OTP: String
   },
   {
     timestamps: true,

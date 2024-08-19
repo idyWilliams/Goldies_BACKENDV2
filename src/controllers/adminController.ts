@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import dotenv from "dotenv";
 dotenv.config();
 import nodemailer from "nodemailer";
+import { TransformStreamDefaultController } from "stream/web";
 
 const inviteAdmin = async (req: Request, res: Response) => {
   const { email } = req.body;
@@ -25,11 +26,11 @@ const inviteAdmin = async (req: Request, res: Response) => {
 
     const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
-      <h2 style="color: #007bff;">Password Reset Request</h2>
+      <h2 style="color: #007bff;">Goldies Admin Invitation</h2>
       <p>Goldies has invited you to be part of the administration team.</p>
       <a 
         href="${SignUpURL}" 
-        style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px;">
+        style="display: inline-block; padding: 10px 20px; background-color: yellow; color: #fff; text-decoration: none; border-radius: 5px;">
         Join Now
       </a>
       <p>If you did not request this, please ignore this email.</p>
@@ -43,13 +44,16 @@ const inviteAdmin = async (req: Request, res: Response) => {
       text: "Goldies has invited you to be part of the administration team.",
       html: emailContent,
     };
+
     const info = await transporter.sendMail(mailOptions);
     console.log("Message sent: %s", info.messageId);
+
     return res.status(200).json({
       error: false,
       message: "Message sent",
       info: info.messageId,
     });
+
   } catch (error) {
     return res.status(500).json({
       error: true,
@@ -71,20 +75,22 @@ function generateOtp() {
 const adminSignup = async (req: Request, res: Response) => {
   const { email, password } = req.body;
   try {
-    const { refCode } = req.params;
+    const { refCode } = req.query;
 
     if (refCode != process.env.ADMINREFCODE) {
       return res.status(401);
     }
+
+  if(!email){
+    return res.status(404).json({
+      error: true,
+      message: "email is required for this process"
+    })
+  }
+
+    const user = await Admin.findOne({ email });
+
     const OTP = generateOtp();
-
-    const admin = await Admin.create({
-      email,
-      password,
-    });
-
-    admin.OTP = OTP;
-    await admin.save();
 
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
@@ -107,7 +113,6 @@ const adminSignup = async (req: Request, res: Response) => {
       <p>If you did not request this, please ignore this email.</p>
     </div>
   `;
-
     const mailOptions = {
       from: process.env.EMAIL,
       to: email,
@@ -115,13 +120,38 @@ const adminSignup = async (req: Request, res: Response) => {
       text: "Email verification.",
       html: emailContent,
     };
+
+
     const info = await transporter.sendMail(mailOptions);
+
+    if (!user) {
+      if(!password){
+        return res.status(404).json({
+          error: true,
+          message: "password is required for this process"
+        })
+      }
+      const admin = await Admin.create({
+        email,
+        password,
+        OTP
+      });
+      
+      console.log(admin);
+      
+    } else {
+      return res.status(404).json({
+       error: false,
+      message: `6 digit code as been sent to ${email}`,
+      });
+    }
     console.log("Message sent: %s", info.messageId);
 
     return res.status(200).json({
       error: false,
       message: `6 digit code as been sent to ${email}`,
     });
+
   } catch (error) {
     return res.status(500).json({
       error: true,
@@ -154,6 +184,7 @@ const verifyOTP = async (req: Request, res: Response) => {
       error: false,
       message: `Admin Signup successful`,
     });
+
   } catch (error) {
     return res.status(500).json({
       error: true,
