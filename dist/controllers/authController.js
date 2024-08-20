@@ -179,7 +179,7 @@ const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, functi
   `;
         const mailOptions = {
             from: process.env.EMAIL,
-            to: "olatunbosunolashubomi@gmail.com",
+            to: email,
             subject: "Forgotten Password",
             text: "You requested a password reset.",
             html: emailContent,
