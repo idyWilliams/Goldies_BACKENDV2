@@ -150,7 +150,7 @@ const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, functi
         // Create a transporter with direct SMTP settings
         const transporter = nodemailer_1.default.createTransport({
             host: "smtp.gmail.com",
-            port: 587,
+            port: 465,
             secure: true,
             auth: {
                 user: process.env.EMAIL,
@@ -213,7 +213,7 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         if (!password) {
             return res.status(404).json({
                 error: true,
-                message: "Please provide a password",
+                message: "Please provide a pasword",
             });
         }
         const hashedPwd = bcryptjs_1.default.hashSync(password, 10);
