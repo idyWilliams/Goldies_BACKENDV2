@@ -159,7 +159,7 @@ const forgottenPassword = async (req: Request, res: Response) => {
     // Create a transporter with direct SMTP settings
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
-      port: 465,
+      port: 587,
       secure: true,
       auth: {
         user: process.env.EMAIL,
@@ -232,7 +232,7 @@ const resetPassword = async (req: CustomRequest, res: Response) => {
     if (!password) {
       return res.status(404).json({
         error: true,
-        message: "Please provide a pasword",
+        message: "Please provide a password",
       });
     }
 
