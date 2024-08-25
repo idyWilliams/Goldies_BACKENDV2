@@ -54,7 +54,7 @@ const editCategory = async (req: Request, res: Response) => {
     const categoryDetails = await Category.findOne({ _id: categoryId });
 
     if (!categoryDetails)
-      return res.status(200).json({
+      return res.status(404).json({
         error: true,
         message: "category not found",
       });

@@ -27,4 +27,43 @@ const getUser = async (req: CustomRequest, res: Response) => {
   }
 };
 
-export default getUser;
+const saveBillingInfo = async (req: CustomRequest, res: Response) => {
+    const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body
+    const user  = req.id
+    const userDetails = await User.findOne({ _id: user });
+
+    if(!userDetails) {
+      return res.status(404).json({
+        error: true,
+        message: "User not found, Please login and try again"
+      })
+    }
+
+    try {
+      if(userDetails.billingInfo) {
+        userDetails.billingInfo.firstName = firstName
+        userDetails.billingInfo.lastName = lastName
+        userDetails.billingInfo.email = email
+        userDetails.billingInfo.country = country
+        userDetails.billingInfo.cityOrTown = cityOrTown
+        userDetails.billingInfo.streetAddress = streetAddress
+        userDetails.billingInfo.phoneNumber = phoneNumber
+        userDetails.billingInfo.defaultBillingInfo = defaultBillingInfo
+      }
+
+        await userDetails.save();
+        return res.status(200).json({
+            error: false,
+            userDetails,
+            message: "Billing info created successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            error: true,
+            err: error,
+            message: "Internal server error, please try again"
+        })
+    }
+}
+
+export {saveBillingInfo, getUser};
