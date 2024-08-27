@@ -12,7 +12,7 @@ const UserSchema = new Schema({
     country: { type: String, require: [true, "Please provide country to complete this process"]},
     cityOrTown: { type: String, require: [true, "Please provide city or town to complete this process"]},
     streetAddress: { type: String, require: [true, "Please provide street address to complete this process"]},
-    phoneNumber: { type: Number, require: [true, "Please provide phone number to complete this process"]},
+    phoneNumber: { type: String, require: [true, "Please provide phone number to complete this process"]},
     defaultBillingInfo: { type: Boolean, default: false},
   }
 }, {

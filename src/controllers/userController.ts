@@ -37,7 +37,6 @@ const saveBillingInfo = async (req: CustomRequest, res: Response) => {
   const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
   const user = req.id;
 
-  // Check if required fields are provided
   if (!firstName || !lastName || !email || !country || !cityOrTown || !streetAddress || !phoneNumber) {
     return res.status(400).json({
       error: true,
@@ -70,9 +69,13 @@ const saveBillingInfo = async (req: CustomRequest, res: Response) => {
     // Save user with the updated billing info
     await userDetails.save();
 
+    const userObject = userDetails.toObject();
+
+    const { password, ...rest } = userObject;
+
     return res.status(200).json({
       error: false,
-      userDetails,
+      user: rest,
       message: "Billing info saved successfully."
     });
   } catch (error) {

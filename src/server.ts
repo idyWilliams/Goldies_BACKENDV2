@@ -9,6 +9,7 @@ import categoryRouter from "./routes/categoryRoute";
 import subcategoryRouter from "./routes/subcategoryRoute";
 import adminRouter from "./routes/adminRoute";
 import cartRouter from "./routes/cartRoute";
+import orderRouter from "./routes/orderRoute";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 import cors from "cors";
@@ -34,5 +35,6 @@ app.use("/api/category", categoryRouter);
 app.use("/api/subcategory", subcategoryRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/cart", cartRouter);
+app.use("/api/order", orderRouter);
 
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`));
