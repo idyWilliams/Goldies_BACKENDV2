@@ -3,7 +3,7 @@ import SubCategory from "../models/SubCategory.model";
 
 // Create SubCategories
 const createSubCategory = async (req: Request, res: Response) => {
-  const { name, description, image, status } = req.body;
+  const { name, description, image, status, categoryId } = req.body;
 
   try {
     const subCategory = await SubCategory.create({
@@ -11,6 +11,7 @@ const createSubCategory = async (req: Request, res: Response) => {
       description,
       image,
       status,
+      categoryId
     });
     res.status(200).json({
       error: false,
@@ -21,7 +22,7 @@ const createSubCategory = async (req: Request, res: Response) => {
     return res.status(500).json({
       error: true,
       err,
-      messaage: "Internal server error, Please try again",
+      message: "Internal server error, Please try again",
     });
   }
 };
@@ -33,10 +34,6 @@ const updateSubCategory = async (req: Request, res: Response) => {
   try {
     const subCategory = await SubCategory.findOne({ _id: subCategoryId });
 
-    // if (!name || !description || !image || !status) {
-    //     return res.status()
-    // }
-
     if (!subCategory) {
       return res.status(200).json({
         error: true,
@@ -47,7 +44,7 @@ const updateSubCategory = async (req: Request, res: Response) => {
     if (name) subCategory.name = name;
     if (description) subCategory.description = description;
     if (image) subCategory.image = image;
-    if (status) subCategory.status = status;
+    subCategory.status = status;
 
     await subCategory.save();
 
@@ -60,7 +57,7 @@ const updateSubCategory = async (req: Request, res: Response) => {
     return res.status(500).json({
       error: true,
       err,
-      messaage: "Internal server error, Please try again",
+      message: "Internal server error, Please try again",
     });
   }
 };
@@ -78,7 +75,7 @@ const getAllSubCategory = async (req: Request, res: Response) => {
     return res.status(500).json({
       error: true,
       err,
-      messaage: "Internal server error, Please try again",
+      message: "Internal server error, Please try again",
     });
   }
 };
@@ -105,7 +102,7 @@ const getSubCategory = async (req: Request, res: Response) => {
     return res.status(500).json({
       error: true,
       err,
-      messaage: "Internal server error, Please try again",
+      message: "Internal server error, Please try again",
     });
   }
 };

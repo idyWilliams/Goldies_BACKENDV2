@@ -179,7 +179,7 @@ const forgottenPassword = async (req: Request, res: Response) => {
       }
     );
 
-    const resetUrl = `https://goldies-frontend.vercel.app/reset_password/${token}`;
+    const resetUrl = `http://localhost:3000/reset_password/${token}`;
 
     const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">

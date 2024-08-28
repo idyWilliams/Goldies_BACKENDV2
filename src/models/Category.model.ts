@@ -5,6 +5,7 @@ interface categorySchemaI extends Document {
   description: string;
   categorySlug: string;
   image: string;
+  status: Boolean
 }
 
 const categorySchema = new Schema<categorySchemaI>({
@@ -13,8 +14,12 @@ const categorySchema = new Schema<categorySchemaI>({
     type: String,
     require: [true, "Please provide category description"],
   },
-  categorySlug: String,
+  categorySlug: { type: String, unique: true },
   image: { type: String, require: [true, "Please provide category image"] },
+  status: {
+      type: Boolean,
+      require: [true, "SubCategory status is not provided"],
+    },
 }, {
   timestamps: true
 });

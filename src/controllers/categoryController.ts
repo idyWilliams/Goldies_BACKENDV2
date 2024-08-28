@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 
 //  create category
 const createCategory = async (req: Request, res: Response) => {
-  const { name, description, image, categorySlug } = req.body;
+  const { name, description, image, categorySlug, status } = req.body;
 
   if (!name)
     return res.status(200).json({
@@ -29,6 +29,7 @@ const createCategory = async (req: Request, res: Response) => {
       description,
       image,
       categorySlug,
+      status
     });
 
     res.status(200).json({
@@ -40,7 +41,7 @@ const createCategory = async (req: Request, res: Response) => {
     return res.status(500).json({
       error: true,
       err,
-      message: "Internal server error, Pleasee try again",
+      message: "Internal server error, Please try again",
     });
   }
 };
@@ -49,7 +50,7 @@ const createCategory = async (req: Request, res: Response) => {
 const editCategory = async (req: Request, res: Response) => {
   const { categoryId } = req.params;
 
-  const { name, description, image, categorySlug } = req.body;
+  const { name, description, image, categorySlug, status } = req.body;
   try {
     const categoryDetails = await Category.findOne({ _id: categoryId });
 
@@ -63,6 +64,7 @@ const editCategory = async (req: Request, res: Response) => {
     if (description) categoryDetails.description = description;
     if (image) categoryDetails.image = image;
     if (categorySlug) categoryDetails.categorySlug = categorySlug;
+    categoryDetails.status = status;
 
     await categoryDetails.save();
 

@@ -5,6 +5,7 @@ interface subCategorySchemaI extends Document {
   description: string;
   image: string;
   status: Boolean;
+  categoryId: Schema.Types.ObjectId
 }
 
 const subCategorySchema = new Schema<subCategorySchemaI>(
@@ -25,6 +26,7 @@ const subCategorySchema = new Schema<subCategorySchemaI>(
       type: Boolean,
       require: [true, "SubCategory status is not provided"],
     },
+    categoryId: { type: Schema.Types.ObjectId, ref: "Category", required: true },
   },
   {
     timestamps: true,
