@@ -56,7 +56,7 @@ const createProduct = async (req: Request, res: Response) => {
     });
   } catch (err) {
     return res.status(500).json({
-      eroor: true,
+      error: true,
       err,
       message: "Internal server error",
     });
@@ -129,7 +129,7 @@ const getProduct = async (req: Request, res: Response) => {
     return res.json({
       error: false,
       productDetails,
-      message: "Category Retrieved succcessfully",
+      message: "Category Retrieved successfully",
     });
   } catch (err) {
     return res.status(500).json({
@@ -162,7 +162,7 @@ const deleteProduct = async (req: Request, res: Response) => {
   try {
     const productDetails = await Product.deleteOne({ _id: productId });
     if (!productDetails) {
-      return res.status(400).json({
+      return res.status(404).json({
         error: true,
         message: "product not found",
       });

@@ -54,8 +54,15 @@ const saveBillingInfo = async (req: CustomRequest, res: Response) => {
       });
     }
 
-    // Create or update billing info
-    userDetails.billingInfo = {
+    // If the new billing info is marked as default, set all others to false
+    if (defaultBillingInfo) {
+      userDetails.billingInfo.forEach(info => {
+        info.defaultBillingInfo = false;
+      });
+    }
+
+    // Add new billing info
+    userDetails.billingInfo.push({
       firstName,
       lastName,
       email,
@@ -64,13 +71,12 @@ const saveBillingInfo = async (req: CustomRequest, res: Response) => {
       streetAddress,
       phoneNumber,
       defaultBillingInfo: defaultBillingInfo || false, // Set default if not provided
-    };
+    });
 
     // Save user with the updated billing info
     await userDetails.save();
 
     const userObject = userDetails.toObject();
-
     const { password, ...rest } = userObject;
 
     return res.status(200).json({
@@ -84,10 +90,180 @@ const saveBillingInfo = async (req: CustomRequest, res: Response) => {
         error: true,
         err: error,
         message: "Internal server error, please try again"
-    })
+    });
+  }
+};
+const updateBillingInfo = async (req: CustomRequest, res: Response) => {
+  const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
+  const { billingId } = req.params;
+  const user = req.id;
+
+  try {
+    const userDetails = await User.findOne({ _id: user });
+
+    if (!userDetails) {
+      return res.status(404).json({
+        error: true,
+        message: "User not found, please log in and try again.",
+      });
+    }
+
+    // Ensure billingInfo is initialized as an array
+    if (!userDetails.billingInfo) {
+      return res.status(400).json({
+        error: true,
+        message: "Billing information is not available.",
+      });
+    }
+
+    // Find the billing info to be updated
+    const billingDoc = userDetails.billingInfo.find((info) => info._id?.toString() === billingId);
+
+    if (!billingDoc) {
+      return res.status(404).json({
+        error: true,
+        message: "Billing information not found.",
+      });
+    }
+
+    // If updating to default, set all other defaultBillingInfo to false
+    if (defaultBillingInfo) {
+      userDetails.billingInfo.forEach((info) => {
+        if (info._id?.toString() !== billingId) {
+          info.defaultBillingInfo = false;
+        }
+      });
+    }
+
+    // Update the specific billing info
+    if (billingDoc) {
+      billingDoc.firstName = firstName;
+      billingDoc.lastName = lastName;
+      billingDoc.email = email;
+      billingDoc.country = country;
+      billingDoc.cityOrTown = cityOrTown;
+      billingDoc.streetAddress = streetAddress;
+      billingDoc.phoneNumber = phoneNumber;
+      billingDoc.defaultBillingInfo = defaultBillingInfo || billingDoc.defaultBillingInfo;
+    }
+
+    // Save updated user details
+    await userDetails.save();
+
+    return res.status(200).json({
+      error: false,
+      user: userDetails.toObject(),
+      message: "Billing info updated successfully.",
+    });
+  } catch (error) {
+    console.error("Error updating billing info:", error);
+    return res.status(500).json({
+      error: true,
+      err: error,
+      message: "Internal server error, please try again",
+    });
   }
 };
 
+
+const deleteBillingInfo = async (req: CustomRequest, res: Response) => {
+  const { billingId } = req.params;
+  const user = req.id;
+
+  try {
+    const userDetails = await User.findOne({ _id: user });
+
+    if (!userDetails) {
+      return res.status(404).json({
+        error: true,
+        message: "User not found, please log in and try again.",
+      });
+    }
+
+    // Ensure billingInfo is initialized as an array
+    if (!userDetails.billingInfo || !Array.isArray(userDetails.billingInfo)) {
+      return res.status(400).json({
+        error: true,
+        message: "Billing information is not available.",
+      });
+    }
+
+    // Find the index of the billing info to be removed
+    const billingIndex = userDetails.billingInfo.findIndex((info) => info._id?.toString() === billingId);
+
+    if (billingIndex === -1) {
+      return res.status(404).json({
+        error: true,
+        message: "Billing information not found.",
+      });
+    }
+
+    // Remove the billing info from the array
+    userDetails.billingInfo.splice(billingIndex, 1);
+
+    await userDetails.save();
+
+    return res.status(200).json({
+      error: false,
+      message: "Billing info deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Error deleting billing info:", error);
+    return res.status(500).json({
+      error: true,
+      err: error,
+      message: "Internal server error, please try again",
+    });
+  }
+};
+
+const updateDefaultBillingInfo = async (req: CustomRequest, res: Response) => {
+  const { billingId } = req.params;
+  const user = req.id;
+
+  try {
+    const userDetails = await User.findOne({ _id: user });
+
+    if (!userDetails) {
+      return res.status(404).json({
+        error: true,
+        message: "User not found, please log in and try again.",
+      });
+    }
+
+    // Ensure billingInfo is initialized
+    if (!userDetails.billingInfo) {
+      return res.status(400).json({
+        error: true,
+        message: "Billing information is not available.",
+      });
+    }
+
+    // Update billingInfo entries
+    userDetails.billingInfo.forEach((info) => {
+      if (info._id?.toString() === billingId) {
+        info.defaultBillingInfo = true;
+      } else {
+        info.defaultBillingInfo = false;
+      }
+    });
+
+    // Save updated user details
+    await userDetails.save();
+
+    return res.status(200).json({
+      error: false,
+      message: "Default billing info updated successfully.",
+    });
+  } catch (error) {
+    console.error("Error updating default billing info:", error);
+    return res.status(500).json({
+      error: true,
+      err: error,
+      message: "Internal server error, please try again",
+    });
+  }
+};
 
 
 // const saveBillingInfo = async (req: CustomRequest, res: Response) => {
@@ -129,4 +305,4 @@ const saveBillingInfo = async (req: CustomRequest, res: Response) => {
 //     }
 // }
 
-export {saveBillingInfo, getUser};
+export { saveBillingInfo, getUser, updateBillingInfo, deleteBillingInfo, updateDefaultBillingInfo };
