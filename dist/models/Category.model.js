@@ -7,8 +7,12 @@ const categorySchema = new mongoose_1.Schema({
         type: String,
         require: [true, "Please provide category description"],
     },
-    categorySlug: String,
+    categorySlug: { type: String, unique: true },
     image: { type: String, require: [true, "Please provide category image"] },
+    status: {
+        type: Boolean,
+        require: [true, "SubCategory status is not provided"],
+    },
 }, {
     timestamps: true
 });

@@ -18,6 +18,7 @@ const subCategorySchema = new mongoose_1.Schema({
         type: Boolean,
         require: [true, "SubCategory status is not provided"],
     },
+    categoryId: { type: mongoose_1.Schema.Types.ObjectId, ref: "Category", required: true },
 }, {
     timestamps: true,
 });

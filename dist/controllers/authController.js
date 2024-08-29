@@ -164,7 +164,7 @@ const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, functi
         const token = jsonwebtoken_1.default.sign({ id: user._id }, process.env.ACCESS_SECRET_TOKEN, {
             expiresIn: maxAge,
         });
-        const resetUrl = `https://goldies-frontend.vercel.app/reset_password/${token}`;
+        const resetUrl = `http://localhost:3000/reset_password/${token}`;
         const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2 style="color: #007bff;">Password Reset Request</h2>

@@ -16,13 +16,14 @@ exports.deleteSubCategory = exports.getSubCategory = exports.getAllSubCategory =
 const SubCategory_model_1 = __importDefault(require("../models/SubCategory.model"));
 // Create SubCategories
 const createSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, description, image, status } = req.body;
+    const { name, description, image, status, categoryId } = req.body;
     try {
         const subCategory = yield SubCategory_model_1.default.create({
             name,
             description,
             image,
             status,
+            categoryId
         });
         res.status(200).json({
             error: false,
@@ -34,7 +35,7 @@ const createSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
         return res.status(500).json({
             error: true,
             err,
-            messaage: "Internal server error, Please try again",
+            message: "Internal server error, Please try again",
         });
     }
 });
@@ -45,9 +46,6 @@ const updateSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
     const { name, description, image, status } = req.body;
     try {
         const subCategory = yield SubCategory_model_1.default.findOne({ _id: subCategoryId });
-        // if (!name || !description || !image || !status) {
-        //     return res.status()
-        // }
         if (!subCategory) {
             return res.status(200).json({
                 error: true,
@@ -60,8 +58,7 @@ const updateSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
             subCategory.description = description;
         if (image)
             subCategory.image = image;
-        if (status)
-            subCategory.status = status;
+        subCategory.status = status;
         yield subCategory.save();
         return res.status(200).json({
             error: false,
@@ -73,7 +70,7 @@ const updateSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
         return res.status(500).json({
             error: true,
             err,
-            messaage: "Internal server error, Please try again",
+            message: "Internal server error, Please try again",
         });
     }
 });
@@ -92,7 +89,7 @@ const getAllSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
         return res.status(500).json({
             error: true,
             err,
-            messaage: "Internal server error, Please try again",
+            message: "Internal server error, Please try again",
         });
     }
 });
@@ -118,7 +115,7 @@ const getSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
         return res.status(500).json({
             error: true,
             err,
-            messaage: "Internal server error, Please try again",
+            message: "Internal server error, Please try again",
         });
     }
 });

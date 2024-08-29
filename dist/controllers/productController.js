@@ -53,7 +53,7 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
     catch (err) {
         return res.status(500).json({
-            eroor: true,
+            error: true,
             err,
             message: "Internal server error",
         });
@@ -122,7 +122,7 @@ const getProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         return res.json({
             error: false,
             productDetails,
-            message: "Category Retrieved succcessfully",
+            message: "Category Retrieved successfully",
         });
     }
     catch (err) {
@@ -157,7 +157,7 @@ const deleteProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     try {
         const productDetails = yield Product_model_1.default.deleteOne({ _id: productId });
         if (!productDetails) {
-            return res.status(400).json({
+            return res.status(404).json({
                 error: true,
                 message: "product not found",
             });

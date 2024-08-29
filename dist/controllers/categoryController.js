@@ -16,7 +16,7 @@ exports.deleteCategory = exports.getCategory = exports.getAllCategories = export
 const Category_model_1 = __importDefault(require("../models/Category.model"));
 //  create category
 const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, description, image, categorySlug } = req.body;
+    const { name, description, image, categorySlug, status } = req.body;
     if (!name)
         return res.status(200).json({
             error: true,
@@ -38,6 +38,7 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
             description,
             image,
             categorySlug,
+            status
         });
         res.status(200).json({
             error: false,
@@ -49,7 +50,7 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
         return res.status(500).json({
             error: true,
             err,
-            message: "Internal server error, Pleasee try again",
+            message: "Internal server error, Please try again",
         });
     }
 });
@@ -57,11 +58,11 @@ exports.createCategory = createCategory;
 // update category
 const editCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { categoryId } = req.params;
-    const { name, description, image, categorySlug } = req.body;
+    const { name, description, image, categorySlug, status } = req.body;
     try {
         const categoryDetails = yield Category_model_1.default.findOne({ _id: categoryId });
         if (!categoryDetails)
-            return res.status(200).json({
+            return res.status(404).json({
                 error: true,
                 message: "category not found",
             });
@@ -73,6 +74,7 @@ const editCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             categoryDetails.image = image;
         if (categorySlug)
             categoryDetails.categorySlug = categorySlug;
+        categoryDetails.status = status;
         yield categoryDetails.save();
         res.status(200).json({
             error: false,
