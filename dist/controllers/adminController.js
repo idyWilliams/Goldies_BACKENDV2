@@ -35,7 +35,7 @@ const inviteAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 rejectUnauthorized: false,
             },
         });
-        const SignUpURL = `http://localhost:3000/invite_admin?refCode=${refCode}&email=${email}`;
+        const SignUpURL = `http://localhost:3000/admin-signup?refCode=${refCode}&email=${email}`;
         const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2 style="color: #007bff;">Goldies Admin Invitation</h2>

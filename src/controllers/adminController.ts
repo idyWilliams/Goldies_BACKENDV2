@@ -23,7 +23,7 @@ const inviteAdmin = async (req: Request, res: Response) => {
       },
     });
 
-    const SignUpURL = `http://localhost:3000/invite_admin?refCode=${refCode}&email=${email}`;
+    const SignUpURL = `http://localhost:3000/admin-signup?refCode=${refCode}&email=${email}`;
 
     const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
