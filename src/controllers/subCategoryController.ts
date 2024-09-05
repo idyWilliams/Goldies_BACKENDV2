@@ -1,11 +1,20 @@
 import { Request, Response } from "express";
 import SubCategory from "../models/SubCategory.model";
+import Category from "../models/Category.model";
 
 // Create SubCategories
 const createSubCategory = async (req: Request, res: Response) => {
   const { name, description, image, status, categoryId } = req.body;
 
   try {
+
+    const category = await Category.findOne({ _id: categoryId})
+
+    if(!category) return res.status(404).json({
+      error: true,
+      message: "Wrong category id provided"
+    })
+    
     const subCategory = await SubCategory.create({
       name,
       description,

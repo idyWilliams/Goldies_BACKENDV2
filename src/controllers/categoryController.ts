@@ -1,5 +1,6 @@
 import Category from "../models/Category.model";
 import { Request, Response } from "express";
+import SubCategory from "../models/SubCategory.model";
 
 //  create category
 const createCategory = async (req: Request, res: Response) => {
@@ -85,12 +86,24 @@ const editCategory = async (req: Request, res: Response) => {
 // Get all categories
 const getAllCategories = async (req: Request, res: Response) => {
   try {
-    const category = await Category.find();
+    const allCategories = await Category.find();
+    const allSubCategories = await SubCategory.find();
+
+    const categoriesWithSubcategories = allCategories.map((category) => {
+      const subCategories = allSubCategories.filter(
+        (subCategory) => subCategory.categoryId.toString() === category._id.toString()
+      );
+
+      return {
+        ...category.toObject(),
+        subCategories,
+      };
+    });
 
     res.status(200).json({
       error: false,
-      category,
-      message: "All category retrieved successfully",
+      categories: categoriesWithSubcategories,
+      message: "All categories retrieved successfully",
     });
   } catch (err) {
     return res.status(500).json({
@@ -100,6 +113,7 @@ const getAllCategories = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 // Get category
 const getCategory = async (req: Request, res: Response) => {

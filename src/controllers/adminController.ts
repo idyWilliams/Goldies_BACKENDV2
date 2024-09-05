@@ -9,7 +9,13 @@ import bcryptjs from "bcryptjs";
 const inviteAdmin = async (req: Request, res: Response) => {
   const { email } = req.body;
   try {
+
     const refCode = process.env.ADMINREFCODE;
+
+    const maxAge = 60 * 15;
+    const token = jwt.sign({ email }, refCode as string, {
+      expiresIn: maxAge,
+    })
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
@@ -23,7 +29,7 @@ const inviteAdmin = async (req: Request, res: Response) => {
       },
     });
 
-    const SignUpURL = `http://localhost:3000/admin-signup?refCode=${refCode}&email=${email}`;
+    const SignUpURL = `http://localhost:3000/admin-signup?refCode=${token}&email=${email}`;
 
     const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
@@ -92,23 +98,15 @@ const generateToken = (id: unknown) => {
 const adminSignup = async (req: Request, res: Response) => {
   const { email, password } = req.body;
   try {
-    const { refCode } = req.query;
-
-    if (refCode != process.env.ADMINREFCODE) {
-      return res.status(401);
-    }
-
   if(!email){
     return res.status(404).json({
       error: true,
       message: "email is required for this process"
     })
   }
-
     const user = await Admin.findOne({ email });
-
     const OTP = generateOtp();
-
+    
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
@@ -162,17 +160,25 @@ const adminSignup = async (req: Request, res: Response) => {
         message: `Admin created successfully, 6 digit code as been sent to ${email}`,
       });
     } else {
+      const { refCode } = req.query;
+
+      jwt.verify(refCode as string, process.env.ACCESS_SECRET_TOKEN as string, (err: any, decoded: any) => {
+          if (err) return res.sendStatus(403)
+        }
+      );
       const passwordMatch = await bcryptjs.compare(password, user.password);
       if (!passwordMatch) {
         return res
           .status(400)
           .json({ error: true, message: "Password is incorrect" });
       }
-      if(OTP) user.OTP = OTP
+
+      if (OTP) user.OTP = OTP
       await user.save()
+
       return res.status(200).json({
-       error: false,
-       message: `New 6 digit code as been sent to ${email}`,
+        error: false,
+        message: `New 6 digit code as been sent to ${email}`,
       });
     }
 
