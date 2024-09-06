@@ -161,6 +161,16 @@ const adminSignup = async (req: Request, res: Response) => {
 
     // If user does not exist, create new admin
     if (!user) {
+      // verify JWT
+      const { refCode } = req.query;
+      try {
+        jwt.verify(refCode as string, process.env.ADMINREFCODE as string);
+      } catch (err) {
+        return res.status(403).json({
+          error: true,
+          message: "Invalid or expired referral code.",
+        });
+      }
       const hashedPwd = bcryptjs.hashSync(password, 10);
       const admin = await Admin.create({
         email,
@@ -176,16 +186,6 @@ const adminSignup = async (req: Request, res: Response) => {
         message: `Admin created successfully. A 6-digit code has been sent to ${email}`,
       });
     } else {
-      // User already exists, verify JWT
-      const { refCode } = req.query;
-      try {
-        jwt.verify(refCode as string, process.env.ACCESS_SECRET_TOKEN as string);
-      } catch (err) {
-        return res.status(403).json({
-          error: true,
-          message: "Invalid or expired token.",
-        });
-      }
 
       // Verify the password
       const passwordMatch = await bcryptjs.compare(password, user.password);

@@ -154,6 +154,17 @@ const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         });
         // If user does not exist, create new admin
         if (!user) {
+            // verify JWT
+            const { refCode } = req.query;
+            try {
+                jsonwebtoken_1.default.verify(refCode, process.env.ADMINREFCODE);
+            }
+            catch (err) {
+                return res.status(403).json({
+                    error: true,
+                    message: "Invalid or expired referral code.",
+                });
+            }
             const hashedPwd = bcryptjs_1.default.hashSync(password, 10);
             const admin = yield Admin_model_1.default.create({
                 email,
@@ -168,17 +179,6 @@ const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             });
         }
         else {
-            // User already exists, verify JWT
-            const { refCode } = req.query;
-            try {
-                jsonwebtoken_1.default.verify(refCode, process.env.ACCESS_SECRET_TOKEN);
-            }
-            catch (err) {
-                return res.status(403).json({
-                    error: true,
-                    message: "Invalid or expired token.",
-                });
-            }
             // Verify the password
             const passwordMatch = yield bcryptjs_1.default.compare(password, user.password);
             if (!passwordMatch) {
