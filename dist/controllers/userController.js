@@ -55,7 +55,7 @@ exports.getUser = getUser;
 const getAllUSers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const id = req.id;
     try {
-        const admin = yield Admin_model_1.default.findOne({ id });
+        const admin = yield Admin_model_1.default.findOne({ _id: id });
         if (!admin)
             return res.status(404).json({
                 error: true,

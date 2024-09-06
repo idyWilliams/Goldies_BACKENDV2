@@ -38,7 +38,7 @@ const getAllUSers = async (req: CustomRequest, res: Response) => {
   const id  = req.id
 
   try{
-    const admin = await Admin.findOne({ id });
+    const admin = await Admin.findOne({ _id: id });
 
     if(!admin) return res.status(404).json({
       error: true,
