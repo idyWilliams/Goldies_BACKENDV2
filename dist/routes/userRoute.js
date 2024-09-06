@@ -5,6 +5,7 @@ const verifyJWT_1 = require("../middleware/verifyJWT");
 const userController_1 = require("../controllers/userController");
 const router = (0, express_1.Router)();
 router.get("/get_user", verifyJWT_1.authenticateToken, userController_1.getUser);
+router.get("/get_all_users", verifyJWT_1.authenticateToken, userController_1.getAllUSers);
 router.post("/save_billing_details", verifyJWT_1.authenticateToken, userController_1.saveBillingInfo);
 router.put("/update_billing_info/:billingId", verifyJWT_1.authenticateToken, userController_1.updateBillingInfo);
 router.patch("/update_default_billing_info/:billingId", verifyJWT_1.authenticateToken, userController_1.updateDefaultBillingInfo);
