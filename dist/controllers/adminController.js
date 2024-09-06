@@ -85,7 +85,7 @@ function generateOtp() {
     return otp;
 }
 const generateToken = (id) => {
-    const maxAge = 60 * 60 * 2;
+    const maxAge = 60 * 60 * 24;
     const secret = process.env.ACCESS_SECRET_TOKEN;
     if (!secret) {
         throw new Error("Secret key is not defined in environment variables.");

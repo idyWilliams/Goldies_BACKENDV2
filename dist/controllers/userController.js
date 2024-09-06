@@ -23,8 +23,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateDefaultBillingInfo = exports.deleteBillingInfo = exports.updateBillingInfo = exports.getUser = exports.saveBillingInfo = void 0;
+exports.getAllUSers = exports.updateDefaultBillingInfo = exports.deleteBillingInfo = exports.updateBillingInfo = exports.getUser = exports.saveBillingInfo = void 0;
 const User_model_1 = __importDefault(require("../models/User.model"));
+const Admin_model_1 = __importDefault(require("../models/Admin.model"));
 const getUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const user = req.id;
     try {
@@ -51,6 +52,31 @@ const getUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.getUser = getUser;
+const getAllUSers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const id = req.id;
+    try {
+        const admin = yield Admin_model_1.default.findOne({ id });
+        if (!admin)
+            return res.status(404).json({
+                error: true,
+                message: "admin not found, Please login as an admin"
+            });
+        const users = yield User_model_1.default.find();
+        return res.status(200).json({
+            error: false,
+            users,
+            message: "All user details retrieved successfully"
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            error: true,
+            err: error,
+            message: "Internal server error, please try again",
+        });
+    }
+});
+exports.getAllUSers = getAllUSers;
 const saveBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
     const user = req.id;

@@ -1,5 +1,6 @@
 import { Response } from "express";
 import User from "../models/User.model";
+import Admin from "../models/Admin.model";
 
 import { CustomRequest } from "../middleware/verifyJWT";
 const getUser = async (req: CustomRequest, res: Response) => {
@@ -32,6 +33,33 @@ const getUser = async (req: CustomRequest, res: Response) => {
   }
 
 };
+
+const getAllUSers = async (req: CustomRequest, res: Response) => {
+  const id  = req.id
+
+  try{
+    const admin = await Admin.findOne({ id });
+
+    if(!admin) return res.status(404).json({
+      error: true,
+      message: "admin not found, Please login as an admin"
+    })
+
+    const users = await User.find()
+
+    return res.status(200).json({
+      error: false,
+      users,
+      message: "All user details retrieved successfully"
+    })
+   } catch (error) {
+    return res.status(500).json({
+      error: true,
+      err: error,
+      message: "Internal server error, please try again",
+    });
+  }
+}
 
 const saveBillingInfo = async (req: CustomRequest, res: Response) => {
   const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
@@ -93,6 +121,7 @@ const saveBillingInfo = async (req: CustomRequest, res: Response) => {
     });
   }
 };
+
 const updateBillingInfo = async (req: CustomRequest, res: Response) => {
   const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
   const { billingId } = req.params;
@@ -305,4 +334,4 @@ const updateDefaultBillingInfo = async (req: CustomRequest, res: Response) => {
 //     }
 // }
 
-export { saveBillingInfo, getUser, updateBillingInfo, deleteBillingInfo, updateDefaultBillingInfo };
+export { saveBillingInfo, getUser, updateBillingInfo, deleteBillingInfo, updateDefaultBillingInfo, getAllUSers };
