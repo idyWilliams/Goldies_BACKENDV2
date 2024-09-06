@@ -97,16 +97,27 @@ const generateToken = (id: unknown) => {
 
 const adminSignup = async (req: Request, res: Response) => {
   const { email, password } = req.body;
-  try {
-  if(!email){
-    return res.status(404).json({
+
+  // Validate input
+  if (!email) {
+    return res.status(400).json({
       error: true,
-      message: "email is required for this process"
-    })
+      message: "Email is required for this process",
+    });
   }
+
+  if (!password) {
+    return res.status(400).json({
+      error: true,
+      message: "Password is required for this process",
+    });
+  }
+
+  try {
     const user = await Admin.findOne({ email });
-    const OTP = generateOtp();
-    
+    const OTP = generateOtp(); // Assuming this function generates a 6-digit OTP
+
+    // Create transporter for sending email
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
@@ -120,76 +131,90 @@ const adminSignup = async (req: Request, res: Response) => {
       },
     });
 
-    const emailContent = `
-    <div style="font-family: Arial, sans-serif; color: #333;">
-      <h2 style="color: #007bff;">Email Verification</h2>
-      <p>Do not share this with anyone.</p>
-      <p> Verification code <strong> ${OTP} </strong> </p>
-      <p>If you did not request this, please ignore this email.</p>
-    </div>
-  `;
-    const mailOptions = {
-      from: process.env.EMAIL,
-      to: email,
-      subject: "Goldies Team",
-      text: "Email verification.",
-      html: emailContent,
+    // Function to send the verification email
+    const sendVerificationEmail = async () => {
+      const emailContent = `
+      <div style="font-family: Arial, sans-serif; color: #333;">
+        <h2 style="color: #007bff;">Email Verification</h2>
+        <p>Do not share this with anyone.</p>
+        <p> Verification code: <strong>${OTP}</strong> </p>
+        <p>If you did not request this, please ignore this email.</p>
+      </div>
+    `;
+
+      const mailOptions = {
+        from: process.env.EMAIL,
+        to: email,
+        subject: "Goldies Team - Email Verification",
+        text: "Email verification.",
+        html: emailContent,
+      };
+
+      try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log("Message sent: %s", info.messageId);
+      } catch (err) {
+        console.error("Error sending email: ", err);
+        throw new Error("Failed to send verification email.");
+      }
     };
 
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Message sent: %s", info.messageId);
-
-    if(!password){
-      return res.status(404).json({
-        error: true,
-        message: "password is required for this process"
-      })
-    }
+    // If user does not exist, create new admin
     if (!user) {
       const hashedPwd = bcryptjs.hashSync(password, 10);
       const admin = await Admin.create({
         email,
         password: hashedPwd,
-        OTP
+        OTP,
       });
-      
-      console.log(admin);
+
+      // Send verification email
+      await sendVerificationEmail();
+
       return res.status(200).json({
         error: false,
-        message: `Admin created successfully, 6 digit code as been sent to ${email}`,
+        message: `Admin created successfully. A 6-digit code has been sent to ${email}`,
       });
     } else {
+      // User already exists, verify JWT
       const { refCode } = req.query;
-
-      jwt.verify(refCode as string, process.env.ACCESS_SECRET_TOKEN as string, (err: any, decoded: any) => {
-          if (err) return res.sendStatus(403)
-        }
-      );
-      const passwordMatch = await bcryptjs.compare(password, user.password);
-      if (!passwordMatch) {
-        return res
-          .status(400)
-          .json({ error: true, message: "Password is incorrect" });
+      try {
+        jwt.verify(refCode as string, process.env.ACCESS_SECRET_TOKEN as string);
+      } catch (err) {
+        return res.status(403).json({
+          error: true,
+          message: "Invalid or expired token.",
+        });
       }
 
-      if (OTP) user.OTP = OTP
-      await user.save()
+      // Verify the password
+      const passwordMatch = await bcryptjs.compare(password, user.password);
+      if (!passwordMatch) {
+        return res.status(400).json({
+          error: true,
+          message: "Password is incorrect",
+        });
+      }
+
+      // Update OTP and send verification email
+      user.OTP = OTP;
+      await user.save();
+      await sendVerificationEmail();
 
       return res.status(200).json({
         error: false,
-        message: `New 6 digit code as been sent to ${email}`,
+        message: `New 6-digit code has been sent to ${email}`,
       });
     }
-
   } catch (error) {
+    console.error("Error in admin signup: ", error);
     return res.status(500).json({
       error: true,
-      err: error,
       message: "Internal server error",
     });
   }
 };
+
 
 const verifyOTP = async (req: Request, res: Response) => {
   const { email, otp } = req.body;

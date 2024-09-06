@@ -97,15 +97,23 @@ const generateToken = (id) => {
 };
 const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
+    // Validate input
+    if (!email) {
+        return res.status(400).json({
+            error: true,
+            message: "Email is required for this process",
+        });
+    }
+    if (!password) {
+        return res.status(400).json({
+            error: true,
+            message: "Password is required for this process",
+        });
+    }
     try {
-        if (!email) {
-            return res.status(404).json({
-                error: true,
-                message: "email is required for this process"
-            });
-        }
         const user = yield Admin_model_1.default.findOne({ email });
-        const OTP = generateOtp();
+        const OTP = generateOtp(); // Assuming this function generates a 6-digit OTP
+        // Create transporter for sending email
         const transporter = nodemailer_1.default.createTransport({
             host: "smtp.gmail.com",
             port: 465,
@@ -118,67 +126,81 @@ const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 rejectUnauthorized: false,
             },
         });
-        const emailContent = `
-    <div style="font-family: Arial, sans-serif; color: #333;">
-      <h2 style="color: #007bff;">Email Verification</h2>
-      <p>Do not share this with anyone.</p>
-      <p> Verification code <strong> ${OTP} </strong> </p>
-      <p>If you did not request this, please ignore this email.</p>
-    </div>
-  `;
-        const mailOptions = {
-            from: process.env.EMAIL,
-            to: email,
-            subject: "Goldies Team",
-            text: "Email verification.",
-            html: emailContent,
-        };
-        const info = yield transporter.sendMail(mailOptions);
-        console.log("Message sent: %s", info.messageId);
-        if (!password) {
-            return res.status(404).json({
-                error: true,
-                message: "password is required for this process"
-            });
-        }
+        // Function to send the verification email
+        const sendVerificationEmail = () => __awaiter(void 0, void 0, void 0, function* () {
+            const emailContent = `
+      <div style="font-family: Arial, sans-serif; color: #333;">
+        <h2 style="color: #007bff;">Email Verification</h2>
+        <p>Do not share this with anyone.</p>
+        <p> Verification code: <strong>${OTP}</strong> </p>
+        <p>If you did not request this, please ignore this email.</p>
+      </div>
+    `;
+            const mailOptions = {
+                from: process.env.EMAIL,
+                to: email,
+                subject: "Goldies Team - Email Verification",
+                text: "Email verification.",
+                html: emailContent,
+            };
+            try {
+                const info = yield transporter.sendMail(mailOptions);
+                console.log("Message sent: %s", info.messageId);
+            }
+            catch (err) {
+                console.error("Error sending email: ", err);
+                throw new Error("Failed to send verification email.");
+            }
+        });
+        // If user does not exist, create new admin
         if (!user) {
             const hashedPwd = bcryptjs_1.default.hashSync(password, 10);
             const admin = yield Admin_model_1.default.create({
                 email,
                 password: hashedPwd,
-                OTP
+                OTP,
             });
-            console.log(admin);
+            // Send verification email
+            yield sendVerificationEmail();
             return res.status(200).json({
                 error: false,
-                message: `Admin created successfully, 6 digit code as been sent to ${email}`,
+                message: `Admin created successfully. A 6-digit code has been sent to ${email}`,
             });
         }
         else {
+            // User already exists, verify JWT
             const { refCode } = req.query;
-            jsonwebtoken_1.default.verify(refCode, process.env.ACCESS_SECRET_TOKEN, (err, decoded) => {
-                if (err)
-                    return res.sendStatus(403);
-            });
+            try {
+                jsonwebtoken_1.default.verify(refCode, process.env.ACCESS_SECRET_TOKEN);
+            }
+            catch (err) {
+                return res.status(403).json({
+                    error: true,
+                    message: "Invalid or expired token.",
+                });
+            }
+            // Verify the password
             const passwordMatch = yield bcryptjs_1.default.compare(password, user.password);
             if (!passwordMatch) {
-                return res
-                    .status(400)
-                    .json({ error: true, message: "Password is incorrect" });
+                return res.status(400).json({
+                    error: true,
+                    message: "Password is incorrect",
+                });
             }
-            if (OTP)
-                user.OTP = OTP;
+            // Update OTP and send verification email
+            user.OTP = OTP;
             yield user.save();
+            yield sendVerificationEmail();
             return res.status(200).json({
                 error: false,
-                message: `New 6 digit code as been sent to ${email}`,
+                message: `New 6-digit code has been sent to ${email}`,
             });
         }
     }
     catch (error) {
+        console.error("Error in admin signup: ", error);
         return res.status(500).json({
             error: true,
-            err: error,
             message: "Internal server error",
         });
     }
