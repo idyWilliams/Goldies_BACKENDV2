@@ -14,10 +14,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteSubCategory = exports.getSubCategory = exports.getAllSubCategory = exports.updateSubCategory = exports.createSubCategory = void 0;
 const SubCategory_model_1 = __importDefault(require("../models/SubCategory.model"));
+const Category_model_1 = __importDefault(require("../models/Category.model"));
 // Create SubCategories
 const createSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { name, description, image, status, categoryId } = req.body;
     try {
+        const category = yield Category_model_1.default.findOne({ _id: categoryId });
+        if (!category)
+            return res.status(404).json({
+                error: true,
+                message: "Wrong category id provided"
+            });
         const subCategory = yield SubCategory_model_1.default.create({
             name,
             description,

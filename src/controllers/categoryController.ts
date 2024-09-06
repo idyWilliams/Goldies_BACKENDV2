@@ -1,6 +1,6 @@
-import Category from "../models/Category.model";
+import Category, { categorySchemaI } from "../models/Category.model";
 import { Request, Response } from "express";
-import SubCategory from "../models/SubCategory.model";
+import SubCategory, { subCategorySchemaI } from "../models/SubCategory.model";
 
 //  create category
 const createCategory = async (req: Request, res: Response) => {
@@ -86,16 +86,18 @@ const editCategory = async (req: Request, res: Response) => {
 // Get all categories
 const getAllCategories = async (req: Request, res: Response) => {
   try {
-    const allCategories = await Category.find();
-    const allSubCategories = await SubCategory.find();
+    // Fetch all categories and subcategories
+    const allCategories = await Category.find().lean(); // Use `.lean()` to get plain objects
+    const allSubCategories = await SubCategory.find().lean();
 
+    // Attach subcategories to their respective categories
     const categoriesWithSubcategories = allCategories.map((category) => {
       const subCategories = allSubCategories.filter(
         (subCategory) => subCategory.categoryId.toString() === category._id.toString()
       );
 
       return {
-        ...category.toObject(),
+        ...category,
         subCategories,
       };
     });
@@ -115,23 +117,35 @@ const getAllCategories = async (req: Request, res: Response) => {
 };
 
 
+
 // Get category
 const getCategory = async (req: Request, res: Response) => {
   const { categoryId } = req.params;
 
   try {
-    const category = await Category.findOne({ _id: categoryId });
+    // Find the category by ID
+    const category = await Category.findById(categoryId).lean(); // Use `.lean()` to get a plain JavaScript object
 
     if (!category) {
-      return res.status(200).json({
+      return res.status(404).json({
         error: true,
-        message: "category not found",
+        message: "Category not found",
       });
     }
+
+    // Find all subcategories associated with this category
+    const subCategories = await SubCategory.find({ categoryId: category._id }).lean();
+
+    // Combine category data with its subcategories
+    const categoryWithSubcategories = {
+      ...category,
+      subCategories,
+    };
+
     res.status(200).json({
       error: false,
-      category,
-      message: "category fetched successfully",
+      category: categoryWithSubcategories,
+      message: "Category fetched successfully",
     });
   } catch (err) {
     return res.status(500).json({
@@ -141,6 +155,7 @@ const getCategory = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 // Delete category
 const deleteCategory = async (req: Request, res: Response) => {

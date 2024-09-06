@@ -23,6 +23,10 @@ const inviteAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     const { email } = req.body;
     try {
         const refCode = process.env.ADMINREFCODE;
+        const maxAge = 60 * 15;
+        const token = jsonwebtoken_1.default.sign({ email }, refCode, {
+            expiresIn: maxAge,
+        });
         const transporter = nodemailer_1.default.createTransport({
             host: "smtp.gmail.com",
             port: 465,
@@ -35,7 +39,7 @@ const inviteAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 rejectUnauthorized: false,
             },
         });
-        const SignUpURL = `http://localhost:3000/admin-signup?refCode=${refCode}&email=${email}`;
+        const SignUpURL = `http://localhost:3000/admin-signup?refCode=${token}&email=${email}`;
         const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2 style="color: #007bff;">Goldies Admin Invitation</h2>
@@ -94,10 +98,6 @@ const generateToken = (id) => {
 const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
     try {
-        const { refCode } = req.query;
-        if (refCode != process.env.ADMINREFCODE) {
-            return res.status(401);
-        }
         if (!email) {
             return res.status(404).json({
                 error: true,
@@ -155,6 +155,11 @@ const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             });
         }
         else {
+            const { refCode } = req.query;
+            jsonwebtoken_1.default.verify(refCode, process.env.ACCESS_SECRET_TOKEN, (err, decoded) => {
+                if (err)
+                    return res.sendStatus(403);
+            });
             const passwordMatch = yield bcryptjs_1.default.compare(password, user.password);
             if (!passwordMatch) {
                 return res

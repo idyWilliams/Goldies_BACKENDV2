@@ -14,6 +14,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteCategory = exports.getCategory = exports.getAllCategories = exports.editCategory = exports.createCategory = void 0;
 const Category_model_1 = __importDefault(require("../models/Category.model"));
+const SubCategory_model_1 = __importDefault(require("../models/SubCategory.model"));
 //  create category
 const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { name, description, image, categorySlug, status } = req.body;
@@ -94,11 +95,18 @@ exports.editCategory = editCategory;
 // Get all categories
 const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const category = yield Category_model_1.default.find();
+        // Fetch all categories and subcategories
+        const allCategories = yield Category_model_1.default.find().lean(); // Use `.lean()` to get plain objects
+        const allSubCategories = yield SubCategory_model_1.default.find().lean();
+        // Attach subcategories to their respective categories
+        const categoriesWithSubcategories = allCategories.map((category) => {
+            const subCategories = allSubCategories.filter((subCategory) => subCategory.categoryId.toString() === category._id.toString());
+            return Object.assign(Object.assign({}, category), { subCategories });
+        });
         res.status(200).json({
             error: false,
-            category,
-            message: "All category retrieved successfully",
+            categories: categoriesWithSubcategories,
+            message: "All categories retrieved successfully",
         });
     }
     catch (err) {
@@ -114,17 +122,22 @@ exports.getAllCategories = getAllCategories;
 const getCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { categoryId } = req.params;
     try {
-        const category = yield Category_model_1.default.findOne({ _id: categoryId });
+        // Find the category by ID
+        const category = yield Category_model_1.default.findById(categoryId).lean(); // Use `.lean()` to get a plain JavaScript object
         if (!category) {
-            return res.status(200).json({
+            return res.status(404).json({
                 error: true,
-                message: "category not found",
+                message: "Category not found",
             });
         }
+        // Find all subcategories associated with this category
+        const subCategories = yield SubCategory_model_1.default.find({ categoryId: category._id }).lean();
+        // Combine category data with its subcategories
+        const categoryWithSubcategories = Object.assign(Object.assign({}, category), { subCategories });
         res.status(200).json({
             error: false,
-            category,
-            message: "category fetched successfully",
+            category: categoryWithSubcategories,
+            message: "Category fetched successfully",
         });
     }
     catch (err) {
