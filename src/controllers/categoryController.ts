@@ -86,11 +86,9 @@ const editCategory = async (req: Request, res: Response) => {
 // Get all categories
 const getAllCategories = async (req: Request, res: Response) => {
   try {
-    // Fetch all categories and subcategories
-    const allCategories = await Category.find().lean(); // Use `.lean()` to get plain objects
+    const allCategories = await Category.find().lean();
     const allSubCategories = await SubCategory.find().lean();
 
-    // Attach subcategories to their respective categories
     const categoriesWithSubcategories = allCategories.map((category) => {
       const subCategories = allSubCategories.filter(
         (subCategory) => subCategory.categoryId.toString() === category._id.toString()

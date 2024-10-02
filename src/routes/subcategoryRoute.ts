@@ -11,10 +11,9 @@ import {
 import { authenticateToken } from "../middleware/verifyJWT";
 
 router.post("/create_subcategory", authenticateToken, createSubCategory);
-router.get("/get_all_subcategory", authenticateToken, getAllSubCategory);
+router.get("/get_all_subcategory", getAllSubCategory);
 router.get(
   "/get_subcategory/:subCategoryId",
-  authenticateToken,
   getSubCategory
 );
 router.put(
