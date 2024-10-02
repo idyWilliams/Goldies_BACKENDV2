@@ -15,6 +15,7 @@ const subcategoryRoute_1 = __importDefault(require("./routes/subcategoryRoute"))
 const adminRoute_1 = __importDefault(require("./routes/adminRoute"));
 const cartRoute_1 = __importDefault(require("./routes/cartRoute"));
 const orderRoute_1 = __importDefault(require("./routes/orderRoute"));
+const paystackRoute_1 = __importDefault(require("./routes/paystackRoute"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const cors_1 = __importDefault(require("cors"));
 const PORT = process.env.PORT || 2030;
@@ -35,4 +36,5 @@ app.use("/api/subcategory", subcategoryRoute_1.default);
 app.use("/api/admin", adminRoute_1.default);
 app.use("/api/cart", cartRoute_1.default);
 app.use("/api/order", orderRoute_1.default);
+app.use("/api/payments", paystackRoute_1.default);
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`));

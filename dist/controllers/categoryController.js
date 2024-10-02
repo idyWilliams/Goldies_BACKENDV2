@@ -92,13 +92,20 @@ const editCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.editCategory = editCategory;
-// Get all categories
+// Get all categories with pagination
 const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        // Fetch all categories and subcategories
-        const allCategories = yield Category_model_1.default.find().lean(); // Use `.lean()` to get plain objects
+        // Extract page and limit from query, and set default values
+        const page = parseInt(req.query.page) || 1; // Default to page 1
+        const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
+        // Calculate the skip value (for MongoDB pagination)
+        const skip = (page - 1) * limit;
+        // Get the total number of categories
+        const totalCategories = yield Category_model_1.default.countDocuments();
+        // Get paginated categories and subcategories
+        const allCategories = yield Category_model_1.default.find().skip(skip).limit(limit).lean();
         const allSubCategories = yield SubCategory_model_1.default.find().lean();
-        // Attach subcategories to their respective categories
+        // Map through categories and attach their subcategories
         const categoriesWithSubcategories = allCategories.map((category) => {
             const subCategories = allSubCategories.filter((subCategory) => subCategory.categoryId.toString() === category._id.toString());
             return Object.assign(Object.assign({}, category), { subCategories });
@@ -106,7 +113,10 @@ const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, functio
         res.status(200).json({
             error: false,
             categories: categoriesWithSubcategories,
-            message: "All categories retrieved successfully",
+            totalPages: Math.ceil(totalCategories / limit),
+            currentPage: page,
+            totalCategories,
+            message: "Categories retrieved successfully",
         });
     }
     catch (err) {
