@@ -82,21 +82,29 @@ const updateSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.updateSubCategory = updateSubCategory;
-// Get all subCategory
+// Get all subCategories with pagination
 const getAllSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const subCategories = yield SubCategory_model_1.default.find();
-        return res.status(200).json({
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+        const totalSubCategories = yield SubCategory_model_1.default.countDocuments();
+        // Get paginated subcategories
+        const subCategories = yield SubCategory_model_1.default.find().skip(skip).limit(limit).lean();
+        res.status(200).json({
             error: false,
             subCategories,
-            message: "All sub Categories fetched successfully",
+            totalPages: Math.ceil(totalSubCategories / limit),
+            currentPage: page,
+            totalSubCategories,
+            message: "All subcategories fetched successfully",
         });
     }
     catch (err) {
         return res.status(500).json({
             error: true,
             err,
-            message: "Internal server error, Please try again",
+            message: "Internal server error, please try again",
         });
     }
 });

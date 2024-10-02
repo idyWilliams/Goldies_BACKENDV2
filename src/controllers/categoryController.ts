@@ -86,21 +86,16 @@ const editCategory = async (req: Request, res: Response) => {
 // Get all categories with pagination
 const getAllCategories = async (req: Request, res: Response) => {
   try {
-    // Extract page and limit from query, and set default values
-    const page = parseInt(req.query.page as string) || 1; // Default to page 1
-    const limit = parseInt(req.query.limit as string) || 10; // Default to 10 items per page
-
-    // Calculate the skip value (for MongoDB pagination)
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+  
     const skip = (page - 1) * limit;
 
-    // Get the total number of categories
     const totalCategories = await Category.countDocuments();
 
-    // Get paginated categories and subcategories
     const allCategories = await Category.find().skip(skip).limit(limit).lean();
     const allSubCategories = await SubCategory.find().lean();
-
-    // Map through categories and attach their subcategories
+  
     const categoriesWithSubcategories = allCategories.map((category) => {
       const subCategories = allSubCategories.filter(
         (subCategory) => subCategory.categoryId.toString() === category._id.toString()
