@@ -139,14 +139,32 @@ const getProduct = async (req: Request, res: Response) => {
     });
   }
 };
+
 const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const productDetails = await Product.find();
+
+    let { page = 1, limit = 10 } = req.query;
+
+    page = parseInt(page as string) || 1;
+    limit = parseInt(limit as string) || 10;
+    const skip = (page - 1) * limit;
+    
+    const totalProducts = await Product.countDocuments();
+    
+    const productDetails = await Product.find()
+      .skip(skip)
+      .limit(limit)
+      .exec();
+      
+    const totalPages = Math.ceil(totalProducts / limit);
 
     return res.json({
       error: false,
       productDetails,
-      message: "All products Retrieved successfully",
+      currentPage: page,
+      totalPages,
+      totalProducts,
+      message: "All products retrieved successfully",
     });
   } catch (err) {
     return res.status(500).json({
@@ -156,6 +174,7 @@ const getAllProducts = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 const deleteProduct = async (req: Request, res: Response) => {
   const { productId } = req.params;

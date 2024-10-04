@@ -136,11 +136,23 @@ const getProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 exports.getProduct = getProduct;
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const productDetails = yield Product_model_1.default.find();
+        let { page = 1, limit = 10 } = req.query;
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const skip = (page - 1) * limit;
+        const totalProducts = yield Product_model_1.default.countDocuments();
+        const productDetails = yield Product_model_1.default.find()
+            .skip(skip)
+            .limit(limit)
+            .exec();
+        const totalPages = Math.ceil(totalProducts / limit);
         return res.json({
             error: false,
             productDetails,
-            message: "All products Retrieved successfully",
+            currentPage: page,
+            totalPages,
+            totalProducts,
+            message: "All products retrieved successfully",
         });
     }
     catch (err) {
