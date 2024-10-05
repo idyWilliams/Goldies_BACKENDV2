@@ -199,10 +199,54 @@ const deleteProduct = async (req: Request, res: Response) => {
   }
 };
 
+
+const filterAllProducts = async (req: Request, res: Response) => {
+  try {
+    const { subCategoryIds, categoryIds, minPrice, maxPrice } = req.body;
+
+    // Initialize an empty filter object
+    const filters: any = {};
+
+    // Filter by multiple category IDs (if provided)
+    if (categoryIds && categoryIds.length > 0) {
+      filters['category.id'] = { $in: categoryIds }; // Match by category.id
+    }
+
+    // Filter by multiple subcategory IDs (if provided)
+    if (subCategoryIds && subCategoryIds.length > 0) {
+      filters['subCategory.id'] = { $in: subCategoryIds }; // Match by subCategory.id
+    }
+
+    // Filter by price range (if provided)
+    if (minPrice || maxPrice) {
+      filters.minPrice = {};
+      if (minPrice) filters.minPrice.$gte = parseFloat(minPrice);
+      if (maxPrice) filters.minPrice.$lte = parseFloat(maxPrice);
+    }
+
+    // Fetch filtered products from database based on filters
+    const productDetails = await Product.find(filters).exec();
+
+    return res.json({
+      error: false,
+      productDetails,
+      message: "Filtered products retrieved successfully",
+    });
+  } catch (err) {
+    return res.status(500).json({
+      error: true,
+      err,
+      message: "Internal Server error",
+    });
+  }
+};
+
+
 export {
   createProduct,
   editProduct,
   deleteProduct,
   getAllProducts,
   getProduct,
+  filterAllProducts
 };
