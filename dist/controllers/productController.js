@@ -136,18 +136,14 @@ const getProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 exports.getProduct = getProduct;
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { subCategoryIds, categoryIds, minPrice, maxPrice } = req.body;
-        // Initialize an empty filter object
+        const { subCategoryIds, categoryIds, minPrice, maxPrice, page = 1, limit = 10 } = req.body;
         const filters = {};
-        // Filter by multiple category IDs (if provided)
         if (categoryIds && categoryIds.length > 0) {
-            filters['category.id'] = { $in: categoryIds }; // Match by category.id
+            filters['category.id'] = { $in: categoryIds };
         }
-        // Filter by multiple subcategory IDs (if provided)
         if (subCategoryIds && subCategoryIds.length > 0) {
-            filters['subCategory.id'] = { $in: subCategoryIds }; // Match by subCategory.id
+            filters['subCategory.id'] = { $in: subCategoryIds };
         }
-        // Filter by price range (if provided)
         if (minPrice || maxPrice) {
             filters.minPrice = {};
             if (minPrice)
@@ -155,12 +151,20 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
             if (maxPrice)
                 filters.minPrice.$lte = parseFloat(maxPrice);
         }
-        // Fetch filtered products from database based on filters
-        const productDetails = yield Product_model_1.default.find(filters).exec();
-        return res.json({
+        const skip = (page - 1) * limit;
+        const productDetails = yield Product_model_1.default.find(filters)
+            .skip(skip)
+            .limit(limit)
+            .exec();
+        const totalProducts = yield Product_model_1.default.countDocuments(filters);
+        const totalPages = Math.ceil(totalProducts / limit);
+        return res.status(200).json({
             error: false,
-            productDetails,
-            message: "Filtered products retrieved successfully",
+            products: productDetails,
+            totalPages,
+            currentPage: page,
+            totalProducts,
+            message: "Products retrieved successfully",
         });
     }
     catch (err) {

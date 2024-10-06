@@ -142,35 +142,34 @@ const getProduct = async (req: Request, res: Response) => {
 
 const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const { subCategoryIds, categoryIds, minPrice, maxPrice } = req.body;
-
-    // Initialize an empty filter object
+    const { subCategoryIds, categoryIds, minPrice, maxPrice, page = 1, limit = 10 } = req.body;
     const filters: any = {};
-
-    // Filter by multiple category IDs (if provided)
     if (categoryIds && categoryIds.length > 0) {
-      filters['category.id'] = { $in: categoryIds }; // Match by category.id
+      filters['category.id'] = { $in: categoryIds }; 
     }
-
-    // Filter by multiple subcategory IDs (if provided)
     if (subCategoryIds && subCategoryIds.length > 0) {
-      filters['subCategory.id'] = { $in: subCategoryIds }; // Match by subCategory.id
+      filters['subCategory.id'] = { $in: subCategoryIds }; 
     }
-
-    // Filter by price range (if provided)
     if (minPrice || maxPrice) {
       filters.minPrice = {};
       if (minPrice) filters.minPrice.$gte = parseFloat(minPrice);
       if (maxPrice) filters.minPrice.$lte = parseFloat(maxPrice);
     }
+    const skip = (page - 1) * limit;
+    const productDetails = await Product.find(filters)
+      .skip(skip)
+      .limit(limit)
+      .exec();
+    const totalProducts = await Product.countDocuments(filters);
+    const totalPages = Math.ceil(totalProducts / limit);
 
-    // Fetch filtered products from database based on filters
-    const productDetails = await Product.find(filters).exec();
-
-    return res.json({
+    return res.status(200).json({
       error: false,
-      productDetails,
-      message: "Filtered products retrieved successfully",
+      products: productDetails,
+      totalPages,              
+      currentPage: page,       
+      totalProducts,           
+      message: "Products retrieved successfully",
     });
   } catch (err) {
     return res.status(500).json({
