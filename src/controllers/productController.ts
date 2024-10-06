@@ -142,66 +142,6 @@ const getProduct = async (req: Request, res: Response) => {
 
 const getAllProducts = async (req: Request, res: Response) => {
   try {
-
-    let { page = 1, limit = 10 } = req.query;
-
-    page = parseInt(page as string) || 1;
-    limit = parseInt(limit as string) || 10;
-    const skip = (page - 1) * limit;
-    
-    const totalProducts = await Product.countDocuments();
-    
-    const productDetails = await Product.find()
-      .skip(skip)
-      .limit(limit)
-      .exec();
-      
-    const totalPages = Math.ceil(totalProducts / limit);
-
-    return res.json({
-      error: false,
-      productDetails,
-      currentPage: page,
-      totalPages,
-      totalProducts,
-      message: "All products retrieved successfully",
-    });
-  } catch (err) {
-    return res.status(500).json({
-      error: true,
-      err,
-      message: "Internal Server error",
-    });
-  }
-};
-
-
-const deleteProduct = async (req: Request, res: Response) => {
-  const { productId } = req.params;
-  try {
-    const productDetails = await Product.deleteOne({ _id: productId });
-    if (!productDetails) {
-      return res.status(404).json({
-        error: true,
-        message: "product not found",
-      });
-    }
-    return res.json({
-      error: false,
-      message: "product deleted successfully",
-    });
-  } catch (err) {
-    res.status(500).json({
-      error: true,
-      err,
-      message: "Internal server Error",
-    });
-  }
-};
-
-
-const filterAllProducts = async (req: Request, res: Response) => {
-  try {
     const { subCategoryIds, categoryIds, minPrice, maxPrice } = req.body;
 
     // Initialize an empty filter object
@@ -242,11 +182,34 @@ const filterAllProducts = async (req: Request, res: Response) => {
 };
 
 
+const deleteProduct = async (req: Request, res: Response) => {
+  const { productId } = req.params;
+  try {
+    const productDetails = await Product.deleteOne({ _id: productId });
+    if (!productDetails) {
+      return res.status(404).json({
+        error: true,
+        message: "product not found",
+      });
+    }
+    return res.json({
+      error: false,
+      message: "product deleted successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: true,
+      err,
+      message: "Internal server Error",
+    });
+  }
+};
+
+
 export {
   createProduct,
   editProduct,
   deleteProduct,
   getAllProducts,
-  getProduct,
-  filterAllProducts
+  getProduct
 };
