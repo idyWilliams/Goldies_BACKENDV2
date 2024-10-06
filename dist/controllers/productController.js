@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.filterAllProducts = exports.getProduct = exports.getAllProducts = exports.deleteProduct = exports.editProduct = exports.createProduct = void 0;
+exports.getProduct = exports.getAllProducts = exports.deleteProduct = exports.editProduct = exports.createProduct = void 0;
 const Product_model_1 = __importDefault(require("../models/Product.model"));
 const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { name, description, images, category, minPrice, maxPrice, subCategory, productType, sizes, flavour, toppings, } = req.body;
@@ -136,60 +136,6 @@ const getProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 exports.getProduct = getProduct;
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        let { page = 1, limit = 10 } = req.query;
-        page = parseInt(page) || 1;
-        limit = parseInt(limit) || 10;
-        const skip = (page - 1) * limit;
-        const totalProducts = yield Product_model_1.default.countDocuments();
-        const productDetails = yield Product_model_1.default.find()
-            .skip(skip)
-            .limit(limit)
-            .exec();
-        const totalPages = Math.ceil(totalProducts / limit);
-        return res.json({
-            error: false,
-            productDetails,
-            currentPage: page,
-            totalPages,
-            totalProducts,
-            message: "All products retrieved successfully",
-        });
-    }
-    catch (err) {
-        return res.status(500).json({
-            error: true,
-            err,
-            message: "Internal Server error",
-        });
-    }
-});
-exports.getAllProducts = getAllProducts;
-const deleteProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { productId } = req.params;
-    try {
-        const productDetails = yield Product_model_1.default.deleteOne({ _id: productId });
-        if (!productDetails) {
-            return res.status(404).json({
-                error: true,
-                message: "product not found",
-            });
-        }
-        return res.json({
-            error: false,
-            message: "product deleted successfully",
-        });
-    }
-    catch (err) {
-        res.status(500).json({
-            error: true,
-            err,
-            message: "Internal server Error",
-        });
-    }
-});
-exports.deleteProduct = deleteProduct;
-const filterAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
         const { subCategoryIds, categoryIds, minPrice, maxPrice } = req.body;
         // Initialize an empty filter object
         const filters = {};
@@ -225,4 +171,28 @@ const filterAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, functi
         });
     }
 });
-exports.filterAllProducts = filterAllProducts;
+exports.getAllProducts = getAllProducts;
+const deleteProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { productId } = req.params;
+    try {
+        const productDetails = yield Product_model_1.default.deleteOne({ _id: productId });
+        if (!productDetails) {
+            return res.status(404).json({
+                error: true,
+                message: "product not found",
+            });
+        }
+        return res.json({
+            error: false,
+            message: "product deleted successfully",
+        });
+    }
+    catch (err) {
+        res.status(500).json({
+            error: true,
+            err,
+            message: "Internal server Error",
+        });
+    }
+});
+exports.deleteProduct = deleteProduct;

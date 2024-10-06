@@ -9,5 +9,4 @@ router.get("/get_all_product", productController_1.getAllProducts);
 router.get("/get_product/:productId", productController_1.getProduct);
 router.put("/edit_product/:productId", verifyJWT_1.authenticateToken, productController_1.editProduct);
 router.delete("/delete_product/:productId", verifyJWT_1.authenticateToken, productController_1.deleteProduct);
-router.post("/filter_product", productController_1.filterAllProducts);
 exports.default = router;
