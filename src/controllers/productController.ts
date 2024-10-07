@@ -142,33 +142,55 @@ const getProduct = async (req: Request, res: Response) => {
 
 const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const { subCategoryIds, categoryIds, minPrice, maxPrice, page = 1, limit = 10 } = req.body;
+    const { 
+      subCategoryIds, 
+      categoryIds, 
+      minPrice, 
+      maxPrice, 
+      searchQuery, 
+      page = 1, 
+      limit = 10 
+    } = req.query;
+
     const filters: any = {};
-    if (categoryIds && categoryIds.length > 0) {
-      filters['category.id'] = { $in: categoryIds }; 
+    
+    if (categoryIds) {
+      filters['category.id'] = { $in: (categoryIds as string).split(',') };
     }
-    if (subCategoryIds && subCategoryIds.length > 0) {
-      filters['subCategory.id'] = { $in: subCategoryIds }; 
+
+    if (subCategoryIds) {
+      filters['subCategory.id'] = { $in: (subCategoryIds as string).split(',') };
     }
+
     if (minPrice || maxPrice) {
       filters.minPrice = {};
-      if (minPrice) filters.minPrice.$gte = parseFloat(minPrice);
-      if (maxPrice) filters.minPrice.$lte = parseFloat(maxPrice);
+      if (minPrice) filters.minPrice.$gte = parseFloat(minPrice as string);
+      if (maxPrice) filters.minPrice.$lte = parseFloat(maxPrice as string);
     }
-    const skip = (page - 1) * limit;
+
+    if (searchQuery && (searchQuery as string).trim() !== '') {
+      filters.$or = [
+        { name: { $regex: searchQuery as string, $options: 'i' } },
+        { description: { $regex: searchQuery as string, $options: 'i' } }
+      ];
+    }
+    
+    const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+
     const productDetails = await Product.find(filters)
       .skip(skip)
-      .limit(limit)
+      .limit(parseInt(limit as string))
       .exec();
-    const totalProducts = await Product.countDocuments(filters);
-    const totalPages = Math.ceil(totalProducts / limit);
 
+    const totalProducts = await Product.countDocuments(filters);
+    const totalPages = Math.ceil(totalProducts / parseInt(limit as string));
+    
     return res.status(200).json({
       error: false,
       products: productDetails,
-      totalPages,              
-      currentPage: page,       
-      totalProducts,           
+      totalPages,
+      currentPage: parseInt(page as string), 
+      totalProducts,            
       message: "Products retrieved successfully",
     });
   } catch (err) {
@@ -179,7 +201,6 @@ const getAllProducts = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 const deleteProduct = async (req: Request, res: Response) => {
   const { productId } = req.params;

@@ -136,13 +136,13 @@ const getProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 exports.getProduct = getProduct;
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { subCategoryIds, categoryIds, minPrice, maxPrice, page = 1, limit = 10 } = req.body;
+        const { subCategoryIds, categoryIds, minPrice, maxPrice, searchQuery, page = 1, limit = 10 } = req.query;
         const filters = {};
-        if (categoryIds && categoryIds.length > 0) {
-            filters['category.id'] = { $in: categoryIds };
+        if (categoryIds) {
+            filters['category.id'] = { $in: categoryIds.split(',') };
         }
-        if (subCategoryIds && subCategoryIds.length > 0) {
-            filters['subCategory.id'] = { $in: subCategoryIds };
+        if (subCategoryIds) {
+            filters['subCategory.id'] = { $in: subCategoryIds.split(',') };
         }
         if (minPrice || maxPrice) {
             filters.minPrice = {};
@@ -151,18 +151,24 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
             if (maxPrice)
                 filters.minPrice.$lte = parseFloat(maxPrice);
         }
-        const skip = (page - 1) * limit;
+        if (searchQuery && searchQuery.trim() !== '') {
+            filters.$or = [
+                { name: { $regex: searchQuery, $options: 'i' } },
+                { description: { $regex: searchQuery, $options: 'i' } }
+            ];
+        }
+        const skip = (parseInt(page) - 1) * parseInt(limit);
         const productDetails = yield Product_model_1.default.find(filters)
             .skip(skip)
-            .limit(limit)
+            .limit(parseInt(limit))
             .exec();
         const totalProducts = yield Product_model_1.default.countDocuments(filters);
-        const totalPages = Math.ceil(totalProducts / limit);
+        const totalPages = Math.ceil(totalProducts / parseInt(limit));
         return res.status(200).json({
             error: false,
             products: productDetails,
             totalPages,
-            currentPage: page,
+            currentPage: parseInt(page),
             totalProducts,
             message: "Products retrieved successfully",
         });
