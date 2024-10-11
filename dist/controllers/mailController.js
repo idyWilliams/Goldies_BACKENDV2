@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.newsLetterSubscription = void 0;
+exports.contactUs = exports.newsLetterSubscription = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const newsLetterSubscription = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -103,3 +103,58 @@ const newsLetterSubscription = (req, res) => __awaiter(void 0, void 0, void 0, f
     }
 });
 exports.newsLetterSubscription = newsLetterSubscription;
+const contactUs = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { fullName, email, phoneNumber, message } = req.body;
+        if (!fullName || !email || !phoneNumber || !message) {
+            return res.status(400).json({ error: "All fields are required." });
+        }
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ error: "Invalid email format." });
+        }
+        // Send email to the company
+        const transporter = nodemailer_1.default.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
+            auth: {
+                user: process.env.EMAIL,
+                pass: process.env.PASSWORD,
+            },
+            tls: {
+                rejectUnauthorized: false,
+            },
+        });
+        const emailContent = `
+        <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px;">
+          <h2 style="color: #D4AF37;">New Contact Us Message</h2>
+          <p>A new message has been received from the Goldies website:</p>
+          <p><strong>Full Name:</strong> ${fullName}</p>
+          <p><strong>Email:</strong> ${email}</p>
+          <strong>Phone Number:</strong> ${phoneNumber}</p>
+          <p><strong>Message:</strong> ${message}</p>
+          <p style="font-size: 12px; color: #888; text-align: center; margin-top: 20px;">
+          © 2024 Goldies Cake Shop. All rights reserved.<br />
+          For any questions, feel free to contact us at <a href="mailto:i.sentryhub@gmail.com" style="color: #D4AF37;">support@goldiescakes.com</a>.
+          </p>
+        </div>
+      `;
+        const mailOptions = {
+            from: `Goldies <${process.env.EMAIL}>`,
+            to: process.env.COMPANY_EMAIL,
+            subject: "New Message From Goldies Website",
+            text: `A new contact us message has been received: ${fullName} - ${email} - ${phoneNumber} - ${message}`,
+            html: emailContent,
+        };
+        yield transporter.sendMail(mailOptions);
+        // Respond with success
+        return res.status(200).json({ message: "Contact us message sent to the company." });
+    }
+    catch (error) {
+        console.error("Error sending email:", error);
+        return res.status(500).json({ error: "Failed to send contact us message. Please try again later." });
+    }
+});
+exports.contactUs = contactUs;
