@@ -1,7 +1,8 @@
 import { Router } from "express"
-import { newsLetterSubscription } from "../controllers/mailController"
+import { contactUs, newsLetterSubscription } from "../controllers/mailController"
 const router = Router()
 
 router.post("/newsletter_subscriptions", newsLetterSubscription)
+router.post("/contact_us", contactUs)
 
 export default router
