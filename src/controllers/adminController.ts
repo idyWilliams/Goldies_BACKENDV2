@@ -96,9 +96,16 @@ const generateToken = (id: unknown) => {
 }
 
 const adminSignup = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { fullName, email, password } = req.body;
 
   // Validate input
+  if (!fullName) {
+    return res.status(400).json({
+      error: true,
+      message: "Email is required for this process",
+    });
+  }
+
   if (!email) {
     return res.status(400).json({
       error: true,
@@ -174,6 +181,7 @@ const adminSignup = async (req: Request, res: Response) => {
       const hashedPwd = bcryptjs.hashSync(password, 10);
       const admin = await Admin.create({
         email,
+        fullName,
         password: hashedPwd,
         OTP,
       });
