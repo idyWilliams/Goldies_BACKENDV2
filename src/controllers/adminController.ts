@@ -35,8 +35,8 @@ const inviteAdmin = async (req: Request, res: Response) => {
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2 style="color: #007bff;">Goldies Admin Invitation</h2>
       <p>Goldies has invited you to be part of the administration team.</p>
-      <a 
-        href="${SignUpURL}" 
+      <a
+        href="${SignUpURL}"
         style="display: inline-block; padding: 10px 20px; background-color: yellow; color: #fff; text-decoration: none; border-radius: 5px;">
         Join Now
       </a>
@@ -95,14 +95,143 @@ const generateToken = (id: unknown) => {
       return token
 }
 
-const adminSignup = async (req: Request, res: Response) => {
-  const { fullName, email, password } = req.body;
+// const adminSignup = async (req: Request, res: Response) => {
+//   const { userName, email, password } = req.body;
 
-  // Validate input
-  if (!fullName) {
+//   // Validate input
+//   if (!userName) {
+//     return res.status(400).json({
+//       error: true,
+//       message: "Email is required for this process",
+//     });
+//   }
+
+//   if (!email) {
+//     return res.status(400).json({
+//       error: true,
+//       message: "Email is required for this process",
+//     });
+//   }
+
+//   if (!password) {
+//     return res.status(400).json({
+//       error: true,
+//       message: "Password is required for this process",
+//     });
+//   }
+
+//   try {
+//     const user = await Admin.findOne({ email });
+//     const OTP = generateOtp(); // Assuming this function generates a 6-digit OTP
+
+//     // Create transporter for sending email
+//     const transporter = nodemailer.createTransport({
+//       host: "smtp.gmail.com",
+//       port: 465,
+//       secure: true,
+//       auth: {
+//         user: process.env.EMAIL,
+//         pass: process.env.PASSWORD,
+//       },
+//       tls: {
+//         rejectUnauthorized: false,
+//       },
+//     });
+
+//     // Function to send the verification email
+//     const sendVerificationEmail = async () => {
+//       const emailContent = `
+//       <div style="font-family: Arial, sans-serif; color: #333;">
+//         <h2 style="color: #007bff;">Email Verification</h2>
+//         <p>Do not share this with anyone.</p>
+//         <p> Verification code: <strong>${OTP}</strong> </p>
+//         <p>If you did not request this, please ignore this email.</p>
+//       </div>
+//     `;
+
+//       const mailOptions = {
+//         from: process.env.EMAIL,
+//         to: email,
+//         subject: "Goldies Team - Email Verification",
+//         text: "Email verification.",
+//         html: emailContent,
+//       };
+
+//       try {
+//         const info = await transporter.sendMail(mailOptions);
+//         console.log("Message sent: %s", info.messageId);
+//       } catch (err) {
+//         console.error("Error sending email: ", err);
+//         throw new Error("Failed to send verification email.");
+//       }
+//     };
+
+//     // If user does not exist, create new admin
+//     if (!user) {
+//       // verify JWT
+//       const { refCode } = req.query;
+//       try {
+//         jwt.verify(refCode as string, process.env.ADMINREFCODE as string);
+//       } catch (err) {
+//         return res.status(403).json({
+//           error: true,
+//           message: "Invalid or expired referral code.",
+//         });
+//       }
+//       const hashedPwd = bcryptjs.hashSync(password, 10);
+//       const admin = await Admin.create({
+//         email,
+//         fullName,
+//         password: hashedPwd,
+//         OTP,
+//       });
+
+//       // Send verification email
+//       await sendVerificationEmail();
+
+//       return res.status(200).json({
+//         error: false,
+//         message: `Admin created successfully. A 6-digit code has been sent to ${email}`,
+//       });
+//     } else {
+
+//       // Verify the password
+//       const passwordMatch = await bcryptjs.compare(password, user.password);
+//       if (!passwordMatch) {
+//         return res.status(400).json({
+//           error: true,
+//           message: "Password is incorrect",
+//         });
+//       }
+
+//       // Update OTP and send verification email
+//       user.OTP = OTP;
+//       await user.save();
+//       await sendVerificationEmail();
+
+//       return res.status(200).json({
+//         error: false,
+//         message: `New 6-digit code has been sent to ${email}`,
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Error in admin signup: ", error);
+//     return res.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+
+const adminSignup = async (req: Request, res: Response) => {
+  const { userName, email, password } = req.body;
+
+
+  if (!userName) {
     return res.status(400).json({
       error: true,
-      message: "Email is required for this process",
+      message: "Username is required for this process",
     });
   }
 
@@ -122,7 +251,7 @@ const adminSignup = async (req: Request, res: Response) => {
 
   try {
     const user = await Admin.findOne({ email });
-    const OTP = generateOtp(); // Assuming this function generates a 6-digit OTP
+    const OTP = generateOtp(); // Generates a 6-digit OTP
 
     // Create transporter for sending email
     const transporter = nodemailer.createTransport({
@@ -144,7 +273,7 @@ const adminSignup = async (req: Request, res: Response) => {
       <div style="font-family: Arial, sans-serif; color: #333;">
         <h2 style="color: #007bff;">Email Verification</h2>
         <p>Do not share this with anyone.</p>
-        <p> Verification code: <strong>${OTP}</strong> </p>
+        <p>Verification code: <strong>${OTP}</strong></p>
         <p>If you did not request this, please ignore this email.</p>
       </div>
     `;
@@ -168,20 +297,23 @@ const adminSignup = async (req: Request, res: Response) => {
 
     // If user does not exist, create new admin
     if (!user) {
-      // verify JWT
+      // Verify JWT referral code (optional step based on your logic)
       const { refCode } = req.query;
-      try {
-        jwt.verify(refCode as string, process.env.ADMINREFCODE as string);
-      } catch (err) {
-        return res.status(403).json({
-          error: true,
-          message: "Invalid or expired referral code.",
-        });
+      if (refCode) {
+        try {
+          jwt.verify(refCode as string, process.env.ADMINREFCODE as string);
+        } catch (err) {
+          return res.status(403).json({
+            error: true,
+            message: "Invalid or expired referral code.",
+          });
+        }
       }
+
       const hashedPwd = bcryptjs.hashSync(password, 10);
       const admin = await Admin.create({
+        userName,
         email,
-        fullName,
         password: hashedPwd,
         OTP,
       });
@@ -189,12 +321,11 @@ const adminSignup = async (req: Request, res: Response) => {
       // Send verification email
       await sendVerificationEmail();
 
-      return res.status(200).json({
+      return res.status(201).json({
         error: false,
         message: `Admin created successfully. A 6-digit code has been sent to ${email}`,
       });
     } else {
-
       // Verify the password
       const passwordMatch = await bcryptjs.compare(password, user.password);
       if (!passwordMatch) {
@@ -211,7 +342,7 @@ const adminSignup = async (req: Request, res: Response) => {
 
       return res.status(200).json({
         error: false,
-        message: `New 6-digit code has been sent to ${email}`,
+        message: `A new 6-digit code has been sent to ${email}`,
       });
     }
   } catch (error) {
@@ -222,6 +353,7 @@ const adminSignup = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 
 const verifyOTP = async (req: Request, res: Response) => {
