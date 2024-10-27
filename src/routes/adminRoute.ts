@@ -1,13 +1,41 @@
-import express from "express";
-const router = express.Router();
+// import express from "express";
+// const router = express.Router();
+// import {
+//   inviteAdmin,
+//   adminSignup,
+//   verifyOTP,
+// } from "../controllers/adminController";
+
+// router.post("/invite_admin", inviteAdmin);
+// router.post("/admin_auth", adminSignup);
+// router.post("/verify_otp", verifyOTP);
+
+// export default router;
+// routes/admin.routes.ts
+
+import express from 'express';
 import {
   inviteAdmin,
   adminSignup,
   verifyOTP,
+  adminLogin,
+  forgotPassword,
+  resetPassword,
+  updateProfile,
 } from "../controllers/adminController";
+import { protect, authorize } from '../middleware/auth.middleware';
 
-router.post("/invite_admin", inviteAdmin);
-router.post("/admin_auth", adminSignup);
-router.post("/verify_otp", verifyOTP);
+const router = express.Router();
+
+// Public routes
+router.post('/login', adminLogin);
+router.post('/signup', adminSignup);
+router.post('/verify', verifyOTP);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
+
+// Protected routes
+router.post('/invite', protect, authorize('super-admin'), inviteAdmin);
+router.put('/profile/:id', protect, updateProfile);
 
 export default router;

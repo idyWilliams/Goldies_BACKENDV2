@@ -393,4 +393,251 @@ const verifyOTP = async (req: Request, res: Response) => {
   }
 };
 
-export { inviteAdmin, adminSignup, verifyOTP };
+const adminLogin = async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      error: true,
+      message: `${!email ? "Email" : "Password"} is required`,
+    });
+  }
+
+  try {
+    const admin = await Admin.findOne({ email });
+
+    if (!admin) {
+      return res.status(404).json({
+        error: true,
+        message: "Admin not found",
+      });
+    }
+
+    if (!admin.isVerified) {
+      return res.status(401).json({
+        error: true,
+        message: "Please verify your email first",
+      });
+    }
+
+    const isValidPassword = await bcryptjs.compare(password, admin.password);
+    if (!isValidPassword) {
+      return res.status(401).json({
+        error: true,
+        message: "Invalid credentials",
+      });
+    }
+
+    const token = generateToken(admin._id);
+
+    return res.status(200).json({
+      error: false,
+      data: {
+        id: admin._id,
+        userName: admin.userName,
+        email: admin.email,
+        role: admin.role,
+      },
+      token,
+      message: "Login successful",
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+const forgotPassword = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({
+      error: true,
+      message: "Email is required",
+    });
+  }
+
+  try {
+    const admin = await Admin.findOne({ email });
+
+    if (!admin) {
+      return res.status(404).json({
+        error: true,
+        message: "Admin not found",
+      });
+    }
+
+    const resetToken = jwt.sign(
+      { id: admin._id },
+      process.env.RESET_SECRET_TOKEN as string,
+      { expiresIn: "15m" }
+    );
+
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    const resetURL = `http://localhost:3000/reset-password?token=${resetToken}`;
+
+    const emailContent = `
+      <div style="font-family: Arial, sans-serif; color: #333;">
+        <h2 style="color: #007bff;">Password Reset Request</h2>
+        <p>Click the button below to reset your password. This link will expire in 15 minutes.</p>
+        <a href="${resetURL}"
+           style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px;">
+          Reset Password
+        </a>
+        <p>If you did not request this, please ignore this email.</p>
+      </div>
+    `;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL,
+      to: email,
+      subject: "Password Reset Request",
+      html: emailContent,
+    });
+
+    return res.status(200).json({
+      error: false,
+      message: "Password reset link sent to email",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+const resetPassword = async (req: Request, res: Response) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({
+      error: true,
+      message: "Token and new password are required",
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.RESET_SECRET_TOKEN as string
+    ) as { id: string };
+    const admin = await Admin.findById(decoded.id);
+
+    if (!admin) {
+      return res.status(404).json({
+        error: true,
+        message: "Admin not found",
+      });
+    }
+
+    const hashedPassword = await bcryptjs.hash(newPassword, 10);
+    admin.password = hashedPassword;
+    await admin.save();
+
+    return res.status(200).json({
+      error: false,
+      message: "Password reset successful",
+    });
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return res.status(401).json({
+        error: true,
+        message: "Reset link has expired",
+      });
+    }
+    console.error("Reset password error:", error);
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+const updateProfile = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { userName, currentPassword, newPassword } = req.body;
+
+  try {
+    const admin = await Admin.findById(id);
+
+    if (!admin) {
+      return res.status(404).json({
+        error: true,
+        message: "Admin not found",
+      });
+    }
+
+    // Update username if provided
+    if (userName) {
+      const existingAdmin = await Admin.findOne({ userName, _id: { $ne: id } });
+      if (existingAdmin) {
+        return res.status(400).json({
+          error: true,
+          message: "Username already taken",
+        });
+      }
+      admin.userName = userName;
+    }
+
+    // Update password if provided
+    if (currentPassword && newPassword) {
+      const isValidPassword = await bcryptjs.compare(
+        currentPassword,
+        admin.password
+      );
+      if (!isValidPassword) {
+        return res.status(401).json({
+          error: true,
+          message: "Current password is incorrect",
+        });
+      }
+      admin.password = await bcryptjs.hash(newPassword, 10);
+    }
+
+    await admin.save();
+
+    return res.status(200).json({
+      error: false,
+      data: {
+        id: admin._id,
+        userName: admin.userName,
+        email: admin.email,
+        role: admin.role,
+      },
+      message: "Profile updated successfully",
+    });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+
+export {
+  inviteAdmin,
+  adminSignup,
+  verifyOTP,
+  adminLogin,
+  forgotPassword,
+  resetPassword,
+  updateProfile,
+};
