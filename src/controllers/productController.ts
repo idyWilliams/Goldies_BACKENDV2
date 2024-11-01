@@ -3,30 +3,33 @@ import Product from "../models/Product.model";
 
 const createProduct = async (req: Request, res: Response) => {
   const {
-    name,
-    description,
+    name,  
+    description,  
+    shapes,   
+    sizes,   
+    fillings,    
+    toppings,   
+    category, 
+    subCategory, 
+    minPrice,   
+    maxPrice,   
     images,
-    category,
-    minPrice,
-    maxPrice,
-    subCategory,
-    productType,
-    sizes,
-    flavour,
-    toppings,
+    flavour
   } = req.body;
 
+
   if (
-    !name ||
-    !description ||
-    !images ||
+      !name ||
+    !description|| 
+    !shapes ||
+    !sizes ||  
+    !fillings ||    
+    !toppings ||
     !category ||
-    !minPrice ||
-    !maxPrice ||
-    !productType ||
-    !sizes ||
     !subCategory ||
-    !toppings
+    !minPrice || 
+    !maxPrice ||
+    !images
   ) {
     return res.status(404).json({
       error: true,
@@ -36,17 +39,18 @@ const createProduct = async (req: Request, res: Response) => {
 
   try {
     const categoryDetails = await Product.create({
-      name,
-      description,
+      name,  
+      description,  
+      shapes,   
+      sizes,   
+      fillings,    
+      toppings,   
+      category, 
+      subCategory, 
+      minPrice,   
+      maxPrice,   
       images,
-      category,
-      minPrice,
-      maxPrice,
-      subCategory,
-      productType,
-      sizes,
-      flavour,
-      toppings,
+      flavour
     });
 
     return res.status(200).json({
@@ -66,17 +70,18 @@ const createProduct = async (req: Request, res: Response) => {
 const editProduct = async (req: Request, res: Response) => {
   const { productId } = req.params;
   const {
-    name,
-    description,
+    name,  
+    description,  
+    shapes,   
+    sizes,   
+    fillings,    
+    toppings,   
+    category, 
+    subCategory, 
+    minPrice,   
+    maxPrice,   
     images,
-    category,
-    minPrice,
-    maxPrice,
-    subCategory,
-    productType,
-    sizes,
-    flavour,
-    toppings,
+    flavour
   } = req.body;
 
   try {
@@ -90,15 +95,17 @@ const editProduct = async (req: Request, res: Response) => {
 
     if (name) productDetails.name = name;
     if (description) productDetails.description = description;
-    if (images) productDetails.images = images;
+    if (shapes) productDetails.shapes = shapes;
+    if (sizes) productDetails.sizes = sizes;
+    if (fillings) productDetails.fillings = fillings;
+    if (toppings) productDetails.toppings = toppings;
     if (category) productDetails.category = category;
+    if (subCategory) productDetails.subCategory = subCategory;
     if (minPrice) productDetails.minPrice = minPrice;
     if (maxPrice) productDetails.maxPrice = maxPrice;
-    if (subCategory) productDetails.subCategory = subCategory;
-    if (sizes) productDetails.sizes = sizes;
+    if (images) productDetails.images = images;
     if (flavour) productDetails.flavour = flavour;
-    if (productType) productDetails.productType = productType;
-    if (toppings) productDetails.toppings = toppings;
+   
 
     await productDetails.save();
     res.json({
