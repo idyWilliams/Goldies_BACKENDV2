@@ -9,30 +9,32 @@ const categoryT = new Schema({
 interface IProduct extends Document {
   name: string;
   description: string;
-  images: string[] | undefined;
+  shapes: string[] | undefined;
+  sizes: string[] | undefined;
+  fillings: string[] | undefined;
+  toppings: string[] | undefined;
   category: typeof categoryT;
   subCategory: typeof categoryT;
   minPrice: string;
   maxPrice: string;
-  sizes: string[] | undefined;
-  toppings: string[] | undefined;
-  flavour: string[] | undefined;
-  productType: string;
+  images: string[] | undefined;
+  flavour?: string[] | undefined;
 }
 
 const productSchema = new Schema<IProduct>(
   {
     name: { type: String, require: true },
     description: { type: String, require: true },
-    images: { type: Array, require: true },
+    shapes: { type: Array, require: true},
+    sizes: { type: Array, require: true },
+    fillings: { type: Array, require: true},
+    toppings: { type: Array, require: true },
     category: { type: categoryT, require: true },
     subCategory: { type: categoryT, require: true },
     minPrice: { type: String, require: true },
     maxPrice: { type: String, require: true },
-    sizes: { type: Array, require: true },
-    productType: { type: String, require: true },
-    toppings: { type: Array, require: true },
-    flavour: Array,
+    images: { type: Array, require: true },
+    flavour: { type: Array, required: false }
   },
   {
     timestamps: true,

@@ -15,17 +15,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getProduct = exports.getAllProducts = exports.deleteProduct = exports.editProduct = exports.createProduct = void 0;
 const Product_model_1 = __importDefault(require("../models/Product.model"));
 const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, description, images, category, minPrice, maxPrice, subCategory, productType, sizes, flavour, toppings, } = req.body;
+    const { name, description, shapes, sizes, fillings, toppings, category, subCategory, minPrice, maxPrice, images, flavour } = req.body;
     if (!name ||
         !description ||
-        !images ||
+        !shapes ||
+        !sizes ||
+        !fillings ||
+        !toppings ||
         !category ||
+        !subCategory ||
         !minPrice ||
         !maxPrice ||
-        !productType ||
-        !sizes ||
-        !subCategory ||
-        !toppings) {
+        !images) {
         return res.status(404).json({
             error: true,
             message: "Please fill out all fields",
@@ -35,15 +36,16 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         const categoryDetails = yield Product_model_1.default.create({
             name,
             description,
-            images,
+            shapes,
+            sizes,
+            fillings,
+            toppings,
             category,
+            subCategory,
             minPrice,
             maxPrice,
-            subCategory,
-            productType,
-            sizes,
-            flavour,
-            toppings,
+            images,
+            flavour
         });
         return res.status(200).json({
             error: false,
@@ -62,7 +64,7 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
 exports.createProduct = createProduct;
 const editProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { productId } = req.params;
-    const { name, description, images, category, minPrice, maxPrice, subCategory, productType, sizes, flavour, toppings, } = req.body;
+    const { name, description, shapes, sizes, fillings, toppings, category, subCategory, minPrice, maxPrice, images, flavour } = req.body;
     try {
         const productDetails = yield Product_model_1.default.findOne({ _id: productId });
         if (!productDetails) {
@@ -75,24 +77,26 @@ const editProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             productDetails.name = name;
         if (description)
             productDetails.description = description;
-        if (images)
-            productDetails.images = images;
+        if (shapes)
+            productDetails.shapes = shapes;
+        if (sizes)
+            productDetails.sizes = sizes;
+        if (fillings)
+            productDetails.fillings = fillings;
+        if (toppings)
+            productDetails.toppings = toppings;
         if (category)
             productDetails.category = category;
+        if (subCategory)
+            productDetails.subCategory = subCategory;
         if (minPrice)
             productDetails.minPrice = minPrice;
         if (maxPrice)
             productDetails.maxPrice = maxPrice;
-        if (subCategory)
-            productDetails.subCategory = subCategory;
-        if (sizes)
-            productDetails.sizes = sizes;
+        if (images)
+            productDetails.images = images;
         if (flavour)
             productDetails.flavour = flavour;
-        if (productType)
-            productDetails.productType = productType;
-        if (toppings)
-            productDetails.toppings = toppings;
         yield productDetails.save();
         res.json({
             error: false,
