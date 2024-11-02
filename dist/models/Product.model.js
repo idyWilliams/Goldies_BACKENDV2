@@ -8,15 +8,16 @@ const categoryT = new mongoose_1.Schema({
 const productSchema = new mongoose_1.Schema({
     name: { type: String, require: true },
     description: { type: String, require: true },
-    images: { type: Array, require: true },
+    shapes: { type: Array, require: true },
+    sizes: { type: Array, require: true },
+    fillings: { type: Array, require: true },
+    toppings: { type: Array, require: true },
     category: { type: categoryT, require: true },
     subCategory: { type: categoryT, require: true },
     minPrice: { type: String, require: true },
     maxPrice: { type: String, require: true },
-    sizes: { type: Array, require: true },
-    productType: { type: String, require: true },
-    toppings: { type: Array, require: true },
-    flavour: Array,
+    images: { type: Array, require: true },
+    flavour: { type: Array, required: false }
 }, {
     timestamps: true,
 });
