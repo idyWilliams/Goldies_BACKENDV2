@@ -83,7 +83,7 @@ const newsLetterSubscription = async (req: Request, res: Response) => {
     // Send email to the company
     const companyMailOptions = {
       from: `Goldies <${process.env.EMAIL}>`,
-      to: process.env.COMPANY_EMAIL,
+      to: process.env.EMAIL,
       subject: "New Newsletter Subscriber",
       text: `A new subscriber has joined the Goldies newsletter: ${email}`,
       html: companyEmailContent,
@@ -143,7 +143,7 @@ const contactUs = async (req: Request, res: Response) => {
       
       const mailOptions = {
         from: `Goldies <${process.env.EMAIL}>`,
-        to: process.env.COMPANY_EMAIL,
+        to: process.env.EMAIL,
         subject: "New Message From Goldies Website",
         text: `A new contact us message has been received: ${fullName} - ${email} - ${phoneNumber} - ${message}`,
         html: emailContent,

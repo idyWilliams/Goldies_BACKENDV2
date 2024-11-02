@@ -88,7 +88,7 @@ const newsLetterSubscription = (req, res) => __awaiter(void 0, void 0, void 0, f
         // Send email to the company
         const companyMailOptions = {
             from: `Goldies <${process.env.EMAIL}>`,
-            to: process.env.COMPANY_EMAIL,
+            to: process.env.EMAIL,
             subject: "New Newsletter Subscriber",
             text: `A new subscriber has joined the Goldies newsletter: ${email}`,
             html: companyEmailContent,
@@ -143,7 +143,7 @@ const contactUs = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
       `;
         const mailOptions = {
             from: `Goldies <${process.env.EMAIL}>`,
-            to: process.env.COMPANY_EMAIL,
+            to: process.env.EMAIL,
             subject: "New Message From Goldies Website",
             text: `A new contact us message has been received: ${fullName} - ${email} - ${phoneNumber} - ${message}`,
             html: emailContent,

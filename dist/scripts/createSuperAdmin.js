@@ -26,7 +26,9 @@ const createSuperAdmin = () => __awaiter(void 0, void 0, void 0, function* () {
             email: "superadmin@example.com",
             password: yield bcryptjs_1.default.hash("superadmin123", 10),
             isVerified: true,
-            role: "super-admin",
+
+            role: "super_admin",
+
         };
         const existingAdmin = yield Admin_model_1.default.findOne({ email: superAdminData.email });
         if (!existingAdmin) {

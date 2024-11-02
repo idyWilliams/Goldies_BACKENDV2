@@ -16,7 +16,7 @@ const createSuperAdmin = async () => {
       email: "superadmin@example.com",
       password: await bcryptjs.hash("superadmin123", 10),
       isVerified: true,
-      role: "super-admin",
+      role: "super_admin",
     };
 
     const existingAdmin = await Admin.findOne({ email: superAdminData.email });
