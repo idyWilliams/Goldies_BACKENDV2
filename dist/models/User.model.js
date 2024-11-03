@@ -39,6 +39,7 @@ const UserSchema = new mongoose_1.Schema({
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
+    phoneNumber: { type: String, requried: true },
     billingInfo: [BillingInfoSchema], // Now an array of billing information
 }, {
     timestamps: true

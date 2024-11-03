@@ -23,7 +23,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllUSers = exports.updateDefaultBillingInfo = exports.deleteBillingInfo = exports.updateBillingInfo = exports.getUser = exports.saveBillingInfo = void 0;
+exports.updateProfile = exports.getAllUSers = exports.updateDefaultBillingInfo = exports.deleteBillingInfo = exports.updateBillingInfo = exports.getUser = exports.saveBillingInfo = void 0;
 const User_model_1 = __importDefault(require("../models/User.model"));
 const Admin_model_1 = __importDefault(require("../models/Admin.model"));
 const getUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -285,3 +285,47 @@ const updateDefaultBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0,
     }
 });
 exports.updateDefaultBillingInfo = updateDefaultBillingInfo;
+const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { firstName, lastName, email, phoneNumber } = req.body;
+    const user = req.id;
+    try {
+        const userDetails = yield User_model_1.default.findOne({ _id: user });
+        if (!userDetails) {
+            return res.status(404).json({
+                error: true,
+                message: "User not found",
+            });
+        }
+        if (email) {
+            const emailExist = yield User_model_1.default.findOne({ email: email });
+            if (emailExist) {
+                return res.status(404).json({
+                    error: true,
+                    message: 'Email already in use'
+                });
+            }
+        }
+        if (firstName)
+            userDetails.firstName = firstName;
+        if (lastName)
+            userDetails.lastName = lastName;
+        if (email)
+            userDetails.email = email;
+        if (phoneNumber)
+            userDetails.phoneNumber = phoneNumber;
+        yield userDetails.save();
+        return res.status(200).json({
+            error: false,
+            message: "Profile updated successfully.",
+        });
+    }
+    catch (error) {
+        console.error("Error updating profile:", error);
+        return res.status(500).json({
+            error: true,
+            err: error,
+            message: "Internal server error, please try again",
+        });
+    }
+});
+exports.updateProfile = updateProfile;

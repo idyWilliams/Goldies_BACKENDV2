@@ -8,7 +8,7 @@ import nodemailer from "nodemailer";
 import { CustomRequest } from "../middleware/verifyJWT";
 
 const create_acct = async (req: Request, res: Response) => {
-  const { firstName, lastName, email, password } = req.body;
+  const { firstName, lastName, email, password, phoneNumber } = req.body;
 
   if (!firstName) {
     return res
@@ -35,6 +35,12 @@ const create_acct = async (req: Request, res: Response) => {
       .json({ error: true, message: "Please provide a valid password" });
   }
 
+  if (!phoneNumber) {
+    return res
+      .status(400)
+      .json({ error: true, message: "Phone Number is required" });
+  }
+
   try {
     const isUser = await User.findOne({ email });
 
@@ -53,6 +59,7 @@ const create_acct = async (req: Request, res: Response) => {
       lastName,
       email,
       password: hashedPwd,
+      phoneNumber
     });
 
     await user.save();
@@ -63,6 +70,7 @@ const create_acct = async (req: Request, res: Response) => {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
+        phoneNumber: user.phoneNumber,
         _id: user._id,
       },
       message: "Registration Successful",
