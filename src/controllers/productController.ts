@@ -185,6 +185,7 @@ const getAllProducts = async (req: Request, res: Response) => {
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
     const productDetails = await Product.find(filters)
+     .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit as string))
       .exec();

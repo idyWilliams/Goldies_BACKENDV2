@@ -163,6 +163,7 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
         }
         const skip = (parseInt(page) - 1) * parseInt(limit);
         const productDetails = yield Product_model_1.default.find(filters)
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(parseInt(limit))
             .exec();
