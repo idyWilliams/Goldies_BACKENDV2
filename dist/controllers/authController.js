@@ -20,7 +20,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 dotenv_1.default.config();
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const create_acct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, password, phoneNumber } = req.body;
     if (!firstName) {
         return res
             .status(400)
@@ -42,6 +42,11 @@ const create_acct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             .status(400)
             .json({ error: true, message: "Please provide a valid password" });
     }
+    if (!phoneNumber) {
+        return res
+            .status(400)
+            .json({ error: true, message: "Phone Number is required" });
+    }
     try {
         const isUser = yield User_model_1.default.findOne({ email });
         if (isUser) {
@@ -57,6 +62,7 @@ const create_acct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             lastName,
             email,
             password: hashedPwd,
+            phoneNumber
         });
         yield user.save();
         return res.json({
@@ -65,6 +71,7 @@ const create_acct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.email,
+                phoneNumber: user.phoneNumber,
                 _id: user._id,
             },
             message: "Registration Successful",

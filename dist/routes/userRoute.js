@@ -10,4 +10,5 @@ router.post("/save_billing_details", verifyJWT_1.authenticateToken, userControll
 router.put("/update_billing_info/:billingId", verifyJWT_1.authenticateToken, userController_1.updateBillingInfo);
 router.patch("/update_default_billing_info/:billingId", verifyJWT_1.authenticateToken, userController_1.updateDefaultBillingInfo);
 router.delete("/delete_billing_info/:billingId", verifyJWT_1.authenticateToken, userController_1.deleteBillingInfo);
+router.patch("/profile", verifyJWT_1.authenticateToken, userController_1.updateProfile);
 exports.default = router;
