@@ -35,7 +35,7 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 
 // Protected routes
-router.post('/invite', protect, authorize('super-admin'), inviteAdmin);
+router.post('/invite', protect, authorize('super_admin'), inviteAdmin);
 router.put('/profile/:id', protect, updateProfile);
 
 export default router;
