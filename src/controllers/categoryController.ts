@@ -86,14 +86,18 @@ const editCategory = async (req: Request, res: Response) => {
 // Get all categories with pagination
 const getAllCategories = async (req: Request, res: Response) => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
-  
-    const skip = (page - 1) * limit;
 
+    const page = req.query.page ? parseInt(req.query.page as string, 10) : null;
+    const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : null;
+
+    const skip = page && limit ? (page - 1) * limit : 0;
+    
     const totalCategories = await Category.countDocuments();
 
-    const allCategories = await Category.find().skip(skip).limit(limit).lean();
+    const allCategoriesQuery = Category.find().sort({ createdAt: -1 });
+    const allCategories = page && limit
+      ? await allCategoriesQuery.skip(skip).limit(limit).lean()
+      : await allCategoriesQuery.lean();
     const allSubCategories = await SubCategory.find().lean();
   
     const categoriesWithSubcategories = allCategories.map((category) => {
@@ -107,11 +111,13 @@ const getAllCategories = async (req: Request, res: Response) => {
       };
     });
 
+    const totalPages = page && limit ? Math.ceil(totalCategories / limit) : 1;
+
     res.status(200).json({
       error: false,
       categories: categoriesWithSubcategories,
-      totalPages: Math.ceil(totalCategories / limit),
-      currentPage: page,
+      totalPages,
+      currentPage: page || 1,
       totalCategories, 
       message: "Categories retrieved successfully",
     });
