@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createOrder, deleteOrder, getAllOrders, getOrder, getSpecificUserOrder, updateOrderStatus } from "../controllers/orderController";
+import { createOrder, deleteOrder, getAllOrders, getOrder, getSpecificUserOrder, updateOrderStatus } from "../controllers/tempOrdercontroller";
 const router = Router();
 import { authenticateToken } from "../middleware/verifyJWT";
 
