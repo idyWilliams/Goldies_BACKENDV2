@@ -46,7 +46,7 @@ const create_acct = async (req: Request, res: Response) => {
 
     if (isUser) {
       console.log(isUser);
-      return res.json({
+      return res.status(409).json({
         error: true,
         message: "User already exists",
       });
