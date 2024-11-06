@@ -17,7 +17,13 @@ import { Request, Response } from "express";
 import cors from "cors";
 const PORT = process.env.PORT || 2030;
 
-app.use(cors());
+
+app.use(cors({
+  origin:  '*',
+  methods: ['GET,POST,PUT,PATCH,DELETE'],
+  allowedHeaders: ['Content-Type, Authorization'],
+  credentials: true,
+}));
 
 app.use(express.json());
 
