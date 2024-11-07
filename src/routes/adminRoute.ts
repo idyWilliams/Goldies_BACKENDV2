@@ -27,6 +27,7 @@ import { protect, authorize } from '../middleware/auth.middleware';
 
 const router = express.Router();
 
+
 // Public routes
 router.post('/login', adminLogin);
 router.post('/signup', adminSignup);

@@ -15,6 +15,7 @@ import mailRouter from "./routes/mailRoute";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 import cors from "cors";
+import { Script } from "vm";
 const PORT = process.env.PORT || 2030;
 
 
@@ -48,3 +49,7 @@ app.use("/api/payments", paystackRouter);
 app.use("/api/mail", mailRouter);
 
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`));
+
+
+
+
