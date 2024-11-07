@@ -26,6 +26,6 @@ router.post('/verify', adminController_1.verifyOTP);
 router.post('/forgot-password', adminController_1.forgotPassword);
 router.post('/reset-password', adminController_1.resetPassword);
 // Protected routes
-router.post('/invite', auth_middleware_1.protect, (0, auth_middleware_1.authorize)('super-admin'), adminController_1.inviteAdmin);
+router.post('/invite', auth_middleware_1.protect, (0, auth_middleware_1.authorize)('super_admin'), adminController_1.inviteAdmin);
 router.put('/profile/:id', auth_middleware_1.protect, adminController_1.updateProfile);
 exports.default = router;

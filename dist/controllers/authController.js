@@ -51,7 +51,7 @@ const create_acct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const isUser = yield User_model_1.default.findOne({ email });
         if (isUser) {
             console.log(isUser);
-            return res.json({
+            return res.status(409).json({
                 error: true,
                 message: "User already exists",
             });

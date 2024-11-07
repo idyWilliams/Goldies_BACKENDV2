@@ -20,7 +20,12 @@ const mailRoute_1 = __importDefault(require("./routes/mailRoute"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const cors_1 = __importDefault(require("cors"));
 const PORT = process.env.PORT || 2030;
-app.use((0, cors_1.default)());
+app.use((0, cors_1.default)({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+}));
 app.use(express_1.default.json());
 mongoose_1.default
     .connect(process.env.connectionString)

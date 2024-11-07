@@ -95,21 +95,25 @@ exports.editCategory = editCategory;
 // Get all categories with pagination
 const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
+        const page = req.query.page ? parseInt(req.query.page, 10) : null;
+        const limit = req.query.limit ? parseInt(req.query.limit, 10) : null;
+        const skip = page && limit ? (page - 1) * limit : 0;
         const totalCategories = yield Category_model_1.default.countDocuments();
-        const allCategories = yield Category_model_1.default.find().skip(skip).limit(limit).lean();
+        const allCategoriesQuery = Category_model_1.default.find().sort({ createdAt: -1 });
+        const allCategories = page && limit
+            ? yield allCategoriesQuery.skip(skip).limit(limit).lean()
+            : yield allCategoriesQuery.lean();
         const allSubCategories = yield SubCategory_model_1.default.find().lean();
         const categoriesWithSubcategories = allCategories.map((category) => {
             const subCategories = allSubCategories.filter((subCategory) => subCategory.categoryId.toString() === category._id.toString());
             return Object.assign(Object.assign({}, category), { subCategories });
         });
+        const totalPages = page && limit ? Math.ceil(totalCategories / limit) : 1;
         res.status(200).json({
             error: false,
             categories: categoriesWithSubcategories,
-            totalPages: Math.ceil(totalCategories / limit),
-            currentPage: page,
+            totalPages,
+            currentPage: page || 1,
             totalCategories,
             message: "Categories retrieved successfully",
         });
