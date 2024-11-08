@@ -19,12 +19,12 @@ import { Script } from "vm";
 const PORT = process.env.PORT || 2030;
 
 
-app.use(cors({
-  origin:  '*',
-  methods: ['GET','POST','PUT','PATCH','DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-}));
+const allowedOrigin = process.env.NODE_ENV === "production" ? process.env.PROD_ORIGIN : process.env.DEV_ORIGIN;
+app.use( cors({
+  origin: allowedOrigin,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"], 
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true, }) );
 
 app.use(express.json());
 
