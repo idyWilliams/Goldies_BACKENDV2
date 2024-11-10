@@ -19,12 +19,19 @@ import { Script } from "vm";
 const PORT = process.env.PORT || 2030;
 
 
-const allowedOrigin = process.env.NODE_ENV === "production" ? process.env.PROD_ORIGIN : process.env.DEV_ORIGIN;
-app.use( cors({
-  origin: allowedOrigin,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"], 
+const allowedOrigins = ["https://goldies-backendv2.vercel.app", "http://localhost:7009"];
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true, }) );
+  credentials: true,
+}));
 
 app.use(express.json());
 
