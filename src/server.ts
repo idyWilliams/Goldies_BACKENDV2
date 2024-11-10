@@ -19,7 +19,7 @@ import { Script } from "vm";
 const PORT = process.env.PORT || 2030;
 
 
-const allowedOrigins = ["https://goldies-backendv2.vercel.app", "http://localhost:7009"];
+const allowedOrigins = ["https://goldies-frontend-v3.vercel.app", "http://localhost:7009"];
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
