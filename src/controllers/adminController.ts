@@ -9,13 +9,12 @@ import bcryptjs from "bcryptjs";
 const inviteAdmin = async (req: Request, res: Response) => {
   const { email } = req.body;
   try {
-
     const refCode = process.env.ADMINREFCODE;
 
     const maxAge = 60 * 15;
     const token = jwt.sign({ email }, refCode as string, {
       expiresIn: maxAge,
-    })
+    });
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
@@ -60,7 +59,6 @@ const inviteAdmin = async (req: Request, res: Response) => {
       message: "Message sent",
       info: info.messageId,
     });
-
   } catch (error) {
     return res.status(500).json({
       error: true,
@@ -79,21 +77,20 @@ function generateOtp() {
   return otp;
 }
 
-
 const generateToken = (id: unknown) => {
-   const maxAge = 60 * 60 * 24;
-      const secret = process.env.ACCESS_SECRET_TOKEN;
+  const maxAge = 60 * 60 * 24;
+  const secret = process.env.ACCESS_SECRET_TOKEN;
 
-      if (!secret) {
-        throw new Error("Secret key is not defined in environment variables.");
-      }
+  if (!secret) {
+    throw new Error("Secret key is not defined in environment variables.");
+  }
 
-      const token = jwt.sign({ id }, secret, {
-        expiresIn: maxAge,
-      });
+  const token = jwt.sign({ id }, secret, {
+    expiresIn: maxAge,
+  });
 
-      return token
-}
+  return token;
+};
 
 // const adminSignup = async (req: Request, res: Response) => {
 //   const { userName, email, password } = req.body;
@@ -223,10 +220,8 @@ const generateToken = (id: unknown) => {
 //   }
 // };
 
-
 const adminSignup = async (req: Request, res: Response) => {
   const { userName, email, password } = req.body;
-
 
   if (!userName) {
     return res.status(400).json({
@@ -354,8 +349,6 @@ const adminSignup = async (req: Request, res: Response) => {
   }
 };
 
-
-
 const verifyOTP = async (req: Request, res: Response) => {
   const { email, otp } = req.body;
   try {
@@ -375,7 +368,7 @@ const verifyOTP = async (req: Request, res: Response) => {
       });
     }
 
-    const token = generateToken(admin._id)
+    const token = generateToken(admin._id);
 
     return res.status(200).json({
       error: false,
@@ -383,7 +376,6 @@ const verifyOTP = async (req: Request, res: Response) => {
       token,
       message: `Admin Signup successful`,
     });
-
   } catch (error) {
     return res.status(500).json({
       error: true,
@@ -405,6 +397,49 @@ const adminLogin = async (req: Request, res: Response) => {
 
   try {
     const admin = await Admin.findOne({ email });
+    const OTP = generateOtp(); // Generates a 6-digit OTP
+
+    // Create transporter for sending email
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.PASSWORD,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    // Function to send the verification email
+    const sendVerificationEmail = async () => {
+      const emailContent = `
+      <div style="font-family: Arial, sans-serif; color: #333;">
+        <h2 style="color: #007bff;">Email Verification</h2>
+        <p>Do not share this with anyone.</p>
+        <p>Verification code: <strong>${OTP}</strong></p>
+        <p>If you did not request this, please ignore this email.</p>
+      </div>
+    `;
+
+      const mailOptions = {
+        from: process.env.EMAIL,
+        to: email,
+        subject: "Goldies Team - Email Verification",
+        text: "Email verification.",
+        html: emailContent,
+      };
+
+      try {
+        const info = await transporter.sendMail(mailOptions);
+        console.log("Message sent: %s", info.messageId, OTP);
+      } catch (err) {
+        console.error("Error sending email: ", err);
+        throw new Error("Failed to send verification email.");
+      }
+    };
 
     if (!admin) {
       return res.status(404).json({
@@ -427,6 +462,11 @@ const adminLogin = async (req: Request, res: Response) => {
         message: "Invalid credentials",
       });
     }
+
+    admin.OTP = OTP;
+    await admin.save();
+    // Send verification email
+    await sendVerificationEmail();
 
     const token = generateToken(admin._id);
 
@@ -630,7 +670,6 @@ const updateProfile = async (req: Request, res: Response) => {
     });
   }
 };
-
 
 export {
   inviteAdmin,
