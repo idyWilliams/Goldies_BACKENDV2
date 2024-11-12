@@ -3,32 +3,33 @@ import Product from "../models/Product.model";
 
 const createProduct = async (req: Request, res: Response) => {
   const {
-    name,
+    category,
+    flavour,
     description,
+    images,
+    maxPrice,
+    minPrice,
+    name,
+    productType,
     shapes,
     sizes,
-    productType,
-    toppings,
-    category,
-    subCategory,
-    minPrice,
-    maxPrice,
-    images,
-    flavour,
-  } = req.body;
+  subCategory,
+   toppings
+} = req.body;
 
   if (
-    !name ||
-    !description ||
-    !shapes ||
-    !sizes ||
-    !productType ||
-    !toppings ||
-    !category ||
-    !subCategory ||
-    !minPrice ||
-    !maxPrice ||
-    !images
+    !category||
+    !flavour||
+    !description||
+    !images||
+    !maxPrice||
+    !minPrice||
+    !name||
+    !productType||
+    !shapes||
+    !sizes||
+  !subCategory||
+   !toppings
   ) {
     return res.status(404).json({
       error: true,
@@ -38,18 +39,18 @@ const createProduct = async (req: Request, res: Response) => {
 
   try {
     const categoryDetails = await Product.create({
-      name,
+      category,
+      flavour,
       description,
+      images,
+      maxPrice,
+      minPrice,
+      name,
+      productType,
       shapes,
       sizes,
-      productType,
-      toppings,
-      category,
-      subCategory,
-      minPrice,
-      maxPrice,
-      images,
-      flavour,
+    subCategory,
+     toppings
     });
 
     return res.status(200).json({
