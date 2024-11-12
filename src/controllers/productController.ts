@@ -3,31 +3,30 @@ import Product from "../models/Product.model";
 
 const createProduct = async (req: Request, res: Response) => {
   const {
-    name,  
-    description,  
-    shapes,   
-    sizes,   
-    fillings,    
-    toppings,   
-    category, 
-    subCategory, 
-    minPrice,   
-    maxPrice,   
+    name,
+    description,
+    shapes,
+    sizes,
+    productType,
+    toppings,
+    category,
+    subCategory,
+    minPrice,
+    maxPrice,
     images,
-    flavour
+    flavour,
   } = req.body;
 
-
   if (
-      !name ||
-    !description|| 
+    !name ||
+    !description ||
     !shapes ||
-    !sizes ||  
-    !fillings ||    
+    !sizes ||
+    !productType ||
     !toppings ||
     !category ||
     !subCategory ||
-    !minPrice || 
+    !minPrice ||
     !maxPrice ||
     !images
   ) {
@@ -39,18 +38,18 @@ const createProduct = async (req: Request, res: Response) => {
 
   try {
     const categoryDetails = await Product.create({
-      name,  
-      description,  
-      shapes,   
-      sizes,   
-      fillings,    
-      toppings,   
-      category, 
-      subCategory, 
-      minPrice,   
-      maxPrice,   
+      name,
+      description,
+      shapes,
+      sizes,
+      productType,
+      toppings,
+      category,
+      subCategory,
+      minPrice,
+      maxPrice,
       images,
-      flavour
+      flavour,
     });
 
     return res.status(200).json({
@@ -70,18 +69,18 @@ const createProduct = async (req: Request, res: Response) => {
 const editProduct = async (req: Request, res: Response) => {
   const { productId } = req.params;
   const {
-    name,  
-    description,  
-    shapes,   
-    sizes,   
-    fillings,    
-    toppings,   
-    category, 
-    subCategory, 
-    minPrice,   
-    maxPrice,   
+    name,
+    description,
+    shapes,
+    sizes,
+    productType,
+    toppings,
+    category,
+    subCategory,
+    minPrice,
+    maxPrice,
     images,
-    flavour
+    flavour,
   } = req.body;
 
   try {
@@ -97,7 +96,7 @@ const editProduct = async (req: Request, res: Response) => {
     if (description) productDetails.description = description;
     if (shapes) productDetails.shapes = shapes;
     if (sizes) productDetails.sizes = sizes;
-    if (fillings) productDetails.fillings = fillings;
+    if (productType) productDetails.productType = productType;
     if (toppings) productDetails.toppings = toppings;
     if (category) productDetails.category = category;
     if (subCategory) productDetails.subCategory = subCategory;
@@ -105,7 +104,6 @@ const editProduct = async (req: Request, res: Response) => {
     if (maxPrice) productDetails.maxPrice = maxPrice;
     if (images) productDetails.images = images;
     if (flavour) productDetails.flavour = flavour;
-   
 
     await productDetails.save();
     res.json({
@@ -149,24 +147,26 @@ const getProduct = async (req: Request, res: Response) => {
 
 const getAllProducts = async (req: Request, res: Response) => {
   try {
-    const { 
-      subCategoryIds, 
-      categoryIds, 
-      minPrice, 
-      maxPrice, 
-      searchQuery, 
-      page = 1, 
-      limit = 10 
+    const {
+      subCategoryIds,
+      categoryIds,
+      minPrice,
+      maxPrice,
+      searchQuery,
+      page = 1,
+      limit = 10,
     } = req.query;
 
     const filters: any = {};
-    
+
     if (categoryIds) {
-      filters['category.id'] = { $in: (categoryIds as string).split(',') };
+      filters["category.id"] = { $in: (categoryIds as string).split(",") };
     }
 
     if (subCategoryIds) {
-      filters['subCategory.id'] = { $in: (subCategoryIds as string).split(',') };
+      filters["subCategory.id"] = {
+        $in: (subCategoryIds as string).split(","),
+      };
     }
 
     if (minPrice || maxPrice) {
@@ -175,30 +175,30 @@ const getAllProducts = async (req: Request, res: Response) => {
       if (maxPrice) filters.minPrice.$lte = parseFloat(maxPrice as string);
     }
 
-    if (searchQuery && (searchQuery as string).trim() !== '') {
+    if (searchQuery && (searchQuery as string).trim() !== "") {
       filters.$or = [
-        { name: { $regex: searchQuery as string, $options: 'i' } },
-        { description: { $regex: searchQuery as string, $options: 'i' } }
+        { name: { $regex: searchQuery as string, $options: "i" } },
+        { description: { $regex: searchQuery as string, $options: "i" } },
       ];
     }
-    
+
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
     const productDetails = await Product.find(filters)
-     .sort({ createdAt: -1 })
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit as string))
       .exec();
 
     const totalProducts = await Product.countDocuments(filters);
     const totalPages = Math.ceil(totalProducts / parseInt(limit as string));
-    
+
     return res.status(200).json({
       error: false,
       products: productDetails,
       totalPages,
-      currentPage: parseInt(page as string), 
-      totalProducts,            
+      currentPage: parseInt(page as string),
+      totalProducts,
       message: "Products retrieved successfully",
     });
   } catch (err) {
@@ -233,11 +233,10 @@ const deleteProduct = async (req: Request, res: Response) => {
   }
 };
 
-
 export {
   createProduct,
   editProduct,
   deleteProduct,
   getAllProducts,
-  getProduct
+  getProduct,
 };
