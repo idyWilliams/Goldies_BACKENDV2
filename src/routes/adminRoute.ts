@@ -22,6 +22,7 @@ import {
   forgotPassword,
   resetPassword,
   updateProfile,
+  getAdmin
 } from "../controllers/adminController";
 import { protect, authorize } from '../middleware/auth.middleware';
 
@@ -38,5 +39,7 @@ router.post('/reset-password', resetPassword);
 // Protected routes
 router.post('/invite', protect, authorize('super_admin'), inviteAdmin);
 router.put('/profile/:id', protect, updateProfile);
+router.get('/:id', protect, getAdmin);
+
 
 export default router;
