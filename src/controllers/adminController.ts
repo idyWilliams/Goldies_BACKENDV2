@@ -372,8 +372,12 @@ const verifyOTP = async (req: Request, res: Response) => {
       });
     }
 
-    const token = generateToken(admin._id);
+    admin.isVerified = true;
+    await admin.save()
 
+
+    const token = generateToken(admin._id);
+ 
     return res.status(200).json({
       error: false,
       admin,
@@ -533,7 +537,7 @@ const forgotPassword = async (req: Request, res: Response) => {
       },
     });
 
-    const resetURL = `http://localhost:3000/reset-password?token=${resetToken}`;
+    const resetURL = `${process.env.ADMIN_RESET_PASSWORD}?token=${resetToken}`;
 
     const emailContent = `
       <div style="font-family: Arial, sans-serif; color: #333;">
@@ -675,6 +679,37 @@ const updateProfile = async (req: Request, res: Response) => {
   }
 };
 
+const getAdmin = async (req: Request, res: Response)=>{
+const { id } = req.params;
+
+console.log(id)
+try {
+  const admin = await Admin.findOne({ _id: id});
+
+  if (!admin) {
+    return res.status(404).json({
+      error: true,
+      message: "Admin not found",
+    });
+  }
+  return res.status(200).json({
+    error: false,
+    admin
+   
+    },)
+  
+}catch(err){
+  return res.status(500).json({
+    error: true,
+    err,
+    message: "Internal Server error",
+  });
+
+}
+
+};
+
+
 export {
   inviteAdmin,
   adminSignup,
@@ -683,4 +718,5 @@ export {
   forgotPassword,
   resetPassword,
   updateProfile,
+  getAdmin
 };
