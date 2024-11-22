@@ -8,10 +8,6 @@ import bcryptjs from "bcryptjs";
 
 const inviteAdmin = async (req: Request, res: Response) => {
   const { email } = req.body;
-
-  const origin = req.get("origin");
-
-  console.log(`origin: ${origin}`);
   try {
     const refCode = process.env.ADMINREFCODE;
 
@@ -32,7 +28,7 @@ const inviteAdmin = async (req: Request, res: Response) => {
       },
     });
 
-    const SignUpURL = `${origin}/admin-signup?refCode=${token}&email=${email}`;
+    const SignUpURL = `${process.env.FRONTEND_URL}/admin-signup?refCode=${token}&email=${email}`;
 
     const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">

@@ -21,16 +21,20 @@ const authenticateToken = (
 
   if (!token1 && !token2) return res.sendStatus(401);
 
+ 
   jwt.verify(
     token,
     process.env.ACCESS_SECRET_TOKEN as string,
     (err: any, decoded: any) => {
-      if (err) return res.sendStatus(403);
-
+      if (err) {
+        console.error("Token verification error:", err);
+        return res.sendStatus(403);
+      }
       req.id = decoded.id;
       next();
     }
   );
+  
 };
 
 export { authenticateToken };

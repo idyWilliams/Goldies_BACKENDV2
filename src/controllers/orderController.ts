@@ -3,6 +3,7 @@ import Order from "../models/Order.model";
 import User from "../models/User.model";
 
 import { CustomRequest } from "../middleware/verifyJWT";
+import mongoose from "mongoose";
 const createOrder = async (req: CustomRequest, res: Response) => {
     const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, orderedItems, fee } = req.body;
 
@@ -14,9 +15,14 @@ const createOrder = async (req: CustomRequest, res: Response) => {
             });
         }
 
+        console.log("User ID from token:", req.id);
+
         const user = req.id;
         const userDetails = await User.findOne({ _id: user })
+    
+        console.log("User Details:", userDetails);
 
+        const orderId = generateUniqueId()
         if(!userDetails) {
             return res.status(404).json({
                 error: true,
@@ -34,6 +40,7 @@ const createOrder = async (req: CustomRequest, res: Response) => {
             phoneNumber,
             orderedItems,
             fee,
+            orderId
         });
 
     await newOrder.save();
@@ -53,12 +60,33 @@ const createOrder = async (req: CustomRequest, res: Response) => {
     }
 }
 
+const generatedIds = new Set(); // Store unique IDs
+
+function generateUniqueId() {
+  const prefix = "GOL";
+  let uniqueId;
+
+  do {
+    const randomNumbers = Math.floor(100000 + Math.random() * 900000); // Generate a 6-digit random number
+    uniqueId = `${prefix}${randomNumbers}`;
+  } while (generatedIds.has(uniqueId)); // Ensure the ID is not already in the set
+
+  generatedIds.add(uniqueId); // Add the new unique ID to the set
+  return uniqueId;
+}
 const updateOrderStatus = async (req: Request, res: Response) => {
     const { orderStatus } = req.body;
     const { orderId } = req.params
 
     try{
-        const order = await Order.findOne({ _id: orderId })
+     const isValidObjectId = mongoose.Types.ObjectId.isValid(orderId);
+
+  const queryConditions = isValidObjectId
+    ? [{ _id: orderId }, { orderId: orderId }] // Match both _id and orderId
+    : [{ orderId: orderId }]; // Match only orderId
+
+  const order = await Order.findOne({ $or: queryConditions });
+          
         if(!order){
             return res.status(404).json({
                 error: true,
@@ -107,8 +135,15 @@ const getOrder = async (req: Request, res: Response) => {
     const { orderId } = req.params
 
     try {
-        const order = await Order.findOne({ _id: orderId })
+        const isValidObjectId = mongoose.Types.ObjectId.isValid(orderId);
 
+  const queryConditions = isValidObjectId
+    ? [{ _id: orderId }, { orderId: orderId }] // Match both _id and orderId
+    : [{ orderId: orderId }]; // Match only orderId
+
+  const order = await Order.findOne({ $or: queryConditions });
+
+          
         if(!order){
             return res.status(404).json({
                 error: true,
@@ -133,7 +168,13 @@ const getOrder = async (req: Request, res: Response) => {
 const deleteOrder = async (req: Request, res: Response) => {
     try {
         const { orderId } = req.params
-        const result = await Order.deleteOne({ _id: orderId })
+             const isValidObjectId = mongoose.Types.ObjectId.isValid(orderId);
+
+  const queryConditions = isValidObjectId
+    ? [{ _id: orderId }, { orderId: orderId }] // Match both _id and orderId
+    : [{ orderId: orderId }]; // Match only orderId
+
+  const result = await Order.deleteOne({ $or: queryConditions });
         if(!result){
             return res.status(404).json({
                 error: true,

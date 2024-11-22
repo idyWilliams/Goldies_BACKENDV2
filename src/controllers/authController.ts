@@ -187,7 +187,7 @@ const forgottenPassword = async (req: Request, res: Response) => {
       }
     );
 
-    const resetUrl = `http://localhost:3000/reset_password/${token}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset_password/${token}`;
 
     const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">

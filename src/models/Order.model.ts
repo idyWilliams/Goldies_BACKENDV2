@@ -18,6 +18,7 @@ interface  OrderSchemaI extends Document {
     fee: FeeT
     user: Schema.Types.ObjectId
     orderStatus: "pending" | "completed" | "cancelled"
+    orderId: string
 }
 
 const FeeSchema = new Schema({
@@ -44,7 +45,8 @@ const OrderSchema = new Schema<OrderSchemaI>({
             type: String,
             enum: ["pending", "completed", "cancelled"], 
             default: "pending" 
-    }
+    },
+    orderId: {type: String, required: true}
 }, {
     timestamps: true
 })
