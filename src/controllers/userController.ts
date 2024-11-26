@@ -371,6 +371,36 @@ const updateProfile = async (req: CustomRequest, res: Response) => {
 
 }}
 
+const deleteAccount = async (req: CustomRequest, res: Response) => {
+  const user = req.id;
+
+  try {
+    const userDetails = await User.findOne({ _id: user });
+
+    if (!userDetails) {
+      return res.status(404).json({
+        error: true,
+        message: "User not found, please log in and try again.",
+      });
+    }
+ 
+    await User.findOneAndDelete({ _id: user });
+
+    return res.status(200).json({
+      error: false,
+      message: "Account deleted successfully.",
+    });
+  } catch (error) {
+    console.error("Error deleting user account", error);
+    return res.status(500).json({
+      error: true,
+      err: error,
+      message: "Internal server error, please try again",
+    });
+  }
+};
+
+
 // const saveBillingInfo = async (req: CustomRequest, res: Response) => {
 //     const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body
 //     const user  = req.id
@@ -410,4 +440,4 @@ const updateProfile = async (req: CustomRequest, res: Response) => {
 //     }
 // }
 
-export { saveBillingInfo, getUser, updateBillingInfo, deleteBillingInfo, updateDefaultBillingInfo, getAllUSers, updateProfile, getBillingInfo };
+export { saveBillingInfo, getUser, updateBillingInfo, deleteBillingInfo, updateDefaultBillingInfo, getAllUSers, updateProfile, getBillingInfo, deleteAccount };
