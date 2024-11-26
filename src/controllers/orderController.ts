@@ -115,7 +115,7 @@ const updateOrderStatus = async (req: Request, res: Response) => {
 
 const getAllOrders = async (req: Request, res: Response) => {
     try {
-        const orders = await Order.find()
+        const orders = await Order.find().sort({ createdAt: -1 })
 
         return res.status(200).json({
             error: false,
