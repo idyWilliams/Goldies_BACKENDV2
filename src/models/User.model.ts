@@ -18,6 +18,7 @@ const UserSchema = new Schema({
   password: { type: String, required: true },
   phoneNumber: { type: String, requried: true },
   billingInfo: [BillingInfoSchema], // Now an array of billing information
+  favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }]
 }, {
   timestamps: true
 });
