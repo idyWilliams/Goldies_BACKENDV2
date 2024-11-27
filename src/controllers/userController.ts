@@ -197,24 +197,28 @@ const updateBillingInfo = async (req: CustomRequest, res: Response) => {
 
     // Update the specific billing info
     if (billingDoc) {
-      billingDoc.firstName = firstName;
-      billingDoc.lastName = lastName;
-      billingDoc.email = email;
-      billingDoc.country = country;
-      billingDoc.cityOrTown = cityOrTown;
-      billingDoc.streetAddress = streetAddress;
-      billingDoc.phoneNumber = phoneNumber;
-      billingDoc.defaultBillingInfo = defaultBillingInfo || billingDoc.defaultBillingInfo;
+     if(firstName) billingDoc.firstName = firstName;
+      if(lastName) billingDoc.lastName = lastName;
+      if(email) billingDoc.email = email;
+      if(country) billingDoc.country = country;
+      if(cityOrTown) billingDoc.cityOrTown = cityOrTown;
+      if(streetAddress) billingDoc.streetAddress = streetAddress;
+      if(phoneNumber) billingDoc.phoneNumber = phoneNumber;
+      if(defaultBillingInfo) billingDoc.defaultBillingInfo = defaultBillingInfo || billingDoc.defaultBillingInfo;
     }
+
 
     // Save updated user details
     await userDetails.save();
+     const userObject = userDetails.toObject();
+    const { password, ...rest } = userObject;
 
     return res.status(200).json({
       error: false,
-      user: userDetails.toObject(),
-      message: "Billing info updated successfully.",
+      user: rest,
+      message: "Billing info saved successfully."
     });
+
   } catch (error) {
     console.error("Error updating billing info:", error);
     return res.status(500).json({
