@@ -4,7 +4,7 @@ import { authenticateToken } from "../middleware/verifyJWT";
 import { addFavorite, getFavorites, removeFavorite } from "../controllers/userFavoritesController";
 
 router.post("/add", authenticateToken, addFavorite);
-router.delete("/remove", authenticateToken, removeFavorite);
+router.delete("/remove/:productId", authenticateToken, removeFavorite);
 router.get("/", authenticateToken, getFavorites);
 
 
