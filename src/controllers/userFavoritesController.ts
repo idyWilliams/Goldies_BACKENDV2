@@ -55,7 +55,7 @@ const addFavorite = async (req: CustomRequest, res: Response)=> {
 }
 
 const removeFavorite = async (req: CustomRequest, res: Response) => {
-    const { productId } = req.body;
+    const { productId } = req.params;
     const user = req.id;
     
     try{
