@@ -199,7 +199,7 @@ const deleteOrder = async (req: Request, res: Response) => {
 const getSpecificUserOrder = async (req: CustomRequest, res: Response) => {
     try {
         const user = req.id
-        const userOrder = await Order.find({ user })
+        const userOrder = await Order.find({ user }).sort({ createdAt: -1 })
 
         const userDetails = await User.findOne({ _id: user })
 
