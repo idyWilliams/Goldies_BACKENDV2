@@ -330,7 +330,7 @@ const updateDefaultBillingInfo = async (req: CustomRequest, res: Response) => {
 };
 
 const updateProfile = async (req: CustomRequest, res: Response) => {
-  const { firstName, lastName, email, phoneNumber } = req.body;
+  const { firstName, lastName, email, phone, country, address, state } = req.body;
   const user = req.id;
 
   try {
@@ -343,22 +343,22 @@ const updateProfile = async (req: CustomRequest, res: Response) => {
       });
     }
 
-    if (email){
-      const emailExist = await User.findOne({ email: email})
-      if(emailExist){
-        return res.status(404).json({
-          error: true,
-          message: 'Email already in use'
-        })
-      }
+    const defaultBillingInfo = userDetails.billingInfo.find(info => info.defaultBillingInfo === true);
+
+    if (!defaultBillingInfo) {
+      return { error: true, message: "Default billing information not found" };
     }
 
-    if (firstName) userDetails.firstName = firstName;
-    if (lastName) userDetails.lastName = lastName;
-    if (email) userDetails.email = email;
-    if (phoneNumber) userDetails.phoneNumber = phoneNumber;
+   
+    if (firstName) defaultBillingInfo.firstName = firstName;
+    if (lastName) defaultBillingInfo.lastName = lastName;
+    if (email) defaultBillingInfo.email = email;
+    if (phone) defaultBillingInfo.phoneNumber = phone;
+    if (country) defaultBillingInfo.country = country;
+    if (address) defaultBillingInfo.streetAddress = address;
+    if (state) defaultBillingInfo.cityOrTown = state;
 
-    
+
     await userDetails.save();
 
     return res.status(200).json({
