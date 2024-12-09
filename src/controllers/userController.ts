@@ -343,22 +343,10 @@ const updateProfile = async (req: CustomRequest, res: Response) => {
       });
     }
 
-    const defaultBillingInfo = userDetails.billingInfo.find(info => info.defaultBillingInfo === true);
-
-    if (!defaultBillingInfo) {
-      return { error: true, message: "Default billing information not found" };
-    }
-
+    if (firstName) userDetails.firstName = firstName;
+    if (lastName) userDetails.lastName = lastName;
+    if (phone) userDetails.phoneNumber = phone;
    
-    if (firstName) defaultBillingInfo.firstName = firstName;
-    if (lastName) defaultBillingInfo.lastName = lastName;
-    if (email) defaultBillingInfo.email = email;
-    if (phone) defaultBillingInfo.phoneNumber = phone;
-    if (country) defaultBillingInfo.country = country;
-    if (address) defaultBillingInfo.streetAddress = address;
-    if (state) defaultBillingInfo.cityOrTown = state;
-
-
     await userDetails.save();
 
     return res.status(200).json({
