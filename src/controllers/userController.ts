@@ -330,7 +330,7 @@ const updateDefaultBillingInfo = async (req: CustomRequest, res: Response) => {
 };
 
 const updateProfile = async (req: CustomRequest, res: Response) => {
-  const { firstName, lastName, email, phone, country, address, state } = req.body;
+  const { firstName, lastName, phone } = req.body;
   const user = req.id;
 
   try {
@@ -352,6 +352,7 @@ const updateProfile = async (req: CustomRequest, res: Response) => {
     return res.status(200).json({
       error: false,
       message: "Profile updated successfully.",
+      data: userDetails
     });
   }catch (error) {
   console.error("Error updating profile:", error);
