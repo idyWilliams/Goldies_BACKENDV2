@@ -352,7 +352,13 @@ const updateProfile = async (req: CustomRequest, res: Response) => {
     return res.status(200).json({
       error: false,
       message: "Profile updated successfully.",
-      data: userDetails
+      data:{
+        firstName: userDetails.firstName,
+        lastName: userDetails.lastName,
+        phoneNumber: userDetails.phoneNumber,
+        email: userDetails.email,
+        _id: userDetails._id,
+      },
     });
   }catch (error) {
   console.error("Error updating profile:", error);
