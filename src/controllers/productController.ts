@@ -38,7 +38,7 @@ const createProduct = async (req: Request, res: Response) => {
   }
 
   try {
-    const categoryDetails = await Product.create({
+    const productDetails = await Product.create({
       category,
       flavour,
       description,
@@ -55,8 +55,8 @@ const createProduct = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       error: false,
-      categoryDetails,
-      message: "Category Created successfully",
+      productDetails,
+      message: "Product Created successfully",
     });
   } catch (err) {
     return res.status(500).json({
