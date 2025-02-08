@@ -2,12 +2,22 @@ import { CustomRequest } from "../middleware/verifyJWT";
 import { Response } from "express";
 import Product from "../models/Product.model";
 import User from "../models/User.model";
+import mongoose from "mongoose";
 
 const addFavorite = async (req: CustomRequest, res: Response)=> {
    const { productId } = req.body;
    const user = req.id;
    
    try{
+
+    
+    // if (!mongoose.Types.ObjectId.isValid(productId)) {
+    //   return res.status(400).json({
+    //     error: true,
+    //     message: "Invalid Product ID format.",
+    //   });
+    // }
+
     const userDetails = await User.findOne({ _id: user });
 
     if (!userDetails) {
@@ -17,13 +27,15 @@ const addFavorite = async (req: CustomRequest, res: Response)=> {
       })
     }
 
-    const product = await Product.findOne({ _id: productId })
-    if(!product){
-        return res.status(404).json({
-            error: true,
-            message: "Product not found"
-        })
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        error: true,
+        message: "Product not found",
+      });
     }
+
+
 
     if (userDetails.favorites.includes(productId)){
         return res.status(400).json({
@@ -97,7 +109,6 @@ const removeFavorite = async (req: CustomRequest, res: Response) => {
 
 const getFavorites = async (req: CustomRequest, res: Response) => {
     const user = req.id;
-    
     try{
      const userDetails = await User.findOne({ _id: user }).populate('favorites');
  
