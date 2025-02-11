@@ -50,7 +50,8 @@ const createProduct = async (req: Request, res: Response) => {
       shapes,
       sizes,
     subCategory,
-     toppings
+     toppings,
+     status
     });
 
     return res.status(200).json({
@@ -82,6 +83,7 @@ const editProduct = async (req: Request, res: Response) => {
     maxPrice,
     images,
     flavour,
+    status
   } = req.body;
 
   try {
@@ -105,6 +107,7 @@ const editProduct = async (req: Request, res: Response) => {
     if (maxPrice) productDetails.maxPrice = maxPrice;
     if (images) productDetails.images = images;
     if (flavour) productDetails.flavour = flavour;
+    if (status) productDetails.status = status ;
 
     await productDetails.save();
     res.json({
@@ -156,6 +159,8 @@ const getAllProducts = async (req: Request, res: Response) => {
       searchQuery,
       page = 1,
       limit = 10,
+      sortBy = "createdAt", // Default sorting by createdAt
+      order = "desc", // Default order is descending
     } = req.query;
 
     const filters: any = {};
@@ -185,8 +190,13 @@ const getAllProducts = async (req: Request, res: Response) => {
 
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
+    // Ensure `sortBy` is a valid string and cast it
+    const validSortBy = typeof sortBy === 'string' ? sortBy : 'createdAt'; // Fallback to 'createdAt' if invalid
+    const sortOrder = order === "asc" ? 1 : -1;
+
+    // Apply sorting
     const productDetails = await Product.find(filters)
-      .sort({ createdAt: -1 })
+      .sort({ [validSortBy]: sortOrder }) // Sort by the specified field and order
       .skip(skip)
       .limit(parseInt(limit as string))
       .exec();
