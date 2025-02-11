@@ -139,7 +139,7 @@ const getProduct = async (req: Request, res: Response) => {
     return res.json({
       error: false,
       productDetails,
-      message: "Category Retrieved successfully",
+      message: "Product Retrieved successfully",
     });
   } catch (err) {
     return res.status(500).json({
