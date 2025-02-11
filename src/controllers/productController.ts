@@ -14,7 +14,8 @@ const createProduct = async (req: Request, res: Response) => {
     shapes,
     sizes,
   subCategory,
-   toppings
+   toppings,
+   status
 } = req.body;
 
   if (
@@ -29,7 +30,7 @@ const createProduct = async (req: Request, res: Response) => {
     !shapes||
     !sizes||
   !subCategory||
-   !toppings
+   !toppings|| !status
   ) {
     return res.status(404).json({
       error: true,
