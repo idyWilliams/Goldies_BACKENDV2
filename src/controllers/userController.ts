@@ -86,10 +86,10 @@ const getUserById = async (req: Request, res: Response) => {
 }
 
 const saveBillingInfo = async (req: CustomRequest, res: Response) => {
-  const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
+  const { firstName, lastName, email, country,  state, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
   const user = req.id;
 
-  if (!firstName || !lastName || !email || !country || !cityOrTown || !streetAddress || !phoneNumber) {
+  if (!firstName || !lastName || !email || !country || !state || !cityOrTown || !streetAddress || !phoneNumber) {
     return res.status(400).json({
       error: true,
       message: "All billing information fields are required."
@@ -119,6 +119,7 @@ const saveBillingInfo = async (req: CustomRequest, res: Response) => {
       lastName,
       email,
       country,
+      state,
       cityOrTown,
       streetAddress,
       phoneNumber,
@@ -178,7 +179,7 @@ const getBillingInfo = async (req: CustomRequest, res: Response) => {
 
 
 const updateBillingInfo = async (req: CustomRequest, res: Response) => {
-  const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
+  const { firstName, lastName, email, country, state, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
   const { billingId } = req.params;
   const user = req.id;
 
@@ -225,6 +226,7 @@ const updateBillingInfo = async (req: CustomRequest, res: Response) => {
       if(lastName) billingDoc.lastName = lastName;
       if(email) billingDoc.email = email;
       if(country) billingDoc.country = country;
+      if(state) billingDoc.state = state;
       if(cityOrTown) billingDoc.cityOrTown = cityOrTown;
       if(streetAddress) billingDoc.streetAddress = streetAddress;
       if(phoneNumber) billingDoc.phoneNumber = phoneNumber;
@@ -422,6 +424,8 @@ const deleteAccount = async (req: CustomRequest, res: Response) => {
     });
   }
 };
+
+
 
 
 // const saveBillingInfo = async (req: CustomRequest, res: Response) => {

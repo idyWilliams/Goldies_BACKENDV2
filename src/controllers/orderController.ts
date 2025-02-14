@@ -5,10 +5,10 @@ import User from "../models/User.model";
 import { CustomRequest } from "../middleware/verifyJWT";
 import mongoose from "mongoose";
 const createOrder = async (req: CustomRequest, res: Response) => {
-    const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, orderedItems, fee } = req.body;
+    const { firstName, lastName, email, country, state, cityOrTown, streetAddress, phoneNumber, orderedItems, fee } = req.body;
 
     try{
-        if (!firstName || !lastName || !email || !country || !cityOrTown || !streetAddress || !phoneNumber || !orderedItems || !fee) {
+        if (!firstName || !lastName || !email || !country || !state || !cityOrTown || !streetAddress || !phoneNumber || !orderedItems || !fee) {
             return res.status(400).json({
                 error: true,
                 message: "All order information fields are required."
@@ -20,7 +20,6 @@ const createOrder = async (req: CustomRequest, res: Response) => {
         const user = req.id;
         const userDetails = await User.findOne({ _id: user })
     
-        console.log("User Details:", userDetails);
 
         const orderId = generateUniqueId()
         if(!userDetails) {
@@ -35,6 +34,7 @@ const createOrder = async (req: CustomRequest, res: Response) => {
             lastName,
             email,
             country,
+            state,
             cityOrTown,
             streetAddress,
             phoneNumber,

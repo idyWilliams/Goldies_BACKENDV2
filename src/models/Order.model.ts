@@ -11,6 +11,7 @@ interface  OrderSchemaI extends Document {
     lastName: string
     email: string
     country: string
+    state: string
     cityOrTown: string
     streetAddress: string
     phoneNumber: string
@@ -32,6 +33,7 @@ const OrderSchema = new Schema<OrderSchemaI>({
     lastName: { type: String, require: [true, "Please provide billing last name to complete this process"]},
     email: { type: String, require: [true, "Please provide billing email to complete this process"]},
     country: { type: String, require: [true, "Please provide country to complete this process"]},
+    state: { type: String, require: [true, "Please provide city or town to complete this process"]},
     cityOrTown: { type: String, require: [true, "Please provide city or town to complete this process"]},
     streetAddress: { type: String, require: [true, "Please provide street address to complete this process"]},
     phoneNumber: { type: String, require: [true, "Please provide phone number to complete this process"]},
