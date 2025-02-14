@@ -259,6 +259,33 @@ const resetPassword = async (req: CustomRequest, res: Response) => {
       message: "Internal server error",
     });
   }
+
+
 };
 
-export { create_acct, login, forgottenPassword, resetPassword };
+const logout = async (req: Request, res: Response) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(400).json({
+        error: true,
+        message: "No token provided",
+      });
+    }
+
+
+    return res.status(200).json({
+      error: false,
+      message: "Logout successful",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error. Please try again.",
+    });
+  }
+};
+
+
+export { create_acct, login, forgottenPassword, resetPassword, logout };
