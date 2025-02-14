@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authenticateToken } from "../middleware/verifyJWT";
-import { deleteAccount, deleteBillingInfo, getAllUSers, getBillingInfo, getUser, saveBillingInfo, updateBillingInfo, updateDefaultBillingInfo, updateProfile } from "../controllers/userController";
+import { deleteAccount, deleteBillingInfo, getAllUSers, getBillingInfo, getUser, getUserById, saveBillingInfo, updateBillingInfo, updateDefaultBillingInfo, updateProfile } from "../controllers/userController";
 const router = Router();
 
 router.get("/get_user", authenticateToken, getUser);
@@ -12,6 +12,7 @@ router.delete("/delete_billing_info/:billingId", authenticateToken, deleteBillin
 router.get("/billing_info", authenticateToken, getBillingInfo);
 router.patch("/profile", authenticateToken, updateProfile);
 router.delete("/my_account", authenticateToken, deleteAccount)
+router.get("/:userId", authenticateToken, getUserById)
 
 
 export default router;

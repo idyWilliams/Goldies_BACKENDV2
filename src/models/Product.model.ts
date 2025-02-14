@@ -19,6 +19,7 @@ interface IProduct extends Document {
   images: string[] | undefined;
   flavour?: string[] | undefined;
   status: string;
+  productCode: string;
 }
 
 const productSchema = new Schema<IProduct>(
@@ -35,7 +36,8 @@ const productSchema = new Schema<IProduct>(
     maxPrice: { type: String, require: true },
     images: { type: Array, require: true },
     flavour: { type: Array, required: false },
-    status: {type: String, required: true}
+    status: {type: String, required: true},
+    productCode: {type: String, required: true}
   },
   {
     timestamps: true,
