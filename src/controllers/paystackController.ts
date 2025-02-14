@@ -20,9 +20,11 @@ const paystackInstance = axios.create({
 export class PaymentController {
   // Initialize payment to get an authorization URL
   static async initializePayment(req: Request, res: Response): Promise<void> {
-    const { email, amount, callbackUrl } = req.body;
+    const { first_name, last_name, email, amount, callbackUrl } = req.body;
     try {
       const response = await paystackInstance.post('/transaction/initialize', {
+      first_name,
+      last_name,
         email,
         amount: amount * 100,
         callback_url: callbackUrl,

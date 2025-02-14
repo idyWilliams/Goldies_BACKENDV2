@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import User from "../models/User.model";
 import Admin from "../models/Admin.model";
 
@@ -45,7 +45,7 @@ const getAllUSers = async (req: CustomRequest, res: Response) => {
       message: "admin not found, Please login as an admin"
     })
 
-    const users = await User.find()
+    const users = await User.find().select("-password");
 
     return res.status(200).json({
       error: false,
@@ -57,6 +57,30 @@ const getAllUSers = async (req: CustomRequest, res: Response) => {
       error: true,
       err: error,
       message: "Internal server error, please try again",
+    });
+  }
+}
+const getUserById = async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const userDetails = await User.findOne({ _id: userId }).select("-password");
+    if (!userDetails) {
+      return res.status(400).json({
+        error: true,
+        message: "user not found",
+      });
+    }
+
+    return res.json({
+      error: false,
+      userDetails,
+      message: "User Retrieved successfully",
+    });
+  } catch (err) {
+    return res.status(500).json({
+      error: true,
+      err,
+      message: "Internal Server error",
     });
   }
 }
@@ -439,4 +463,4 @@ const deleteAccount = async (req: CustomRequest, res: Response) => {
 //     }
 // }
 
-export { saveBillingInfo, getUser, updateBillingInfo, deleteBillingInfo, updateDefaultBillingInfo, getAllUSers, updateProfile, getBillingInfo, deleteAccount };
+export { saveBillingInfo, getUser, updateBillingInfo, deleteBillingInfo, updateDefaultBillingInfo, getAllUSers, updateProfile, getBillingInfo, deleteAccount, getUserById };

@@ -38,6 +38,7 @@ const createProduct = async (req: Request, res: Response) => {
     });
   }
 
+  const productCode = generateUniqueId()
   try {
     const productDetails = await Product.create({
       category,
@@ -52,7 +53,8 @@ const createProduct = async (req: Request, res: Response) => {
       sizes,
     subCategory,
      toppings,
-     status
+     status,
+     productCode
     });
 
     return res.status(200).json({
@@ -68,6 +70,22 @@ const createProduct = async (req: Request, res: Response) => {
     });
   }
 };
+
+
+const generatedIds = new Set(); // Store unique IDs
+
+function generateUniqueId() {
+  const prefix = "GOL";
+  let uniqueId;
+
+  do {
+    const randomNumbers = Math.floor(100000 + Math.random() * 900000); // Generate a 6-digit random number
+    uniqueId = `${prefix}${randomNumbers}`;
+  } while (generatedIds.has(uniqueId)); // Ensure the ID is not already in the set
+
+  generatedIds.add(uniqueId); // Add the new unique ID to the set
+  return uniqueId;
+}
 
 const editProduct = async (req: Request, res: Response) => {
   const { productId } = req.params;
@@ -186,6 +204,7 @@ const getAllProducts = async (req: Request, res: Response) => {
       filters.$or = [
         { name: { $regex: searchQuery as string, $options: "i" } },
         { description: { $regex: searchQuery as string, $options: "i" } },
+        { productCode: { $regex: searchQuery as string, $options: "i" } },
       ];
     }
 
@@ -243,6 +262,8 @@ const deleteProduct = async (req: Request, res: Response) => {
       message: "Internal server Error",
     });
   }
+
+  
 };
 
 export {
