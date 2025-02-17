@@ -463,7 +463,7 @@ const adminLogin = async (req: Request, res: Response) => {
     if (!isValidPassword) {
       return res.status(401).json({
         error: true,
-        message: "Invalid credentials",
+        message: "Incorrect Password",
       });
     }
 

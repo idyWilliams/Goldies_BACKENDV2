@@ -23,7 +23,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateProfile = exports.getAllUSers = exports.updateDefaultBillingInfo = exports.deleteBillingInfo = exports.updateBillingInfo = exports.getUser = exports.saveBillingInfo = void 0;
+exports.getUserById = exports.deleteAccount = exports.getBillingInfo = exports.updateProfile = exports.getAllUSers = exports.updateDefaultBillingInfo = exports.deleteBillingInfo = exports.updateBillingInfo = exports.getUser = exports.saveBillingInfo = void 0;
 const User_model_1 = __importDefault(require("../models/User.model"));
 const Admin_model_1 = __importDefault(require("../models/Admin.model"));
 const getUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -61,7 +61,7 @@ const getAllUSers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 error: true,
                 message: "admin not found, Please login as an admin"
             });
-        const users = yield User_model_1.default.find();
+        const users = yield User_model_1.default.find().select("-password");
         return res.status(200).json({
             error: false,
             users,
@@ -77,10 +77,35 @@ const getAllUSers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.getAllUSers = getAllUSers;
+const getUserById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { userId } = req.params;
+        const userDetails = yield User_model_1.default.findOne({ _id: userId }).select("-password");
+        if (!userDetails) {
+            return res.status(400).json({
+                error: true,
+                message: "user not found",
+            });
+        }
+        return res.json({
+            error: false,
+            userDetails,
+            message: "User Retrieved successfully",
+        });
+    }
+    catch (err) {
+        return res.status(500).json({
+            error: true,
+            err,
+            message: "Internal Server error",
+        });
+    }
+});
+exports.getUserById = getUserById;
 const saveBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
+    const { firstName, lastName, email, country, state, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
     const user = req.id;
-    if (!firstName || !lastName || !email || !country || !cityOrTown || !streetAddress || !phoneNumber) {
+    if (!firstName || !lastName || !email || !country || !state || !cityOrTown || !streetAddress || !phoneNumber) {
         return res.status(400).json({
             error: true,
             message: "All billing information fields are required."
@@ -106,6 +131,7 @@ const saveBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function
             lastName,
             email,
             country,
+            state,
             cityOrTown,
             streetAddress,
             phoneNumber,
@@ -131,8 +157,35 @@ const saveBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function
     }
 });
 exports.saveBillingInfo = saveBillingInfo;
+const getBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = req.id;
+    try {
+        const userDetails = yield User_model_1.default.findOne({ _id: user });
+        if (!userDetails) {
+            return res.status(404).json({
+                error: true,
+                message: "User not found, please log in and try again."
+            });
+        }
+        const billingInfo = userDetails.billingInfo;
+        return res.status(200).json({
+            error: false,
+            user: billingInfo,
+            message: "Billing info fetched successfully."
+        });
+    }
+    catch (error) {
+        console.error("Error getting billing info:", error);
+        return res.status(500).json({
+            error: true,
+            err: error,
+            message: "Internal server error, please try again"
+        });
+    }
+});
+exports.getBillingInfo = getBillingInfo;
 const updateBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
+    const { firstName, lastName, email, country, state, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
     const { billingId } = req.params;
     const user = req.id;
     try {
@@ -169,21 +222,33 @@ const updateBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, functi
         }
         // Update the specific billing info
         if (billingDoc) {
-            billingDoc.firstName = firstName;
-            billingDoc.lastName = lastName;
-            billingDoc.email = email;
-            billingDoc.country = country;
-            billingDoc.cityOrTown = cityOrTown;
-            billingDoc.streetAddress = streetAddress;
-            billingDoc.phoneNumber = phoneNumber;
-            billingDoc.defaultBillingInfo = defaultBillingInfo || billingDoc.defaultBillingInfo;
+            if (firstName)
+                billingDoc.firstName = firstName;
+            if (lastName)
+                billingDoc.lastName = lastName;
+            if (email)
+                billingDoc.email = email;
+            if (country)
+                billingDoc.country = country;
+            if (state)
+                billingDoc.state = state;
+            if (cityOrTown)
+                billingDoc.cityOrTown = cityOrTown;
+            if (streetAddress)
+                billingDoc.streetAddress = streetAddress;
+            if (phoneNumber)
+                billingDoc.phoneNumber = phoneNumber;
+            if (defaultBillingInfo)
+                billingDoc.defaultBillingInfo = defaultBillingInfo || billingDoc.defaultBillingInfo;
         }
         // Save updated user details
         yield userDetails.save();
+        const userObject = userDetails.toObject();
+        const { password } = userObject, rest = __rest(userObject, ["password"]);
         return res.status(200).json({
             error: false,
-            user: userDetails.toObject(),
-            message: "Billing info updated successfully.",
+            user: rest,
+            message: "Billing info saved successfully."
         });
     }
     catch (error) {
@@ -286,7 +351,7 @@ const updateDefaultBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0,
 });
 exports.updateDefaultBillingInfo = updateDefaultBillingInfo;
 const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { firstName, lastName, email, phoneNumber } = req.body;
+    const { firstName, lastName, phone } = req.body;
     const user = req.id;
     try {
         const userDetails = yield User_model_1.default.findOne({ _id: user });
@@ -296,27 +361,23 @@ const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* 
                 message: "User not found",
             });
         }
-        if (email) {
-            const emailExist = yield User_model_1.default.findOne({ email: email });
-            if (emailExist) {
-                return res.status(404).json({
-                    error: true,
-                    message: 'Email already in use'
-                });
-            }
-        }
         if (firstName)
             userDetails.firstName = firstName;
         if (lastName)
             userDetails.lastName = lastName;
-        if (email)
-            userDetails.email = email;
-        if (phoneNumber)
-            userDetails.phoneNumber = phoneNumber;
+        if (phone)
+            userDetails.phoneNumber = phone;
         yield userDetails.save();
         return res.status(200).json({
             error: false,
             message: "Profile updated successfully.",
+            data: {
+                firstName: userDetails.firstName,
+                lastName: userDetails.lastName,
+                phoneNumber: userDetails.phoneNumber,
+                email: userDetails.email,
+                _id: userDetails._id,
+            },
         });
     }
     catch (error) {
@@ -329,3 +390,29 @@ const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.updateProfile = updateProfile;
+const deleteAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = req.id;
+    try {
+        const userDetails = yield User_model_1.default.findOne({ _id: user });
+        if (!userDetails) {
+            return res.status(404).json({
+                error: true,
+                message: "User not found, please log in and try again.",
+            });
+        }
+        yield User_model_1.default.findOneAndDelete({ _id: user });
+        return res.status(200).json({
+            error: false,
+            message: "Account deleted successfully.",
+        });
+    }
+    catch (error) {
+        console.error("Error deleting user account", error);
+        return res.status(500).json({
+            error: true,
+            err: error,
+            message: "Internal server error, please try again",
+        });
+    }
+});
+exports.deleteAccount = deleteAccount;

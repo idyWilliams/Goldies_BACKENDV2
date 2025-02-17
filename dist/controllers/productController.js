@@ -15,42 +15,46 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getProduct = exports.getAllProducts = exports.deleteProduct = exports.editProduct = exports.createProduct = void 0;
 const Product_model_1 = __importDefault(require("../models/Product.model"));
 const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { name, description, shapes, sizes, fillings, toppings, category, subCategory, minPrice, maxPrice, images, flavour } = req.body;
-    if (!name ||
+    const { category, flavour, description, images, maxPrice, minPrice, name, productType, shapes, sizes, subCategory, toppings, status } = req.body;
+    if (!category ||
+        !flavour ||
         !description ||
+        !images ||
+        !maxPrice ||
+        !minPrice ||
+        !name ||
+        !productType ||
         !shapes ||
         !sizes ||
-        !fillings ||
-        !toppings ||
-        !category ||
         !subCategory ||
-        !minPrice ||
-        !maxPrice ||
-        !images) {
+        !toppings || !status) {
         return res.status(404).json({
             error: true,
             message: "Please fill out all fields",
         });
     }
+    const productCode = generateUniqueId();
     try {
-        const categoryDetails = yield Product_model_1.default.create({
-            name,
+        const productDetails = yield Product_model_1.default.create({
+            category,
+            flavour,
             description,
+            images,
+            maxPrice,
+            minPrice,
+            name,
+            productType,
             shapes,
             sizes,
-            fillings,
-            toppings,
-            category,
             subCategory,
-            minPrice,
-            maxPrice,
-            images,
-            flavour
+            toppings,
+            status,
+            productCode
         });
         return res.status(200).json({
             error: false,
-            categoryDetails,
-            message: "Category Created successfully",
+            productDetails,
+            message: "Product Created successfully",
         });
     }
     catch (err) {
@@ -62,9 +66,20 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.createProduct = createProduct;
+const generatedIds = new Set(); // Store unique IDs
+function generateUniqueId() {
+    const prefix = "GOL";
+    let uniqueId;
+    do {
+        const randomNumbers = Math.floor(100000 + Math.random() * 900000); // Generate a 6-digit random number
+        uniqueId = `${prefix}${randomNumbers}`;
+    } while (generatedIds.has(uniqueId)); // Ensure the ID is not already in the set
+    generatedIds.add(uniqueId); // Add the new unique ID to the set
+    return uniqueId;
+}
 const editProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { productId } = req.params;
-    const { name, description, shapes, sizes, fillings, toppings, category, subCategory, minPrice, maxPrice, images, flavour } = req.body;
+    const { name, description, shapes, sizes, productType, toppings, category, subCategory, minPrice, maxPrice, images, flavour, status } = req.body;
     try {
         const productDetails = yield Product_model_1.default.findOne({ _id: productId });
         if (!productDetails) {
@@ -81,8 +96,8 @@ const editProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             productDetails.shapes = shapes;
         if (sizes)
             productDetails.sizes = sizes;
-        if (fillings)
-            productDetails.fillings = fillings;
+        if (productType)
+            productDetails.productType = productType;
         if (toppings)
             productDetails.toppings = toppings;
         if (category)
@@ -97,6 +112,8 @@ const editProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             productDetails.images = images;
         if (flavour)
             productDetails.flavour = flavour;
+        if (status)
+            productDetails.status = status;
         yield productDetails.save();
         res.json({
             error: false,
@@ -126,7 +143,7 @@ const getProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         return res.json({
             error: false,
             productDetails,
-            message: "Category Retrieved successfully",
+            message: "Product Retrieved successfully",
         });
     }
     catch (err) {
@@ -140,13 +157,17 @@ const getProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 exports.getProduct = getProduct;
 const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { subCategoryIds, categoryIds, minPrice, maxPrice, searchQuery, page = 1, limit = 10 } = req.query;
+        const { subCategoryIds, categoryIds, minPrice, maxPrice, searchQuery, page = 1, limit = 10, sortBy = "createdAt", // Default sorting by createdAt
+        order = "desc", // Default order is descending
+         } = req.query;
         const filters = {};
         if (categoryIds) {
-            filters['category.id'] = { $in: categoryIds.split(',') };
+            filters["category.id"] = { $in: categoryIds.split(",") };
         }
         if (subCategoryIds) {
-            filters['subCategory.id'] = { $in: subCategoryIds.split(',') };
+            filters["subCategory.id"] = {
+                $in: subCategoryIds.split(","),
+            };
         }
         if (minPrice || maxPrice) {
             filters.minPrice = {};
@@ -155,15 +176,20 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
             if (maxPrice)
                 filters.minPrice.$lte = parseFloat(maxPrice);
         }
-        if (searchQuery && searchQuery.trim() !== '') {
+        if (searchQuery && searchQuery.trim() !== "") {
             filters.$or = [
-                { name: { $regex: searchQuery, $options: 'i' } },
-                { description: { $regex: searchQuery, $options: 'i' } }
+                { name: { $regex: searchQuery, $options: "i" } },
+                { description: { $regex: searchQuery, $options: "i" } },
+                { productCode: { $regex: searchQuery, $options: "i" } },
             ];
         }
         const skip = (parseInt(page) - 1) * parseInt(limit);
+        // Ensure `sortBy` is a valid string and cast it
+        const validSortBy = typeof sortBy === 'string' ? sortBy : 'createdAt'; // Fallback to 'createdAt' if invalid
+        const sortOrder = order === "asc" ? 1 : -1;
+        // Apply sorting
         const productDetails = yield Product_model_1.default.find(filters)
-            .sort({ createdAt: -1 })
+            .sort({ [validSortBy]: sortOrder }) // Sort by the specified field and order
             .skip(skip)
             .limit(parseInt(limit))
             .exec();

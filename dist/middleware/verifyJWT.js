@@ -17,8 +17,10 @@ const authenticateToken = (req, res, next) => {
     if (!token1 && !token2)
         return res.sendStatus(401);
     jsonwebtoken_1.default.verify(token, process.env.ACCESS_SECRET_TOKEN, (err, decoded) => {
-        if (err)
+        if (err) {
+            console.error("Token verification error:", err);
             return res.sendStatus(403);
+        }
         req.id = decoded.id;
         next();
     });

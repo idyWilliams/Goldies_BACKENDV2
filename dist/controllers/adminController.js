@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateProfile = exports.resetPassword = exports.forgotPassword = exports.adminLogin = exports.verifyOTP = exports.adminSignup = exports.inviteAdmin = void 0;
+exports.getAdmin = exports.updateProfile = exports.resetPassword = exports.forgotPassword = exports.adminLogin = exports.verifyOTP = exports.adminSignup = exports.inviteAdmin = void 0;
 const Admin_model_1 = __importDefault(require("../models/Admin.model"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -39,7 +39,7 @@ const inviteAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 rejectUnauthorized: false,
             },
         });
-        const SignUpURL = `http://localhost:3000/admin-signup?refCode=${token}&email=${email}`;
+        const SignUpURL = `${process.env.FRONTEND_URL}/admin-signup?refCode=${token}&email=${email}`;
         const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2 style="color: #007bff;">Goldies Admin Invitation</h2>
@@ -85,7 +85,7 @@ function generateOtp() {
     return otp;
 }
 const generateToken = (id) => {
-    const maxAge = 60 * 60 * 24;
+    const maxAge = '7d';
     const secret = process.env.ACCESS_SECRET_TOKEN;
     if (!secret) {
         throw new Error("Secret key is not defined in environment variables.");
@@ -343,6 +343,8 @@ const verifyOTP = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 message: "Wrong OTP",
             });
         }
+        admin.isVerified = true;
+        yield admin.save();
         const token = generateToken(admin._id);
         return res.status(200).json({
             error: false,
@@ -370,6 +372,46 @@ const adminLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
     try {
         const admin = yield Admin_model_1.default.findOne({ email });
+        const OTP = generateOtp(); // Generates a 6-digit OTP
+        // Create transporter for sending email
+        const transporter = nodemailer_1.default.createTransport({
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
+            auth: {
+                user: process.env.EMAIL,
+                pass: process.env.PASSWORD,
+            },
+            tls: {
+                rejectUnauthorized: false,
+            },
+        });
+        // Function to send the verification email
+        const sendVerificationEmail = () => __awaiter(void 0, void 0, void 0, function* () {
+            const emailContent = `
+      <div style="font-family: Arial, sans-serif; color: #333;">
+        <h2 style="color: #007bff;">Email Verification</h2>
+        <p>Do not share this with anyone.</p>
+        <p>Verification code: <strong>${OTP}</strong></p>
+        <p>If you did not request this, please ignore this email.</p>
+      </div>
+    `;
+            const mailOptions = {
+                from: process.env.EMAIL,
+                to: email,
+                subject: "Goldies Team - Email Verification",
+                text: "Email verification.",
+                html: emailContent,
+            };
+            try {
+                const info = yield transporter.sendMail(mailOptions);
+                console.log("Message sent: %s", info.messageId, OTP);
+            }
+            catch (err) {
+                console.error("Error sending email: ", err);
+                throw new Error("Failed to send verification email.");
+            }
+        });
         if (!admin) {
             return res.status(404).json({
                 error: true,
@@ -386,9 +428,13 @@ const adminLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         if (!isValidPassword) {
             return res.status(401).json({
                 error: true,
-                message: "Invalid credentials",
+                message: "Incorrect Password",
             });
         }
+        admin.OTP = OTP;
+        yield admin.save();
+        // Send verification email
+        yield sendVerificationEmail();
         const token = generateToken(admin._id);
         return res.status(200).json({
             error: false,
@@ -440,7 +486,7 @@ const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 rejectUnauthorized: false,
             },
         });
-        const resetURL = `http://localhost:3000/reset-password?token=${resetToken}`;
+        const resetURL = `${process.env.ADMIN_RESET_PASSWORD}?token=${resetToken}`;
         const emailContent = `
       <div style="font-family: Arial, sans-serif; color: #333;">
         <h2 style="color: #007bff;">Password Reset Request</h2>
@@ -566,3 +612,28 @@ const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.updateProfile = updateProfile;
+const getAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    console.log(id);
+    try {
+        const admin = yield Admin_model_1.default.findOne({ _id: id });
+        if (!admin) {
+            return res.status(404).json({
+                error: true,
+                message: "Admin not found",
+            });
+        }
+        return res.status(200).json({
+            error: false,
+            admin
+        });
+    }
+    catch (err) {
+        return res.status(500).json({
+            error: true,
+            err,
+            message: "Internal Server error",
+        });
+    }
+});
+exports.getAdmin = getAdmin;
