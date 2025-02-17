@@ -15,17 +15,20 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getSpecificUserOrder = exports.deleteOrder = exports.getOrder = exports.getAllOrders = exports.updateOrderStatus = exports.createOrder = void 0;
 const Order_model_1 = __importDefault(require("../models/Order.model"));
 const User_model_1 = __importDefault(require("../models/User.model"));
+const mongoose_1 = __importDefault(require("mongoose"));
 const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { firstName, lastName, email, country, cityOrTown, streetAddress, phoneNumber, orderedItems, fee } = req.body;
+    const { firstName, lastName, email, country, state, cityOrTown, streetAddress, phoneNumber, orderedItems, fee } = req.body;
     try {
-        if (!firstName || !lastName || !email || !country || !cityOrTown || !streetAddress || !phoneNumber || !orderedItems || !fee) {
+        if (!firstName || !lastName || !email || !country || !state || !cityOrTown || !streetAddress || !phoneNumber || !orderedItems || !fee) {
             return res.status(400).json({
                 error: true,
                 message: "All order information fields are required."
             });
         }
+        console.log("User ID from token:", req.id);
         const user = req.id;
         const userDetails = yield User_model_1.default.findOne({ _id: user });
+        const orderId = generateUniqueId();
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
@@ -38,11 +41,13 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             lastName,
             email,
             country,
+            state,
             cityOrTown,
             streetAddress,
             phoneNumber,
             orderedItems,
             fee,
+            orderId
         });
         yield newOrder.save();
         return res.status(201).json({
@@ -60,11 +65,26 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.createOrder = createOrder;
+const generatedIds = new Set(); // Store unique IDs
+function generateUniqueId() {
+    const prefix = "GOL";
+    let uniqueId;
+    do {
+        const randomNumbers = Math.floor(100000 + Math.random() * 900000); // Generate a 6-digit random number
+        uniqueId = `${prefix}${randomNumbers}`;
+    } while (generatedIds.has(uniqueId)); // Ensure the ID is not already in the set
+    generatedIds.add(uniqueId); // Add the new unique ID to the set
+    return uniqueId;
+}
 const updateOrderStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { orderStatus } = req.body;
     const { orderId } = req.params;
     try {
-        const order = yield Order_model_1.default.findOne({ _id: orderId });
+        const isValidObjectId = mongoose_1.default.Types.ObjectId.isValid(orderId);
+        const queryConditions = isValidObjectId
+            ? [{ _id: orderId }, { orderId: orderId }] // Match both _id and orderId
+            : [{ orderId: orderId }]; // Match only orderId
+        const order = yield Order_model_1.default.findOne({ $or: queryConditions });
         if (!order) {
             return res.status(404).json({
                 error: true,
@@ -91,7 +111,7 @@ const updateOrderStatus = (req, res) => __awaiter(void 0, void 0, void 0, functi
 exports.updateOrderStatus = updateOrderStatus;
 const getAllOrders = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const orders = yield Order_model_1.default.find();
+        const orders = yield Order_model_1.default.find().sort({ createdAt: -1 });
         return res.status(200).json({
             error: false,
             orders,
@@ -110,7 +130,11 @@ exports.getAllOrders = getAllOrders;
 const getOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { orderId } = req.params;
     try {
-        const order = yield Order_model_1.default.findOne({ _id: orderId });
+        const isValidObjectId = mongoose_1.default.Types.ObjectId.isValid(orderId);
+        const queryConditions = isValidObjectId
+            ? [{ _id: orderId }, { orderId: orderId }] // Match both _id and orderId
+            : [{ orderId: orderId }]; // Match only orderId
+        const order = yield Order_model_1.default.findOne({ $or: queryConditions });
         if (!order) {
             return res.status(404).json({
                 error: true,
@@ -136,7 +160,11 @@ exports.getOrder = getOrder;
 const deleteOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { orderId } = req.params;
-        const result = yield Order_model_1.default.deleteOne({ _id: orderId });
+        const isValidObjectId = mongoose_1.default.Types.ObjectId.isValid(orderId);
+        const queryConditions = isValidObjectId
+            ? [{ _id: orderId }, { orderId: orderId }] // Match both _id and orderId
+            : [{ orderId: orderId }]; // Match only orderId
+        const result = yield Order_model_1.default.deleteOne({ $or: queryConditions });
         if (!result) {
             return res.status(404).json({
                 error: true,
@@ -161,7 +189,7 @@ exports.deleteOrder = deleteOrder;
 const getSpecificUserOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = req.id;
-        const userOrder = yield Order_model_1.default.find({ user });
+        const userOrder = yield Order_model_1.default.find({ user }).sort({ createdAt: -1 });
         const userDetails = yield User_model_1.default.findOne({ _id: user });
         if (!userDetails) {
             return res.status(404).json({

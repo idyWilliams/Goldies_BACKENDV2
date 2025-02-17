@@ -108,7 +108,7 @@ const login = async (req: Request, res: Response) => {
     if (!user) {
       return res
         .status(404)
-        .json({ error: true, message: "Account does not exist" });
+        .json({ error: true, message: "Email or Password is incorrect" });
     }
 
     const passwordMatch = await bcryptjs.compare(password, user.password);
@@ -116,7 +116,7 @@ const login = async (req: Request, res: Response) => {
     if (!passwordMatch) {
       return res
         .status(400)
-        .json({ error: true, message: "Password is incorrect" });
+        .json({ error: true, message: "Email or Password is incorrect" });
     }
 
     const maxAge = 60 * 60 * 2;
@@ -152,8 +152,7 @@ const login = async (req: Request, res: Response) => {
 };
 
 const forgottenPassword = async (req: Request, res: Response) => {
-  console.log("Email:", process.env.EMAIL);
-  console.log("Password:", process.env.PASSWORD);
+ 
   try {
     const { email } = req.body;
     const user = await User.findOne({ email });

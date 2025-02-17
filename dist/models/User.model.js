@@ -30,6 +30,7 @@ const BillingInfoSchema = new mongoose_1.Schema({
     email: { type: String, required: [true, "Please provide billing email to complete this process"] },
     country: { type: String, required: [true, "Please provide country to complete this process"] },
     cityOrTown: { type: String, required: [true, "Please provide city or town to complete this process"] },
+    state: { type: String, required: [true, "Please provide state to complete this process"] },
     streetAddress: { type: String, required: [true, "Please provide street address to complete this process"] },
     phoneNumber: { type: String, required: [true, "Please provide phone number to complete this process"] },
     defaultBillingInfo: { type: Boolean, default: false },
@@ -41,6 +42,7 @@ const UserSchema = new mongoose_1.Schema({
     password: { type: String, required: true },
     phoneNumber: { type: String, requried: true },
     billingInfo: [BillingInfoSchema], // Now an array of billing information
+    favorites: [{ type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Product' }]
 }, {
     timestamps: true
 });

@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.resetPassword = exports.forgottenPassword = exports.login = exports.create_acct = void 0;
+exports.logout = exports.resetPassword = exports.forgottenPassword = exports.login = exports.create_acct = void 0;
 const User_model_1 = __importDefault(require("../models/User.model"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const dotenv_1 = __importDefault(require("dotenv"));
@@ -105,13 +105,13 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!user) {
             return res
                 .status(404)
-                .json({ error: true, message: "Account does not exist" });
+                .json({ error: true, message: "Email or Password is incorrect" });
         }
         const passwordMatch = yield bcryptjs_1.default.compare(password, user.password);
         if (!passwordMatch) {
             return res
                 .status(400)
-                .json({ error: true, message: "Password is incorrect" });
+                .json({ error: true, message: "Email or Password is incorrect" });
         }
         const maxAge = 60 * 60 * 2;
         const secret = process.env.ACCESS_SECRET_TOKEN;
@@ -144,8 +144,6 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 });
 exports.login = login;
 const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    console.log("Email:", process.env.EMAIL);
-    console.log("Password:", process.env.PASSWORD);
     try {
         const { email } = req.body;
         const user = yield User_model_1.default.findOne({ email });
@@ -171,7 +169,7 @@ const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, functi
         const token = jsonwebtoken_1.default.sign({ id: user._id }, process.env.ACCESS_SECRET_TOKEN, {
             expiresIn: maxAge,
         });
-        const resetUrl = `http://localhost:3000/reset_password/${token}`;
+        const resetUrl = `${process.env.FRONTEND_URL}/reset_password/${token}`;
         const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2 style="color: #007bff;">Password Reset Request</h2>
@@ -240,3 +238,26 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.resetPassword = resetPassword;
+const logout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const token = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split(" ")[1];
+        if (!token) {
+            return res.status(400).json({
+                error: true,
+                message: "No token provided",
+            });
+        }
+        return res.status(200).json({
+            error: false,
+            message: "Logout successful",
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            error: true,
+            message: "Internal server error. Please try again.",
+        });
+    }
+});
+exports.logout = logout;

@@ -17,13 +17,22 @@ const cartRoute_1 = __importDefault(require("./routes/cartRoute"));
 const orderRoute_1 = __importDefault(require("./routes/orderRoute"));
 const paystackRoute_1 = __importDefault(require("./routes/paystackRoute"));
 const mailRoute_1 = __importDefault(require("./routes/mailRoute"));
+const userFavoritesRoute_1 = __importDefault(require("./routes/userFavoritesRoute"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const cors_1 = __importDefault(require("cors"));
 const PORT = process.env.PORT || 2030;
+const allowedOrigins = ["https://goldies-frontend-v3.vercel.app", "http://localhost:7009"];
 app.use((0, cors_1.default)({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        }
+        else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
 }));
 app.use(express_1.default.json());
@@ -44,4 +53,5 @@ app.use("/api/cart", cartRoute_1.default);
 app.use("/api/order", orderRoute_1.default);
 app.use("/api/payments", paystackRoute_1.default);
 app.use("/api/mail", mailRoute_1.default);
+app.use("/api/favorites", userFavoritesRoute_1.default);
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`));
