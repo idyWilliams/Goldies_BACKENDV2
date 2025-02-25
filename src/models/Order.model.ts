@@ -1,4 +1,4 @@
-import { Document, model, Schema } from "mongoose"
+import { Document, model, Schema, Types } from "mongoose"
 
 type FeeT = {
     subTotal: number 
@@ -15,7 +15,8 @@ interface  OrderSchemaI extends Document {
     cityOrTown: string
     streetAddress: string
     phoneNumber: string
-    orderedItems: string[] 
+    orderedItems: Schema.Types.ObjectId[];  
+
     fee: FeeT
     user: Schema.Types.ObjectId
     orderStatus: "pending" | "completed" | "cancelled"
@@ -38,9 +39,10 @@ const OrderSchema = new Schema<OrderSchemaI>({
     streetAddress: { type: String, require: [true, "Please provide street address to complete this process"]},
     phoneNumber: { type: String, require: [true, "Please provide phone number to complete this process"]},
     orderedItems: {
-        type: [String], // Defines an array of strings
-        required: [true, "Please provide the items that were ordered"], // Validation message
-    },
+            type: [Schema.Types.ObjectId], 
+            ref: 'Product',
+            required: true 
+          },
     fee: { type: FeeSchema, require: [true, "Please provide all the necessary fees to complete this process"] },
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
     orderStatus: { 

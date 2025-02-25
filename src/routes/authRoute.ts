@@ -12,7 +12,7 @@ const router = express.Router();
 router.post("/create_acct", create_acct);
 router.post("/login", login);
 router.post("/forgot_password", forgottenPassword);
-router.post("/reset_password", authenticateToken, resetPassword);
+router.post("/reset_password", resetPassword);
 router.post("/logout", logout);
 
 

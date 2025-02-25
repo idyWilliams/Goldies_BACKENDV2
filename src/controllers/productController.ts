@@ -1,73 +1,162 @@
 import { Request, Response } from "express";
 import Product from "../models/Product.model";
+import Category from "../models/Category.model";
+import SubCategory from "../models/SubCategory.model";
+import mongoose from "mongoose";
 
-const createProduct = async (req: Request, res: Response) => {
-  const {
-    category,
-    flavour,
-    description,
-    images,
-    maxPrice,
-    minPrice,
-    name,
-    productType,
-    shapes,
-    sizes,
-  subCategory,
-   toppings,
-   status
-} = req.body;
+// const createProduct = async (req: Request, res: Response) => {
+//   const {
+//     category,
+//     flavour,
+//     description,
+//     images,
+//     maxPrice,
+//     minPrice,
+//     name,
+//     productType,
+//     shapes,
+//     sizes,
+//   subCategory,
+//    toppings,
+//    status
+// } = req.body;
 
-  if (
-    !category||
-    !flavour||
-    !description||
-    !images||
-    !maxPrice||
-    !minPrice||
-    !name||
-    !productType||
-    !shapes||
-    !sizes||
-  !subCategory||
-   !toppings|| !status
-  ) {
-    return res.status(404).json({
-      error: true,
-      message: "Please fill out all fields",
-    });
-  }
+//   if (
+//     !category||
+//     !flavour||
+//     !description||
+//     !images||
+//     !maxPrice||
+//     !minPrice||
+//     !name||
+//     !productType||
+//     !shapes||
+//     !sizes||
+//   !subCategory||
+//    !toppings|| !status
+//   ) {
+//     return res.status(404).json({
+//       error: true,
+//       message: "Please fill out all fields",
+//     });
+//   }
 
-  const productCode = generateUniqueId()
+//   const productCode = generateUniqueId()
+//   try {
+//     const productDetails = await Product.create({
+//       category,
+//       flavour,
+//       description,
+//       images,
+//       maxPrice,
+//       minPrice,
+//       name,
+//       productType,
+//       shapes,
+//       sizes,
+//     subCategory,
+//      toppings,
+//      status,
+//      productCode
+//     });
+
+//     return res.status(200).json({
+//       error: false,
+//       productDetails,
+//       message: "Product Created successfully",
+//     });
+//   } catch (err) {
+//     return res.status(500).json({
+//       error: true,
+//       err,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+ const createProduct = async (req: Request, res: Response) => {
   try {
-    const productDetails = await Product.create({
-      category,
-      flavour,
-      description,
-      images,
-      maxPrice,
-      minPrice,
+    const {
       name,
-      productType,
+      description,
       shapes,
       sizes,
-    subCategory,
-     toppings,
-     status,
-     productCode
+      productType,
+      toppings,
+      category,
+      subCategories,
+      minPrice,
+      maxPrice,
+      images,
+      flavour,
+      status,
+      productCode
+    } = req.body;
+
+    if (!name || !description || !category || !subCategories || !minPrice || !maxPrice || !status) {
+      return res.status(400).json({ message: "All required fields must be provided." });
+    }
+
+    // Check if category ID is valid
+    if (!mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({ message: "Invalid category ID format." });
+    }
+
+    // Convert and validate subCategory IDs
+    const subCategoryIds = (subCategories as string[]).map((id: string) => 
+      mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : null
+    ).filter((id): id is mongoose.Types.ObjectId => id !== null);
+    
+    if (subCategoryIds.length !== subCategories.length) {
+      return res.status(400).json({ message: "One or more subcategories have an invalid ID format." });
+    }
+
+    // Check if category exists
+    const existingCategory = await Category.findOne({_id: category});
+    if (!existingCategory) {
+      return res.status(404).json({ message: "Category not found." });
+    }
+
+    // Check if subCategories exist
+    const existingSubCategories = await SubCategory.find({ _id: { $in: subCategoryIds } });
+    if (existingSubCategories.length !== subCategories.length) {
+      return res.status(400).json({ message: "One or more subcategories do not exist." });
+    }
+
+    // Ensure subCategories belong to the specified category
+    const invalidSubCategories = existingSubCategories.filter(
+      (subCategory) => subCategory.categoryId.toString() !== category
+    );
+
+    if (invalidSubCategories.length > 0) {
+      return res.status(400).json({ message: "Some subcategories do not belong to the provided category." });
+    }
+
+    // Create new product
+    const newProduct = new Product({
+      name,
+      description,
+      shapes,
+      sizes,
+      productType,
+      toppings,
+      category,
+      subCategories: subCategoryIds,
+      minPrice,
+      maxPrice,
+      images,
+      flavour,
+      status,
+      productCode,
     });
 
-    return res.status(200).json({
-      error: false,
-      productDetails,
-      message: "Product Created successfully",
-    });
-  } catch (err) {
-    return res.status(500).json({
-      error: true,
-      err,
-      message: "Internal server error",
-    });
+    // Save product to database
+    await newProduct.save();
+
+    return res.status(201).json({ message: "Product created successfully", product: newProduct });
+
+  } catch (error) {
+    console.error("Error creating product:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
@@ -97,7 +186,7 @@ const editProduct = async (req: Request, res: Response) => {
     productType,
     toppings,
     category,
-    subCategory,
+    subCategories,
     minPrice,
     maxPrice,
     images,
@@ -121,7 +210,7 @@ const editProduct = async (req: Request, res: Response) => {
     if (productType) productDetails.productType = productType;
     if (toppings) productDetails.toppings = toppings;
     if (category) productDetails.category = category;
-    if (subCategory) productDetails.subCategory = subCategory;
+    if (subCategories) productDetails.subCategories = subCategories;
     if (minPrice) productDetails.minPrice = minPrice;
     if (maxPrice) productDetails.maxPrice = maxPrice;
     if (images) productDetails.images = images;
@@ -142,11 +231,10 @@ const editProduct = async (req: Request, res: Response) => {
     });
   }
 };
-
 const getProduct = async (req: Request, res: Response) => {
   try {
     const { productId } = req.params;
-    const productDetails = await Product.findOne({ _id: productId });
+    const productDetails = await Product.findOne({ _id: productId }).populate('category').populate('subCategories');
     if (!productDetails) {
       return res.status(400).json({
         error: true,

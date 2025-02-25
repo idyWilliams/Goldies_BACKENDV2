@@ -134,7 +134,7 @@ const getOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const queryConditions = isValidObjectId
             ? [{ _id: orderId }, { orderId: orderId }] // Match both _id and orderId
             : [{ orderId: orderId }]; // Match only orderId
-        const order = yield Order_model_1.default.findOne({ $or: queryConditions });
+        const order = yield Order_model_1.default.findOne({ $or: queryConditions }).populate('orderedItems');
         if (!order) {
             return res.status(404).json({
                 error: true,
