@@ -141,7 +141,7 @@ const getOrder = async (req: Request, res: Response) => {
     ? [{ _id: orderId }, { orderId: orderId }] // Match both _id and orderId
     : [{ orderId: orderId }]; // Match only orderId
 
-  const order = await Order.findOne({ $or: queryConditions });
+  const order = await Order.findOne({ $or: queryConditions }).populate('orderedItems')
 
           
         if(!order){

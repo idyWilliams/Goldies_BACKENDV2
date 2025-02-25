@@ -14,55 +14,129 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getProduct = exports.getAllProducts = exports.deleteProduct = exports.editProduct = exports.createProduct = void 0;
 const Product_model_1 = __importDefault(require("../models/Product.model"));
+const Category_model_1 = __importDefault(require("../models/Category.model"));
+const SubCategory_model_1 = __importDefault(require("../models/SubCategory.model"));
+const mongoose_1 = __importDefault(require("mongoose"));
+// const createProduct = async (req: Request, res: Response) => {
+//   const {
+//     category,
+//     flavour,
+//     description,
+//     images,
+//     maxPrice,
+//     minPrice,
+//     name,
+//     productType,
+//     shapes,
+//     sizes,
+//   subCategory,
+//    toppings,
+//    status
+// } = req.body;
+//   if (
+//     !category||
+//     !flavour||
+//     !description||
+//     !images||
+//     !maxPrice||
+//     !minPrice||
+//     !name||
+//     !productType||
+//     !shapes||
+//     !sizes||
+//   !subCategory||
+//    !toppings|| !status
+//   ) {
+//     return res.status(404).json({
+//       error: true,
+//       message: "Please fill out all fields",
+//     });
+//   }
+//   const productCode = generateUniqueId()
+//   try {
+//     const productDetails = await Product.create({
+//       category,
+//       flavour,
+//       description,
+//       images,
+//       maxPrice,
+//       minPrice,
+//       name,
+//       productType,
+//       shapes,
+//       sizes,
+//     subCategory,
+//      toppings,
+//      status,
+//      productCode
+//     });
+//     return res.status(200).json({
+//       error: false,
+//       productDetails,
+//       message: "Product Created successfully",
+//     });
+//   } catch (err) {
+//     return res.status(500).json({
+//       error: true,
+//       err,
+//       message: "Internal server error",
+//     });
+//   }
+// };
 const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { category, flavour, description, images, maxPrice, minPrice, name, productType, shapes, sizes, subCategory, toppings, status } = req.body;
-    if (!category ||
-        !flavour ||
-        !description ||
-        !images ||
-        !maxPrice ||
-        !minPrice ||
-        !name ||
-        !productType ||
-        !shapes ||
-        !sizes ||
-        !subCategory ||
-        !toppings || !status) {
-        return res.status(404).json({
-            error: true,
-            message: "Please fill out all fields",
-        });
-    }
-    const productCode = generateUniqueId();
     try {
-        const productDetails = yield Product_model_1.default.create({
-            category,
-            flavour,
-            description,
-            images,
-            maxPrice,
-            minPrice,
+        const { name, description, shapes, sizes, productType, toppings, category, subCategories, minPrice, maxPrice, images, flavour, status, productCode } = req.body;
+        if (!name || !description || !category || !subCategories || !minPrice || !maxPrice || !status) {
+            return res.status(400).json({ message: "All required fields must be provided." });
+        }
+        // Check if category ID is valid
+        if (!mongoose_1.default.Types.ObjectId.isValid(category)) {
+            return res.status(400).json({ message: "Invalid category ID format." });
+        }
+        // Convert and validate subCategory IDs
+        const subCategoryIds = subCategories.map((id) => mongoose_1.default.Types.ObjectId.isValid(id) ? new mongoose_1.default.Types.ObjectId(id) : null).filter((id) => id !== null);
+        if (subCategoryIds.length !== subCategories.length) {
+            return res.status(400).json({ message: "One or more subcategories have an invalid ID format." });
+        }
+        // Check if category exists
+        const existingCategory = yield Category_model_1.default.findOne({ _id: category });
+        if (!existingCategory) {
+            return res.status(404).json({ message: "Category not found." });
+        }
+        // Check if subCategories exist
+        const existingSubCategories = yield SubCategory_model_1.default.find({ _id: { $in: subCategoryIds } });
+        if (existingSubCategories.length !== subCategories.length) {
+            return res.status(400).json({ message: "One or more subcategories do not exist." });
+        }
+        // Ensure subCategories belong to the specified category
+        const invalidSubCategories = existingSubCategories.filter((subCategory) => subCategory.categoryId.toString() !== category);
+        if (invalidSubCategories.length > 0) {
+            return res.status(400).json({ message: "Some subcategories do not belong to the provided category." });
+        }
+        // Create new product
+        const newProduct = new Product_model_1.default({
             name,
-            productType,
+            description,
             shapes,
             sizes,
-            subCategory,
+            productType,
             toppings,
+            category,
+            subCategories: subCategoryIds,
+            minPrice,
+            maxPrice,
+            images,
+            flavour,
             status,
-            productCode
+            productCode,
         });
-        return res.status(200).json({
-            error: false,
-            productDetails,
-            message: "Product Created successfully",
-        });
+        // Save product to database
+        yield newProduct.save();
+        return res.status(201).json({ message: "Product created successfully", product: newProduct });
     }
-    catch (err) {
-        return res.status(500).json({
-            error: true,
-            err,
-            message: "Internal server error",
-        });
+    catch (error) {
+        console.error("Error creating product:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 });
 exports.createProduct = createProduct;
@@ -79,7 +153,7 @@ function generateUniqueId() {
 }
 const editProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { productId } = req.params;
-    const { name, description, shapes, sizes, productType, toppings, category, subCategory, minPrice, maxPrice, images, flavour, status } = req.body;
+    const { name, description, shapes, sizes, productType, toppings, category, subCategories, minPrice, maxPrice, images, flavour, status } = req.body;
     try {
         const productDetails = yield Product_model_1.default.findOne({ _id: productId });
         if (!productDetails) {
@@ -102,8 +176,8 @@ const editProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             productDetails.toppings = toppings;
         if (category)
             productDetails.category = category;
-        if (subCategory)
-            productDetails.subCategory = subCategory;
+        if (subCategories)
+            productDetails.subCategories = subCategories;
         if (minPrice)
             productDetails.minPrice = minPrice;
         if (maxPrice)
@@ -133,7 +207,7 @@ exports.editProduct = editProduct;
 const getProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { productId } = req.params;
-        const productDetails = yield Product_model_1.default.findOne({ _id: productId });
+        const productDetails = yield Product_model_1.default.findOne({ _id: productId }).populate('category').populate('subCategories');
         if (!productDetails) {
             return res.status(400).json({
                 error: true,

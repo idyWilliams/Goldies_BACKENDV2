@@ -16,8 +16,11 @@ const OrderSchema = new mongoose_1.Schema({
     streetAddress: { type: String, require: [true, "Please provide street address to complete this process"] },
     phoneNumber: { type: String, require: [true, "Please provide phone number to complete this process"] },
     orderedItems: {
-        type: [String], // Defines an array of strings
-        required: [true, "Please provide the items that were ordered"], // Validation message
+        subCategories: {
+            type: [mongoose_1.Schema.Types.ObjectId],
+            ref: 'Product',
+            required: true
+        },
     },
     fee: { type: FeeSchema, require: [true, "Please provide all the necessary fees to complete this process"] },
     user: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },

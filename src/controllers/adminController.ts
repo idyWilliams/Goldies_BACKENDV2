@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 dotenv.config();
 import nodemailer from "nodemailer";
 import bcryptjs from "bcryptjs";
+import Order from "../models/Order.model";
 
 const inviteAdmin = async (req: Request, res: Response) => {
   const { email } = req.body;
@@ -705,6 +706,39 @@ try {
 
 };
 
+const getUserOrderByUserId = async (req: Request, res: Response)=>{
+  const { id } = req.params;
+  
+  
+  try {
+    const orders = await Order.find({ user: id });
+  
+    if (!orders) {
+      return res.status(404).json({
+        error: true,
+        message: "User orders not found",
+      });
+    }
+    return res.status(200).json({
+      error: false,
+      orders
+     
+      },)
+    
+  }catch(err){
+    return res.status(500).json({
+      error: true,
+      err,
+      message: "Internal Server error",
+    });
+  
+  }
+  
+  
+  
+  };
+
+
 
 export {
   inviteAdmin,
@@ -714,5 +748,6 @@ export {
   forgotPassword,
   resetPassword,
   updateProfile,
-  getAdmin
+  getAdmin,
+  getUserOrderByUserId
 };

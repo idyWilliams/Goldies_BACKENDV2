@@ -12,13 +12,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAdmin = exports.updateProfile = exports.resetPassword = exports.forgotPassword = exports.adminLogin = exports.verifyOTP = exports.adminSignup = exports.inviteAdmin = void 0;
+exports.getUserOrderByUserId = exports.getAdmin = exports.updateProfile = exports.resetPassword = exports.forgotPassword = exports.adminLogin = exports.verifyOTP = exports.adminSignup = exports.inviteAdmin = void 0;
 const Admin_model_1 = __importDefault(require("../models/Admin.model"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 dotenv_1.default.config();
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const Order_model_1 = __importDefault(require("../models/Order.model"));
 const inviteAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email } = req.body;
     try {
@@ -637,3 +638,27 @@ const getAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.getAdmin = getAdmin;
+const getUserOrderByUserId = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    try {
+        const orders = yield Order_model_1.default.find({ user: id });
+        if (!orders) {
+            return res.status(404).json({
+                error: true,
+                message: "User orders not found",
+            });
+        }
+        return res.status(200).json({
+            error: false,
+            orders
+        });
+    }
+    catch (err) {
+        return res.status(500).json({
+            error: true,
+            err,
+            message: "Internal Server error",
+        });
+    }
+});
+exports.getUserOrderByUserId = getUserOrderByUserId;

@@ -22,7 +22,8 @@ import {
   forgotPassword,
   resetPassword,
   updateProfile,
-  getAdmin
+  getAdmin,
+  getUserOrderByUserId
 } from "../controllers/adminController";
 import { protect, authorize } from '../middleware/auth.middleware';
 
@@ -40,6 +41,7 @@ router.post('/reset-password', resetPassword);
 router.post('/invite', protect, authorize('super_admin'), inviteAdmin);
 router.put('/profile/:id', protect, updateProfile);
 router.get('/:id', protect, getAdmin);
+router.get('/orders/:id',getUserOrderByUserId )
 
 
 export default router;
