@@ -88,8 +88,7 @@ import mongoose from "mongoose";
       maxPrice,
       images,
       flavour,
-      status,
-      productCode
+      status
     } = req.body;
 
     if (!name || !description || !category || !subCategories || !minPrice || !maxPrice || !status) {
@@ -146,13 +145,15 @@ import mongoose from "mongoose";
       images,
       flavour,
       status,
-      productCode,
+      productCode: generateUniqueId(),
     });
 
     // Save product to database
-    await newProduct.save();
+    const product = await newProduct.save();
 
-    return res.status(201).json({ message: "Product created successfully", product: newProduct });
+    const productDetails = await Product.findOne({ _id: product.id }).populate('category').populate('subCategories');
+
+    return res.status(201).json({ message: "Product created successfully", product: productDetails });
 
   } catch (error) {
     console.error("Error creating product:", error);
@@ -303,7 +304,7 @@ const getAllProducts = async (req: Request, res: Response) => {
     const sortOrder = order === "asc" ? 1 : -1;
 
     // Apply sorting
-    const productDetails = await Product.find(filters)
+    const productDetails = await Product.find(filters).populate('category').populate('subCategories')
       .sort({ [validSortBy]: sortOrder }) // Sort by the specified field and order
       .skip(skip)
       .limit(parseInt(limit as string))
