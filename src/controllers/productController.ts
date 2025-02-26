@@ -149,9 +149,11 @@ import mongoose from "mongoose";
     });
 
     // Save product to database
-    await newProduct.save();
+    const product = await newProduct.save();
 
-    return res.status(201).json({ message: "Product created successfully", product: newProduct });
+    const productDetails = await Product.findOne({ _id: product.id }).populate('category').populate('subCategories');
+
+    return res.status(201).json({ message: "Product created successfully", product: productDetails });
 
   } catch (error) {
     console.error("Error creating product:", error);
