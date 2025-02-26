@@ -88,8 +88,7 @@ import mongoose from "mongoose";
       maxPrice,
       images,
       flavour,
-      status,
-      productCode
+      status
     } = req.body;
 
     if (!name || !description || !category || !subCategories || !minPrice || !maxPrice || !status) {
@@ -146,7 +145,7 @@ import mongoose from "mongoose";
       images,
       flavour,
       status,
-      productCode,
+      productCode: generateUniqueId(),
     });
 
     // Save product to database
@@ -303,7 +302,7 @@ const getAllProducts = async (req: Request, res: Response) => {
     const sortOrder = order === "asc" ? 1 : -1;
 
     // Apply sorting
-    const productDetails = await Product.find(filters)
+    const productDetails = await Product.find(filters).populate('category').populate('subCategories')
       .sort({ [validSortBy]: sortOrder }) // Sort by the specified field and order
       .skip(skip)
       .limit(parseInt(limit as string))
