@@ -27,7 +27,7 @@ const cartSchema = new Schema<ICart>(
         size: { type: String, required: [true, "Please provide cake size"] },
         toppings: { type: [String], required: [true, "Please provide cake toppings"] },
         flavour: { type: String, required: [true, "Please provide cake flavour"] },
-        dateNeeded: { type: String, required: [true, "Please provide when the cake is needed"] },
+        dateNeeded: { type: String, required: false },
         details: { type: String, required: false},
         quantity: { type: Number, required: [true, "Please provide the quantity"], min: 1 },
       },

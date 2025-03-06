@@ -22,7 +22,7 @@ const addToCart = async (req: CustomRequest, res: Response) => {
     }
 
     // Validate required fields
-    if (!size || !toppings || !flavour || !dateNeeded || !quantity) {
+    if (!size || !toppings || !flavour || !quantity) {
       return res.status(400).json({ error: true, message: "All fields are required." });
     }
 
@@ -121,7 +121,7 @@ const removeCartItem = async (req: CustomRequest, res: Response) => {
 
     if (!userId) return res.status(401).json({ error: true, message: "Unauthorized." });
 
-    const cart = await Cart.findOne({ userId }).populate("products.productId");
+    const cart = await Cart.findOne({ userId }).populate("products.product");
     if (!cart) return res.status(404).json({ error: true, message: "Cart is empty." });
 
     return res.status(200).json({ error: false, cart });
