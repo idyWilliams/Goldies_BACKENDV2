@@ -4,75 +4,6 @@ import Category from "../models/Category.model";
 import SubCategory from "../models/SubCategory.model";
 import mongoose from "mongoose";
 
-// const createProduct = async (req: Request, res: Response) => {
-//   const {
-//     category,
-//     flavour,
-//     description,
-//     images,
-//     maxPrice,
-//     minPrice,
-//     name,
-//     productType,
-//     shapes,
-//     sizes,
-//   subCategory,
-//    toppings,
-//    status
-// } = req.body;
-
-//   if (
-//     !category||
-//     !flavour||
-//     !description||
-//     !images||
-//     !maxPrice||
-//     !minPrice||
-//     !name||
-//     !productType||
-//     !shapes||
-//     !sizes||
-//   !subCategory||
-//    !toppings|| !status
-//   ) {
-//     return res.status(404).json({
-//       error: true,
-//       message: "Please fill out all fields",
-//     });
-//   }
-
-//   const productCode = generateUniqueId()
-//   try {
-//     const productDetails = await Product.create({
-//       category,
-//       flavour,
-//       description,
-//       images,
-//       maxPrice,
-//       minPrice,
-//       name,
-//       productType,
-//       shapes,
-//       sizes,
-//     subCategory,
-//      toppings,
-//      status,
-//      productCode
-//     });
-
-//     return res.status(200).json({
-//       error: false,
-//       productDetails,
-//       message: "Product Created successfully",
-//     });
-//   } catch (err) {
-//     return res.status(500).json({
-//       error: true,
-//       err,
-//       message: "Internal server error",
-//     });
-//   }
-// };
  const createProduct = async (req: Request, res: Response) => {
   try {
     const {
@@ -257,6 +188,79 @@ const getProduct = async (req: Request, res: Response) => {
   }
 };
 
+// const getAllProducts = async (req: Request, res: Response) => {
+//   try {
+//     const {
+//       subCategoryIds,
+//       categoryIds,
+//       minPrice,
+//       maxPrice,
+//       searchQuery,
+//       page = 1,
+//       limit = 10,
+//       sortBy = "createdAt", // Default sorting by createdAt
+//       order = "desc", // Default order is descending
+//     } = req.query;
+
+//     const filters: any = {};
+
+//     if (categoryIds) {
+//       filters["category.id"] = { $in: (categoryIds as string).split(",") };
+//     }
+
+//     if (subCategoryIds) {
+//       filters["subCategory.id"] = {
+//         $in: (subCategoryIds as string).split(","),
+//       };
+//     }
+
+//     if (minPrice || maxPrice) {
+//       filters.minPrice = {};
+//       if (minPrice) filters.minPrice.$gte = parseFloat(minPrice as string);
+//       if (maxPrice) filters.minPrice.$lte = parseFloat(maxPrice as string);
+//     }
+
+//     if (searchQuery && (searchQuery as string).trim() !== "") {
+//       filters.$or = [
+//         { name: { $regex: searchQuery as string, $options: "i" } },
+//         { description: { $regex: searchQuery as string, $options: "i" } },
+//         { productCode: { $regex: searchQuery as string, $options: "i" } },
+//       ];
+//     }
+
+//     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
+
+//     // Ensure `sortBy` is a valid string and cast it
+//     const validSortBy = typeof sortBy === 'string' ? sortBy : 'createdAt'; // Fallback to 'createdAt' if invalid
+//     const sortOrder = order === "asc" ? 1 : -1;
+
+//     // Apply sorting
+//     const productDetails = await Product.find(filters).populate('category').populate('subCategories')
+//       .sort({ [validSortBy]: sortOrder }) // Sort by the specified field and order
+//       .skip(skip)
+//       .limit(parseInt(limit as string))
+//       .exec();
+
+//     const totalProducts = await Product.countDocuments(filters);
+//     const totalPages = Math.ceil(totalProducts / parseInt(limit as string));
+
+//     return res.status(200).json({
+//       error: false,
+//       products: productDetails,
+//       totalPages,
+//       currentPage: parseInt(page as string),
+//       totalProducts,
+//       message: "Products retrieved successfully",
+//     });
+//   } catch (err) {
+//     return res.status(500).json({
+//       error: true,
+//       err,
+//       message: "Internal Server error",
+//     });
+//   }
+// };
+
 const getAllProducts = async (req: Request, res: Response) => {
   try {
     const {
@@ -273,22 +277,26 @@ const getAllProducts = async (req: Request, res: Response) => {
 
     const filters: any = {};
 
+    // Filter by category
     if (categoryIds) {
-      filters["category.id"] = { $in: (categoryIds as string).split(",") };
+      filters["category"] = { $in: (categoryIds as string).split(",") };  // category is just an ObjectId
     }
 
+    // Filter by subCategory (ensure it's querying against the subCategories array of ObjectIds)
     if (subCategoryIds) {
-      filters["subCategory.id"] = {
-        $in: (subCategoryIds as string).split(","),
+      filters["subCategories"] = {  // subCategories is an array of ObjectIds
+        $in: (subCategoryIds as string).split(",").map(id => new mongoose.Types.ObjectId(id)),  // Convert to ObjectIds
       };
     }
 
+    // Filter by price range
     if (minPrice || maxPrice) {
-      filters.minPrice = {};
-      if (minPrice) filters.minPrice.$gte = parseFloat(minPrice as string);
-      if (maxPrice) filters.minPrice.$lte = parseFloat(maxPrice as string);
+      filters.price = {};
+      if (minPrice) filters.price.$gte = parseFloat(minPrice as string);
+      if (maxPrice) filters.price.$lte = parseFloat(maxPrice as string);
     }
 
+    // Filter by search query
     if (searchQuery && (searchQuery as string).trim() !== "") {
       filters.$or = [
         { name: { $regex: searchQuery as string, $options: "i" } },
@@ -303,8 +311,10 @@ const getAllProducts = async (req: Request, res: Response) => {
     const validSortBy = typeof sortBy === 'string' ? sortBy : 'createdAt'; // Fallback to 'createdAt' if invalid
     const sortOrder = order === "asc" ? 1 : -1;
 
-    // Apply sorting
-    const productDetails = await Product.find(filters).populate('category').populate('subCategories')
+    // Apply sorting and populate category and subCategories
+    const productDetails = await Product.find(filters)
+      .populate('category') // Populate the category
+      .populate('subCategories') // Populate subCategories
       .sort({ [validSortBy]: sortOrder }) // Sort by the specified field and order
       .skip(skip)
       .limit(parseInt(limit as string))
@@ -329,6 +339,7 @@ const getAllProducts = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 const deleteProduct = async (req: Request, res: Response) => {
   const { productId } = req.params;

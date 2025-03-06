@@ -12,10 +12,5 @@ router.delete("/remove/:productId", authenticateToken, removeCartItem);
 
 
 
-// router.delete(
-//   "/delete_cart/:cartId",
-//   authenticateToken,
-//   deleteCart
-// );
 
 export default router;
