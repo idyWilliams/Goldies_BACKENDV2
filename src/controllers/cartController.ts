@@ -6,7 +6,7 @@ import Product from "../models/Product.model";
 
 const addToCart = async (req: CustomRequest, res: Response) => {
   try {
-    const { productId, size, toppings, flavour, dateNeeded, details, quantity } = req.body;
+    const { product, size, toppings, flavour, dateNeeded, details, quantity } = req.body;
     const userId = req.id; 
 
     if (!userId) {
@@ -16,13 +16,13 @@ const addToCart = async (req: CustomRequest, res: Response) => {
 
 
     // Check if the product exists
-    const product = await Product.findOne({ _id: productId });
-    if (!product) {
+    const checkProduct = await Product.findOne({ _id: product });
+    if (!checkProduct) {
       return res.status(404).json({ error: true, message: "Product not found." });
     }
 
     // Validate required fields
-    if (!size || !toppings || !flavour || !dateNeeded || !details || !quantity) {
+    if (!size || !toppings || !flavour || !dateNeeded || !quantity) {
       return res.status(400).json({ error: true, message: "All fields are required." });
     }
 
@@ -32,25 +32,28 @@ const addToCart = async (req: CustomRequest, res: Response) => {
       // Create new cart if user has no cart yet
       cart = new Cart({
         userId,
-        products: [{ productId, size, toppings, flavour, dateNeeded, details, quantity }],
+        products: [{ product, size, toppings, flavour, dateNeeded, details, quantity }],
       });
     } else {
       // Check if the product already exists in the cart
-      const existingProduct = cart.products.find((p) => p.productId.toString() === productId);
+      const existingProduct = cart.products.find((p) => p.product.toString() === product);
 
       if (existingProduct) {
         existingProduct.quantity += 1;
       } else {
-        cart.products.push({ productId, size, toppings, flavour, dateNeeded, details, quantity });
+        cart.products.push({ product, size, toppings, flavour, dateNeeded, details, quantity });
       }
     }
 
     await cart.save();
+    const populatedCart = await Cart.findOne({ userId })
+    .populate("products.product") // Populate product field with full product details
+    .exec();
 
     return res.status(200).json({
       error: false,
       message: "Product added to cart successfully.",
-      cart,
+      cart: populatedCart,
     });
   } catch (error) {
     console.error("Error adding to cart:", error);
@@ -60,7 +63,7 @@ const addToCart = async (req: CustomRequest, res: Response) => {
 
  const updateCartItem = async (req: CustomRequest, res: Response) => {
   try {
-    const { productId, quantity } = req.body;
+    const { product, quantity } = req.body;
     const userId = req.id;
 
     if (!userId) return res.status(401).json({ error: true, message: "Unauthorized." });
@@ -68,10 +71,10 @@ const addToCart = async (req: CustomRequest, res: Response) => {
     const cart = await Cart.findOne({ userId });
     if (!cart) return res.status(404).json({ error: true, message: "Cart not found." });
 
-    const product = cart.products.find((p) => p.productId.toString() === productId);
-    if (!product) return res.status(404).json({ error: true, message: "Product not found in cart." });
+    const cartProduct = cart.products.find((p) => p.product.toString() === product);
+    if (!cartProduct) return res.status(404).json({ error: true, message: "Product not found in cart." });
 
-    product.quantity = quantity;
+    cartProduct.quantity = quantity;
     await cart.save();
 
     return res.status(200).json({ error: false, message: "Cart updated successfully.", cart });
@@ -90,7 +93,7 @@ const removeCartItem = async (req: CustomRequest, res: Response) => {
     const cart = await Cart.findOne({ userId });
     if (!cart) return res.status(404).json({ error: true, message: "Cart not found." });
 
-    cart.products = cart.products.filter((p) => p.productId.toString() !== productId);
+    cart.products = cart.products.filter((p) => p.product.toString() !== productId);
     await cart.save();
 
     return res.status(200).json({ error: false, message: "Product removed from cart.", cart });
