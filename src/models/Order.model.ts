@@ -38,19 +38,14 @@ const OrderSchema = new Schema<OrderSchemaI>({
     cityOrTown: { type: String, require: [true, "Please provide city or town to complete this process"]},
     streetAddress: { type: String, require: [true, "Please provide street address to complete this process"]},
     phoneNumber: { type: String, require: [true, "Please provide phone number to complete this process"]},
-    // orderedItems: {
-    //         type: [Schema.Types.ObjectId], 
-    //         ref: 'Product',
-    //         required: true 
-    //       },
     orderedItems: [
         {
           product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
           size: { type: String, required: true },
           toppings: { type: [String], required: true },
           flavour: { type: String, required: true },
-          dateNeeded: { type: String, required: true },
-          details: { type: String, required: true },
+          dateNeeded: { type: String, required: false },
+          details: { type: String, required: false },
           quantity: { type: Number, required: true }
         }
       ],
