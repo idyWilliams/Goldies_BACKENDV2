@@ -243,7 +243,7 @@ const getAllProducts = async (req: Request, res: Response) => {
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
     // Ensure `sortBy` is a valid string and cast it
-    const validSortBy = typeof sortBy === 'string' ? sortBy : 'createdAt'; // Fallback to 'createdAt' if invalid
+    const validSortBy = typeof sortBy === 'string' ? sortBy : 'createdAt'; 
     const sortOrder = order === "asc" ? 1 : -1;
 
     // Apply sorting and populate category and subCategories
