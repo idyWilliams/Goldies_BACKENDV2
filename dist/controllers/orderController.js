@@ -19,6 +19,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { firstName, lastName, email, country, state, cityOrTown, streetAddress, phoneNumber, orderedItems, fee } = req.body;
     try {
+        // Validate required fields
         if (!firstName || !lastName || !email || !country || !state || !cityOrTown || !streetAddress || !phoneNumber || !orderedItems || !fee) {
             return res.status(400).json({
                 error: true,
@@ -28,13 +29,15 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         console.log("User ID from token:", req.id);
         const user = req.id;
         const userDetails = yield User_model_1.default.findOne({ _id: user });
-        const orderId = generateUniqueId();
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
                 message: "User not found, please login and try again"
             });
         }
+        // Generate a unique order ID
+        const orderId = generateUniqueId();
+        // Create the order, storing only product._id and other fields separately
         const newOrder = new Order_model_1.default({
             user,
             firstName,
@@ -49,18 +52,22 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             fee,
             orderId
         });
+        // Save the order
         yield newOrder.save();
+        // Populate orderedItems with full product details after saving
+        const populatedOrder = yield Order_model_1.default.findById(newOrder._id).populate("orderedItems.product").exec();
         return res.status(201).json({
             error: false,
             message: "Order created successfully",
-            order: newOrder,
+            order: populatedOrder,
         });
     }
     catch (error) {
+        console.error("Error creating order:", error);
         return res.status(500).json({
             error: true,
+            message: "Internal server error, please try again",
             err: error,
-            message: "Internal server error, please try again"
         });
     }
 });
@@ -134,7 +141,7 @@ const getOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const queryConditions = isValidObjectId
             ? [{ _id: orderId }, { orderId: orderId }] // Match both _id and orderId
             : [{ orderId: orderId }]; // Match only orderId
-        const order = yield Order_model_1.default.findOne({ $or: queryConditions }).populate('orderedItems');
+        const order = yield Order_model_1.default.findOne({ $or: queryConditions }).populate('orderedItems.product');
         if (!order) {
             return res.status(404).json({
                 error: true,

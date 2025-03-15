@@ -15,13 +15,17 @@ const OrderSchema = new mongoose_1.Schema({
     cityOrTown: { type: String, require: [true, "Please provide city or town to complete this process"] },
     streetAddress: { type: String, require: [true, "Please provide street address to complete this process"] },
     phoneNumber: { type: String, require: [true, "Please provide phone number to complete this process"] },
-    orderedItems: {
-        subCategories: {
-            type: [mongoose_1.Schema.Types.ObjectId],
-            ref: 'Product',
-            required: true
-        },
-    },
+    orderedItems: [
+        {
+            product: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Product', required: true },
+            size: { type: String, required: true },
+            toppings: { type: [String], required: true },
+            flavour: { type: [String], required: true },
+            dateNeeded: { type: String, required: false },
+            details: { type: String, required: false },
+            quantity: { type: Number, required: true }
+        }
+    ],
     fee: { type: FeeSchema, require: [true, "Please provide all the necessary fees to complete this process"] },
     user: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
     orderStatus: {

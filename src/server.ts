@@ -13,6 +13,7 @@ import orderRouter from "./routes/orderRoute";
 import paystackRouter from "./routes/paystackRoute";
 import mailRouter from "./routes/mailRoute";
 import userFavoritesRouter from "./routes/userFavoritesRoute";
+import reviewRouter from "./routes/reviewRoute"
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 import cors from "cors";
@@ -56,6 +57,7 @@ app.use("/api/order", orderRouter);
 app.use("/api/payments", paystackRouter);
 app.use("/api/mail", mailRouter);
 app.use("/api/favorites", userFavoritesRouter)
+app.use("/api/reviews", reviewRouter)
 
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`));
 
