@@ -79,7 +79,7 @@ function generateOtp() {
 }
 
 const generateToken = (id: unknown) => {
-  const maxAge = '7d';
+  const maxAge = '30m';
   const secret = process.env.ACCESS_SECRET_TOKEN;
 
   if (!secret) {

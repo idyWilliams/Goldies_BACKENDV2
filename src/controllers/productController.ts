@@ -3,6 +3,7 @@ import Product from "../models/Product.model";
 import Category from "../models/Category.model";
 import SubCategory from "../models/SubCategory.model";
 import mongoose from "mongoose";
+import slugify from "slugify";
 
  const createProduct = async (req: Request, res: Response) => {
   try {
@@ -61,6 +62,8 @@ import mongoose from "mongoose";
       return res.status(400).json({ message: "Some subcategories do not belong to the provided category." });
     }
 
+    const slug = slugify(name, { lower: true, strict: true });
+
     // Create new product
     const newProduct = new Product({
       name,
@@ -77,6 +80,7 @@ import mongoose from "mongoose";
       flavour,
       status,
       productCode: generateUniqueId(),
+      slug
     });
 
     // Save product to database
@@ -135,7 +139,11 @@ const editProduct = async (req: Request, res: Response) => {
       });
     }
 
-    if (name) productDetails.name = name;
+    // if (name) productDetails.name = name;
+    if (name) {
+      productDetails.name = name;
+      productDetails.slug = slugify(name, { lower: true, strict: true });  // Regenerate the slug if name is changed
+    }
     if (description) productDetails.description = description;
     if (shapes) productDetails.shapes = shapes;
     if (sizes) productDetails.sizes = sizes;
@@ -235,7 +243,7 @@ const getAllProducts = async (req: Request, res: Response) => {
     const skip = (parseInt(page as string) - 1) * parseInt(limit as string);
 
     // Ensure `sortBy` is a valid string and cast it
-    const validSortBy = typeof sortBy === 'string' ? sortBy : 'createdAt'; // Fallback to 'createdAt' if invalid
+    const validSortBy = typeof sortBy === 'string' ? sortBy : 'createdAt'; 
     const sortOrder = order === "asc" ? 1 : -1;
 
     // Apply sorting and populate category and subCategories
@@ -293,10 +301,40 @@ const deleteProduct = async (req: Request, res: Response) => {
   
 };
 
+const getProductBySlug = async (req: Request, res: Response) => {
+  const { slug } = req.params;  // Get the slug from the URL parameter
+
+  try {
+    // Find the product by slug
+    const product = await Product.findOne({ slug: slug }).populate('category').populate('subCategories');
+
+    if (!product) {
+      return res.status(404).json({
+        error: true,
+        message: "Product not found with the given slug",
+      });
+    }
+
+    return res.status(200).json({
+      error: false,
+      message: "Product retrieved successfully",
+      product,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error",
+      err: error,
+    });
+  }
+};
+
 export {
   createProduct,
   editProduct,
   deleteProduct,
   getAllProducts,
   getProduct,
+getProductBySlug
+
 };

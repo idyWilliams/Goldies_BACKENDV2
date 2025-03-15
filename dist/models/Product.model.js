@@ -27,7 +27,8 @@ const productSchema = new mongoose_1.Schema({
     images: { type: Array, require: true },
     flavour: { type: Array, required: false },
     status: { type: String, required: true },
-    productCode: { type: String, required: false }
+    productCode: { type: String, required: false },
+    slug: { type: String, required: false, unique: true },
 }, {
     timestamps: true,
 });

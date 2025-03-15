@@ -12,80 +12,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getProduct = exports.getAllProducts = exports.deleteProduct = exports.editProduct = exports.createProduct = void 0;
+exports.getProductBySlug = exports.getProduct = exports.getAllProducts = exports.deleteProduct = exports.editProduct = exports.createProduct = void 0;
 const Product_model_1 = __importDefault(require("../models/Product.model"));
 const Category_model_1 = __importDefault(require("../models/Category.model"));
 const SubCategory_model_1 = __importDefault(require("../models/SubCategory.model"));
 const mongoose_1 = __importDefault(require("mongoose"));
-// const createProduct = async (req: Request, res: Response) => {
-//   const {
-//     category,
-//     flavour,
-//     description,
-//     images,
-//     maxPrice,
-//     minPrice,
-//     name,
-//     productType,
-//     shapes,
-//     sizes,
-//   subCategory,
-//    toppings,
-//    status
-// } = req.body;
-//   if (
-//     !category||
-//     !flavour||
-//     !description||
-//     !images||
-//     !maxPrice||
-//     !minPrice||
-//     !name||
-//     !productType||
-//     !shapes||
-//     !sizes||
-//   !subCategory||
-//    !toppings|| !status
-//   ) {
-//     return res.status(404).json({
-//       error: true,
-//       message: "Please fill out all fields",
-//     });
-//   }
-//   const productCode = generateUniqueId()
-//   try {
-//     const productDetails = await Product.create({
-//       category,
-//       flavour,
-//       description,
-//       images,
-//       maxPrice,
-//       minPrice,
-//       name,
-//       productType,
-//       shapes,
-//       sizes,
-//     subCategory,
-//      toppings,
-//      status,
-//      productCode
-//     });
-//     return res.status(200).json({
-//       error: false,
-//       productDetails,
-//       message: "Product Created successfully",
-//     });
-//   } catch (err) {
-//     return res.status(500).json({
-//       error: true,
-//       err,
-//       message: "Internal server error",
-//     });
-//   }
-// };
+const slugify_1 = __importDefault(require("slugify"));
 const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, description, shapes, sizes, productType, toppings, category, subCategories, minPrice, maxPrice, images, flavour, status, productCode } = req.body;
+        const { name, description, shapes, sizes, productType, toppings, category, subCategories, minPrice, maxPrice, images, flavour, status } = req.body;
         if (!name || !description || !category || !subCategories || !minPrice || !maxPrice || !status) {
             return res.status(400).json({ message: "All required fields must be provided." });
         }
@@ -98,8 +33,10 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         if (subCategoryIds.length !== subCategories.length) {
             return res.status(400).json({ message: "One or more subcategories have an invalid ID format." });
         }
+        console.log('CATEGORY', category);
         // Check if category exists
         const existingCategory = yield Category_model_1.default.findOne({ _id: category });
+        console.log('CATEGORY', category);
         if (!existingCategory) {
             return res.status(404).json({ message: "Category not found." });
         }
@@ -113,6 +50,7 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         if (invalidSubCategories.length > 0) {
             return res.status(400).json({ message: "Some subcategories do not belong to the provided category." });
         }
+        const slug = (0, slugify_1.default)(name, { lower: true, strict: true });
         // Create new product
         const newProduct = new Product_model_1.default({
             name,
@@ -128,11 +66,13 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             images,
             flavour,
             status,
-            productCode,
+            productCode: generateUniqueId(),
+            slug
         });
         // Save product to database
-        yield newProduct.save();
-        return res.status(201).json({ message: "Product created successfully", product: newProduct });
+        const product = yield newProduct.save();
+        const productDetails = yield Product_model_1.default.findOne({ _id: product.id }).populate('category').populate('subCategories');
+        return res.status(201).json({ message: "Product created successfully", product: productDetails });
     }
     catch (error) {
         console.error("Error creating product:", error);
@@ -162,8 +102,11 @@ const editProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 message: "product not found",
             });
         }
-        if (name)
+        // if (name) productDetails.name = name;
+        if (name) {
             productDetails.name = name;
+            productDetails.slug = (0, slugify_1.default)(name, { lower: true, strict: true }); // Regenerate the slug if name is changed
+        }
         if (description)
             productDetails.description = description;
         if (shapes)
@@ -235,21 +178,25 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
         order = "desc", // Default order is descending
          } = req.query;
         const filters = {};
+        // Filter by category
         if (categoryIds) {
-            filters["category.id"] = { $in: categoryIds.split(",") };
+            filters["category"] = { $in: categoryIds.split(",") }; // category is just an ObjectId
         }
+        // Filter by subCategory (ensure it's querying against the subCategories array of ObjectIds)
         if (subCategoryIds) {
-            filters["subCategory.id"] = {
-                $in: subCategoryIds.split(","),
+            filters["subCategories"] = {
+                $in: subCategoryIds.split(",").map(id => new mongoose_1.default.Types.ObjectId(id)), // Convert to ObjectIds
             };
         }
+        // Filter by price range
         if (minPrice || maxPrice) {
-            filters.minPrice = {};
+            filters.price = {};
             if (minPrice)
-                filters.minPrice.$gte = parseFloat(minPrice);
+                filters.price.$gte = parseFloat(minPrice);
             if (maxPrice)
-                filters.minPrice.$lte = parseFloat(maxPrice);
+                filters.price.$lte = parseFloat(maxPrice);
         }
+        // Filter by search query
         if (searchQuery && searchQuery.trim() !== "") {
             filters.$or = [
                 { name: { $regex: searchQuery, $options: "i" } },
@@ -261,8 +208,10 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
         // Ensure `sortBy` is a valid string and cast it
         const validSortBy = typeof sortBy === 'string' ? sortBy : 'createdAt'; // Fallback to 'createdAt' if invalid
         const sortOrder = order === "asc" ? 1 : -1;
-        // Apply sorting
+        // Apply sorting and populate category and subCategories
         const productDetails = yield Product_model_1.default.find(filters)
+            .populate('category') // Populate the category
+            .populate('subCategories') // Populate subCategories
             .sort({ [validSortBy]: sortOrder }) // Sort by the specified field and order
             .skip(skip)
             .limit(parseInt(limit))
@@ -311,3 +260,29 @@ const deleteProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
     }
 });
 exports.deleteProduct = deleteProduct;
+const getProductBySlug = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { slug } = req.params; // Get the slug from the URL parameter
+    try {
+        // Find the product by slug
+        const product = yield Product_model_1.default.findOne({ slug }).populate('category').populate('subCategories');
+        if (!product) {
+            return res.status(404).json({
+                error: true,
+                message: "Product not found with the given slug",
+            });
+        }
+        return res.status(200).json({
+            error: false,
+            message: "Product retrieved successfully",
+            product,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            error: true,
+            message: "Internal server error",
+            err: error,
+        });
+    }
+});
+exports.getProductBySlug = getProductBySlug;
