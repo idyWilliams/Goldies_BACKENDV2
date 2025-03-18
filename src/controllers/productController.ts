@@ -26,6 +26,11 @@ import slugify from "slugify";
     if (!name || !description || !category || !subCategories || !minPrice || !maxPrice || !status) {
       return res.status(400).json({ message: "All required fields must be provided." });
     }
+    if (productType === 'preorder'){
+      if (!shapes || !sizes || !toppings || !flavour){
+return res.status(400).json({ message: "All required fields must be provided."})}
+    }
+  
 
     // Check if category ID is valid
     if (!mongoose.Types.ObjectId.isValid(category)) {

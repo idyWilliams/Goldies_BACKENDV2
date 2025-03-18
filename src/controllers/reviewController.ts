@@ -112,32 +112,6 @@ const updateReview = async (req: CustomRequest, res: Response) => {
   };
 
   
-//   const getProductReviews = async (req: Request, res: Response) => {
-//     const { productId } = req.params;
-  
-//     try {
-//       const reviews = await Review.find({ product: productId })
-//         .populate('user', 'firstName lastName')  // Populate user data (optional)
-//         .sort({ createdAt: -1 });  // Sort by latest reviews first
-  
-//       if (!reviews || reviews.length === 0) {
-//         return res.status(200).json({ error: false, message: "No reviews found for this product." });
-//       }
-  
-//       return res.status(200).json({
-//         error: false,
-//         message: "Reviews retrieved successfully.",
-//         reviews,
-//       });
-//     } catch (error) {
-//       return res.status(500).json({
-//         error: true,
-//         message: "Internal server error.",
-//         err: error,
-//       });
-//     }
-//   };
-
 const getProductReviews = async (req: Request, res: Response) => {
     const { productId } = req.params;
     const { page = 1, limit = 10 } = req.query;  // Get page and limit from query params
@@ -163,11 +137,7 @@ const getProductReviews = async (req: Request, res: Response) => {
         .limit(limitNumber)
         .populate('user', 'firstName lastName')  // Populate user data (optional)
         .sort({ createdAt: -1 });  // Sort by latest reviews first
-  
-      if (!reviews || reviews.length === 0) {
-        return res.status(200).json({ error: false, message: "No reviews found for this product." });
-      }
-  
+ 
       // Get the total count of reviews for pagination
       const totalReviews = await Review.countDocuments({ product: productId });
   
@@ -191,17 +161,14 @@ const getProductReviews = async (req: Request, res: Response) => {
     }
   };
   
-  const getUserReviews = async (req: CustomRequest, res: Response) => {
-    const userId = req.id;
+  const getUserReviews = async (req: Request, res: Response) => {
+    const { userId } = req.params;
   
     try {
       const reviews = await Review.find({ user: userId })
         .populate('product', 'name')
         .sort({ createdAt: -1 });  
   
-      if (!reviews || reviews.length === 0) {
-        return res.status(404).json({ error: true, message: "No reviews found for this user." });
-      }
   
       return res.status(200).json({
         error: false,

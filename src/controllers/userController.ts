@@ -34,32 +34,100 @@ const getUser = async (req: CustomRequest, res: Response) => {
 
 };
 
-const getAllUSers = async (req: CustomRequest, res: Response) => {
-  const id  = req.id
+// const getAllUSers = async (req: CustomRequest, res: Response) => {
+//   const id  = req.id
 
-  try{
+//   try{
+//     const admin = await Admin.findOne({ _id: id });
+
+//     if(!admin) return res.status(404).json({
+//       error: true,
+//       message: "admin not found, Please login as an admin"
+//     })
+
+//     const users = await User.find().select("-password");
+
+//     return res.status(200).json({
+//       error: false,
+//       users,
+//       message: "All user details retrieved successfully"
+//     })
+//    } catch (error) {
+//     return res.status(500).json({
+//       error: true,
+//       err: error,
+//       message: "Internal server error, please try again",
+//     });
+//   }
+// }
+
+const getAllUSers = async (req: CustomRequest, res: Response) => {
+  const id = req.id;
+  const { page = 1, limit = 10, search = '', sortBy = 'name', sortOrder = 'asc' } = req.query;
+  const pageNumber = parseInt(page as string, 10);
+  const limitNumber = parseInt(limit as string, 10);
+
+  try {
     const admin = await Admin.findOne({ _id: id });
 
-    if(!admin) return res.status(404).json({
-      error: true,
-      message: "admin not found, Please login as an admin"
-    })
+    if (!admin) {
+      return res.status(404).json({
+        error: true,
+        message: "admin not found, Please login as an admin",
+      });
+    }
 
-    const users = await User.find().select("-password");
+    const skip = (pageNumber - 1) * limitNumber;
+    // Build the search query based on the search parameter
+    const searchQuery = search
+      ? {
+          $or: [
+            { firstName: { $regex: search as string, $options: 'i' } },  
+          { lastName: { $regex: search as string, $options: 'i' } } , // Searching by name (case-insensitive)
+            { email: { $regex: search as string, $options: 'i' } }, // Searching by email (case-insensitive)
+          ],
+
+
+         
+        }
+      : {};
+
+    // Determine the sort field and order
+    const sortField = sortBy === 'name' ? 'name' : sortBy === 'date' ? 'createdAt' : 'name';
+    const sortDirection = sortOrder === 'desc' ? -1 : 1;
+
+    // Query users with pagination, search, and sorting
+    const users = await User.find(searchQuery)
+      .select('-password')
+      .skip(skip) // Pagination
+      .limit(limitNumber) // Limit
+      .sort({ [sortField]: sortDirection }); // Sorting by field and direction
+
+    // Get the total count for pagination metadata
+    const totalUsers = await User.countDocuments(searchQuery);
 
     return res.status(200).json({
       error: false,
       users,
-      message: "All user details retrieved successfully"
-    })
-   } catch (error) {
+      totalUsers,
+      message: "All user details retrieved successfully",
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalUsers / limitNumber),
+        totalUsers,
+      },
+    });
+  } catch (error) {
     return res.status(500).json({
       error: true,
       err: error,
       message: "Internal server error, please try again",
     });
   }
-}
+};
+
+
+
 const getUserById = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;

@@ -377,7 +377,14 @@ const verifyOTP = async (req: Request, res: Response) => {
  
     return res.status(200).json({
       error: false,
-      admin,
+      admin: {
+        id: admin._id,
+        userName: admin.userName,
+        email: admin.email,
+        role: admin.role,
+        isVerified: admin.isVerified
+
+      },
       token,
       message: `Admin Signup successful`,
     });

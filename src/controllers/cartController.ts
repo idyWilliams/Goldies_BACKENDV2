@@ -6,7 +6,7 @@ import Product from "../models/Product.model";
 
 const addToCart = async (req: CustomRequest, res: Response) => {
   try {
-    const { product, size, toppings, flavour, dateNeeded, details, quantity } = req.body;
+    const { product, size, toppings, flavour, shape, dateNeeded, details, quantity } = req.body;
     const userId = req.id; 
 
     if (!userId) {
@@ -22,6 +22,11 @@ const addToCart = async (req: CustomRequest, res: Response) => {
     }
 
     // Validate required fields
+
+    if(checkProduct.productType === 'preorder'){
+      if (!shape || !size || !toppings || !flavour)
+        return res.status(400).json({ message: "All required fields must be provided."})
+    }
     if (!size || !toppings || !flavour || !quantity) {
       return res.status(400).json({ error: true, message: "All fields are required." });
     }
@@ -32,7 +37,7 @@ const addToCart = async (req: CustomRequest, res: Response) => {
       // Create new cart if user has no cart yet
       cart = new Cart({
         userId,
-        products: [{ product, size, toppings, flavour, dateNeeded, details, quantity }],
+        products: [{ product, size, toppings, flavour, shape, dateNeeded, details, quantity }],
       });
     } else {
       // Check if the product already exists in the cart
@@ -41,7 +46,7 @@ const addToCart = async (req: CustomRequest, res: Response) => {
       if (existingProduct) {
         existingProduct.quantity += 1;
       } else {
-        cart.products.push({ product, size, toppings, flavour, dateNeeded, details, quantity });
+        cart.products.push({ product, size, toppings, flavour, shape, dateNeeded, details, quantity });
       }
     }
 

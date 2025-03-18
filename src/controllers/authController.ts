@@ -186,7 +186,7 @@ const forgottenPassword = async (req: Request, res: Response) => {
       }
     );
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset_password/${token}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset_password?email=${email}&token=${token}`;
 
     const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
@@ -226,11 +226,11 @@ const forgottenPassword = async (req: Request, res: Response) => {
   }
 };
 
-const resetPassword = async (req: CustomRequest, res: Response) => {
-  const user = req.id;
-  const { password } = req.body;
+const resetPassword = async (req: Request, res: Response) => {
+
+  const {email, password } = req.body;
   try {
-    const isUser = await User.findOne({ _id: user });
+    const isUser = await User.findOne({ email: email });
 
     if (!isUser) {
       return res.sendStatus(401);
