@@ -127,23 +127,97 @@ const updateOrderStatus = async (req: Request, res: Response) => {
     }
 }
 
-const getAllOrders = async (req: Request, res: Response) => {
-    try {
-        const orders = await Order.find().sort({ createdAt: -1 })
+// const getAllOrders = async (req: Request, res: Response) => {
+//     try {
+//         const orders = await Order.find().sort({ createdAt: -1 })
 
-        return res.status(200).json({
-            error: false,
-            orders,
-            message: "All order data fetched successfully"
-        })
-    } catch(error) {
-        return res.status(500).json({
-            error: true,
-            err: error,
-            message: "Internal server error, please try again"
-        })
+//         return res.status(200).json({
+//             error: false,
+//             orders,
+//             message: "All order data fetched successfully"
+//         })
+//     } catch(error) {
+//         return res.status(500).json({
+//             error: true,
+//             err: error,
+//             message: "Internal server error, please try again"
+//         })
+//     }
+// }
+
+const getAllOrders = async (req: Request, res: Response) => {
+    const { page = 1, limit = 10, searchQuery = '', status, minPrice, maxPrice, startDate, endDate } = req.query;  
+    try {
+      const pageNumber = parseInt(page as string, 10);
+      const limitNumber = parseInt(limit as string, 10);
+  
+    
+  
+      const skip = (pageNumber - 1) * limitNumber;  // Calculate the number of records to skip
+  
+      // Build the filters object based on searchQuery
+      const filters: any = {};
+  
+      // Search by orderId or billing name (firstName, lastName)
+      if (searchQuery) {
+        filters.$or = [
+          { orderId: { $regex: searchQuery as string, $options: 'i' } },  
+          { firstName: { $regex: searchQuery as string, $options: 'i' } },  
+          { lastName: { $regex: searchQuery as string, $options: 'i' } }  
+        ];
+      }
+
+          // Filter by status
+    if (status) {
+        filters.orderStatus = status;
+      }
+  
+      // Filter by price range (assuming orders have a totalPrice field)
+      if (minPrice || maxPrice) {
+        filters.price = {};
+        if (minPrice) filters.price.$gte = parseFloat(minPrice as string);
+        if (maxPrice) filters.price.$lte = parseFloat(maxPrice as string);
+      }
+  
+      // Filter by date range (assuming orders have a `createdAt` field)
+      if (startDate || endDate) {
+        filters.createdAt = {};
+        if (startDate) filters.createdAt.$gte = new Date(startDate as string);
+        if (endDate) filters.createdAt.$lte = new Date(endDate as string);
+      }
+  
+  
+      // Fetch the orders with pagination and search
+      const orders = await Order.find(filters)
+        .skip(skip)
+        .limit(limitNumber)
+        .sort({ createdAt: -1 })  // Sort by createdAt in descending order
+        .populate('user', 'firstName lastName')
+        .exec();
+  
+      // Get the total count of orders for pagination
+      const totalOrders = await Order.countDocuments(filters);
+      const totalPages = Math.ceil(totalOrders / limitNumber);
+  
+  
+  
+      return res.status(200).json({
+        error: false,
+        message: "All order data fetched successfully.",
+        orders,
+        totalPages,
+        currentPage: pageNumber,
+        totalOrders,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        error: true,
+        message: "Internal server error, please try again.",
+        err: error,
+      });
     }
-}
+  };
+  
 
 const getOrder = async (req: Request, res: Response) => {
     const { orderId } = req.params

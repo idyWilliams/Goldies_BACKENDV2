@@ -1,6 +1,7 @@
 import Category, { categorySchemaI } from "../models/Category.model";
 import { Request, Response } from "express";
 import SubCategory, { subCategorySchemaI } from "../models/SubCategory.model";
+import Product from "../models/Product.model";
 
 //  create category
 const createCategory = async (req: Request, res: Response) => {
@@ -86,31 +87,67 @@ const editCategory = async (req: Request, res: Response) => {
 // Get all categories with pagination
 const getAllCategories = async (req: Request, res: Response) => {
   try {
-
     const page = req.query.page ? parseInt(req.query.page as string, 10) : null;
     const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : null;
+    const search = req.query.search ? req.query.search.toString() : "";
+    const sortByStatus = req.query.sortByStatus ? req.query.sortByStatus.toString() : null;
+    const sortByProducts = req.query.sortByProducts ? req.query.sortByProducts.toString() : null;
+    const sortBySubcategories = req.query.sortBySubcategories ? req.query.sortBySubcategories.toString() : null;
 
     const skip = page && limit ? (page - 1) * limit : 0;
-    
-    const totalCategories = await Category.countDocuments();
 
-    const allCategoriesQuery = Category.find().sort({ createdAt: -1 });
-    const allCategories = page && limit
+    // Search query for category name
+    const searchQuery = search
+      ? { name: { $regex: search, $options: "i" } }
+      : {};
+
+    // Fetch categories with search filter
+    let allCategoriesQuery = Category.find(searchQuery).sort({ createdAt: -1 });
+    let allCategories = page && limit
       ? await allCategoriesQuery.skip(skip).limit(limit).lean()
       : await allCategoriesQuery.lean();
+
+    // Fetch subcategories
     const allSubCategories = await SubCategory.find().lean();
-  
-    const categoriesWithSubcategories = allCategories.map((category) => {
-      const subCategories = allSubCategories.filter(
-        (subCategory) => subCategory.categoryId.toString() === category._id.toString()
-      );
 
-      return {
-        ...category,
-        subCategories,
-      };
-    });
+    // Attach subcategories and count products
+    const categoriesWithSubcategories = await Promise.all(
+      allCategories.map(async (category) => {
+        const subCategories = allSubCategories.filter(
+          (subCategory) => subCategory.categoryId.toString() === category._id.toString()
+        );
 
+        // Count number of products in the category
+        const productCount = await Product.countDocuments({ categoryId: category._id });
+
+        return {
+          ...category,
+          subCategories,
+          subCategoryCount: subCategories.length,
+          productCount,
+        };
+      })
+    );
+
+    // Sorting by status
+    if (sortByStatus !== null) {
+      const statusBoolean = sortByStatus === "true"; // Convert to boolean
+      categoriesWithSubcategories.sort((a, b) => (a.status === statusBoolean ? -1 : 1));
+    }
+
+    // Sorting by number of products
+    if (sortByProducts !== null) {
+      const order = sortByProducts === "desc" ? -1 : 1;
+      categoriesWithSubcategories.sort((a, b) => (a.productCount - b.productCount) * order);
+    }
+
+    // Sorting by number of subcategories
+    if (sortBySubcategories !== null) {
+      const order = sortBySubcategories === "desc" ? -1 : 1;
+      categoriesWithSubcategories.sort((a, b) => (a.subCategoryCount - b.subCategoryCount) * order);
+    }
+
+    const totalCategories = await Category.countDocuments(searchQuery);
     const totalPages = page && limit ? Math.ceil(totalCategories / limit) : 1;
 
     res.status(200).json({
@@ -118,7 +155,7 @@ const getAllCategories = async (req: Request, res: Response) => {
       categories: categoriesWithSubcategories,
       totalPages,
       currentPage: page || 1,
-      totalCategories, 
+      totalCategories,
       message: "Categories retrieved successfully",
     });
   } catch (err) {
@@ -129,6 +166,7 @@ const getAllCategories = async (req: Request, res: Response) => {
     });
   }
 };
+
 
 
 

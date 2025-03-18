@@ -8,6 +8,6 @@ router.post("/", authenticateToken, createReview);
 router.patch("/:reviewId", authenticateToken, updateReview); 
 router.delete("/:reviewId", authenticateToken, deleteReview); 
 router.get("/product/:productId", getProductReviews); 
-router.get("/user", authenticateToken, getUserReviews); 
+router.get("/user/:userId", getUserReviews); 
 
 export default router;
