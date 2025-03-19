@@ -334,6 +334,13 @@ const adminLogin = async (req: Request, res: Response) => {
       });
     }
 
+     if (admin.isBlocked) {
+       return res.status(403).json({
+         error: true,
+         message: "Your account has been blocked. Contact the super admin.",
+       });
+     }
+
     if (!admin.isVerified) {
       return res.status(401).json({
         error: true,
@@ -351,7 +358,6 @@ const adminLogin = async (req: Request, res: Response) => {
 
     admin.OTP = OTP;
     await admin.save();
-    // Send verification email
     await sendVerificationEmail();
 
     const token = generateToken(admin._id);
@@ -587,9 +593,6 @@ try {
 
 };
 
-
-// Add these methods to your admin controller
-
 const getAllAdmins = async (req: Request, res: Response) => {
   try {
     const admins = await Admin.find({});
@@ -742,5 +745,10 @@ export {
   resetPassword,
   updateProfile,
   getAdmin,
-  getUserOrderByUserId
+  getUserOrderByUserId,
+  deleteAdmin,
+  unblockAdminAccess,
+  revokeAdminAccess,
+  getAllAdmins,
+  getAdminById,
 };

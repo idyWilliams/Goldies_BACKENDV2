@@ -69,3 +69,27 @@ export const authorize = (...roles: string[]) => {
     next();
   };
 };
+
+export const isSuperAdmin = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  const adminId = req.admin?.id;
+
+  try {
+    const admin = await Admin.findById(adminId);
+    if (!admin || admin.role !== "super_admin") {
+      return res.status(403).json({
+        error: true,
+        message: "Access denied. Only super admins can perform this action.",
+      });
+    }
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};

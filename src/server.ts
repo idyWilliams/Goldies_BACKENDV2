@@ -56,8 +56,9 @@ app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/payments", paystackRouter);
 app.use("/api/mail", mailRouter);
-app.use("/api/favorites", userFavoritesRouter)
-app.use("/api/reviews", reviewRouter)
+app.use("/api/favorites", userFavoritesRouter);
+app.use("/api/reviews", reviewRouter);
+
 
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`));
 
