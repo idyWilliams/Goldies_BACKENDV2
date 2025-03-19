@@ -1,27 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
-// interface AdminSchemaI extends Document {
-//   userName: string;
-//   email: string
-//   password: string
-//   OTP: string
-// }
 
-
-// const AdminSchema = new Schema<AdminSchemaI>(
-//   {
-//     userName: { type: String, required: true, unique: true },
-//     email: { type: String, required: true, unique: true },
-//     password: { type: String, required: true },
-//     OTP: String,
-//   },
-//   {
-//     timestamps: true,
-//   }
-// );
-
-// const Admin = mongoose.model<AdminSchemaI>("Admin", AdminSchema);
-
-// export default Admin;
 
 
 
@@ -30,40 +8,41 @@ const adminSchema = new mongoose.Schema({
     type: String,
     required: [true, "Username is required"],
     unique: true,
-    trim: true
+    trim: true,
   },
   email: {
     type: String,
     required: [true, "Email is required"],
     unique: true,
     trim: true,
-    lowercase: true
+    lowercase: true,
   },
   password: {
     type: String,
-    required: [true, "Password is required"]
+    required: [true, "Password is required"],
   },
   OTP: {
     type: String,
-    required: false
+    required: false,
   },
   isVerified: {
     type: Boolean,
-    default: false
+    default: false,
   },
   lastRefCode: {
     type: String,
-    required: false
+    required: false,
   },
+  isBlocked: { type: Boolean, default: false },
   role: {
     type: String,
-    enum: ['super_admin', 'admin'],
-    default: 'admin'
+    enum: ["super_admin", "admin"],
+    default: "admin",
   },
   createdAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
 export default mongoose.model("Admin", adminSchema);
