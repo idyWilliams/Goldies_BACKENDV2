@@ -93,133 +93,7 @@ const generateToken = (id: unknown) => {
   return token;
 };
 
-// const adminSignup = async (req: Request, res: Response) => {
-//   const { userName, email, password } = req.body;
 
-//   // Validate input
-//   if (!userName) {
-//     return res.status(400).json({
-//       error: true,
-//       message: "Email is required for this process",
-//     });
-//   }
-
-//   if (!email) {
-//     return res.status(400).json({
-//       error: true,
-//       message: "Email is required for this process",
-//     });
-//   }
-
-//   if (!password) {
-//     return res.status(400).json({
-//       error: true,
-//       message: "Password is required for this process",
-//     });
-//   }
-
-//   try {
-//     const user = await Admin.findOne({ email });
-//     const OTP = generateOtp(); // Assuming this function generates a 6-digit OTP
-
-//     // Create transporter for sending email
-//     const transporter = nodemailer.createTransport({
-//       host: "smtp.gmail.com",
-//       port: 465,
-//       secure: true,
-//       auth: {
-//         user: process.env.EMAIL,
-//         pass: process.env.PASSWORD,
-//       },
-//       tls: {
-//         rejectUnauthorized: false,
-//       },
-//     });
-
-//     // Function to send the verification email
-//     const sendVerificationEmail = async () => {
-//       const emailContent = `
-//       <div style="font-family: Arial, sans-serif; color: #333;">
-//         <h2 style="color: #007bff;">Email Verification</h2>
-//         <p>Do not share this with anyone.</p>
-//         <p> Verification code: <strong>${OTP}</strong> </p>
-//         <p>If you did not request this, please ignore this email.</p>
-//       </div>
-//     `;
-
-//       const mailOptions = {
-//         from: process.env.EMAIL,
-//         to: email,
-//         subject: "Goldies Team - Email Verification",
-//         text: "Email verification.",
-//         html: emailContent,
-//       };
-
-//       try {
-//         const info = await transporter.sendMail(mailOptions);
-//         console.log("Message sent: %s", info.messageId);
-//       } catch (err) {
-//         console.error("Error sending email: ", err);
-//         throw new Error("Failed to send verification email.");
-//       }
-//     };
-
-//     // If user does not exist, create new admin
-//     if (!user) {
-//       // verify JWT
-//       const { refCode } = req.query;
-//       try {
-//         jwt.verify(refCode as string, process.env.ADMINREFCODE as string);
-//       } catch (err) {
-//         return res.status(403).json({
-//           error: true,
-//           message: "Invalid or expired referral code.",
-//         });
-//       }
-//       const hashedPwd = bcryptjs.hashSync(password, 10);
-//       const admin = await Admin.create({
-//         email,
-//         fullName,
-//         password: hashedPwd,
-//         OTP,
-//       });
-
-//       // Send verification email
-//       await sendVerificationEmail();
-
-//       return res.status(200).json({
-//         error: false,
-//         message: `Admin created successfully. A 6-digit code has been sent to ${email}`,
-//       });
-//     } else {
-
-//       // Verify the password
-//       const passwordMatch = await bcryptjs.compare(password, user.password);
-//       if (!passwordMatch) {
-//         return res.status(400).json({
-//           error: true,
-//           message: "Password is incorrect",
-//         });
-//       }
-
-//       // Update OTP and send verification email
-//       user.OTP = OTP;
-//       await user.save();
-//       await sendVerificationEmail();
-
-//       return res.status(200).json({
-//         error: false,
-//         message: `New 6-digit code has been sent to ${email}`,
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Error in admin signup: ", error);
-//     return res.status(500).json({
-//       error: true,
-//       message: "Internal server error",
-//     });
-//   }
-// };
 
 const adminSignup = async (req: Request, res: Response) => {
   const { userName, email, password } = req.body;
@@ -374,7 +248,7 @@ const verifyOTP = async (req: Request, res: Response) => {
 
 
     const token = generateToken(admin._id);
- 
+
     return res.status(200).json({
       error: false,
       admin: {
@@ -699,9 +573,9 @@ try {
   return res.status(200).json({
     error: false,
     admin
-   
+
     },)
-  
+
 }catch(err){
   return res.status(500).json({
     error: true,
@@ -713,13 +587,125 @@ try {
 
 };
 
+
+// Add these methods to your admin controller
+
+const getAllAdmins = async (req: Request, res: Response) => {
+  try {
+    const admins = await Admin.find({});
+    return res.status(200).json({
+      error: false,
+      admins,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+const getAdminById = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const admin = await Admin.findById(id);
+    if (!admin) {
+      return res.status(404).json({
+        error: true,
+        message: "Admin not found",
+      });
+    }
+    return res.status(200).json({
+      error: false,
+      admin,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+const revokeAdminAccess = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const admin = await Admin.findById(id);
+    if (!admin) {
+      return res.status(404).json({
+        error: true,
+        message: "Admin not found",
+      });
+    }
+    admin.isBlocked = true;
+    await admin.save();
+    return res.status(200).json({
+      error: false,
+      message: "Admin access revoked successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+const unblockAdminAccess = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const admin = await Admin.findById(id);
+    if (!admin) {
+      return res.status(404).json({
+        error: true,
+        message: "Admin not found",
+      });
+    }
+    admin.isBlocked = false;
+    await admin.save();
+    return res.status(200).json({
+      error: false,
+      message: "Admin access unblocked successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+const deleteAdmin = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  try {
+    const admin = await Admin.findByIdAndDelete(id);
+    if (!admin) {
+      return res.status(404).json({
+        error: true,
+        message: "Admin not found",
+      });
+    }
+    return res.status(200).json({
+      error: false,
+      message: "Admin deleted successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+
+
 const getUserOrderByUserId = async (req: Request, res: Response)=>{
   const { id } = req.params;
-  
-  
+
+
   try {
     const orders = await Order.find({ user: id });
-  
+
     if (!orders) {
       return res.status(404).json({
         error: true,
@@ -729,20 +715,20 @@ const getUserOrderByUserId = async (req: Request, res: Response)=>{
     return res.status(200).json({
       error: false,
       orders
-     
+
       },)
-    
+
   }catch(err){
     return res.status(500).json({
       error: true,
       err,
       message: "Internal Server error",
     });
-  
+
   }
-  
-  
-  
+
+
+
   };
 
 
