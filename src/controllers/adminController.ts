@@ -79,7 +79,7 @@ function generateOtp() {
 }
 
 const generateToken = (id: unknown) => {
-  const maxAge = '30m';
+  const maxAge = "30m";
   const secret = process.env.ACCESS_SECRET_TOKEN;
 
   if (!secret) {
@@ -92,8 +92,6 @@ const generateToken = (id: unknown) => {
 
   return token;
 };
-
-
 
 const adminSignup = async (req: Request, res: Response) => {
   const { userName, email, password } = req.body;
@@ -244,8 +242,7 @@ const verifyOTP = async (req: Request, res: Response) => {
     }
 
     admin.isVerified = true;
-    await admin.save()
-
+    await admin.save();
 
     const token = generateToken(admin._id);
 
@@ -256,8 +253,7 @@ const verifyOTP = async (req: Request, res: Response) => {
         userName: admin.userName,
         email: admin.email,
         role: admin.role,
-        isVerified: admin.isVerified
-
+        isVerified: admin.isVerified,
       },
       token,
       message: `Admin Signup successful`,
@@ -334,12 +330,12 @@ const adminLogin = async (req: Request, res: Response) => {
       });
     }
 
-     if (admin.isBlocked) {
-       return res.status(403).json({
-         error: true,
-         message: "Your account has been blocked. Contact the super admin.",
-       });
-     }
+    if (admin.isBlocked) {
+      return res.status(403).json({
+        error: true,
+        message: "Your account has been blocked. Contact the super admin.",
+      });
+    }
 
     if (!admin.isVerified) {
       return res.status(401).json({
@@ -563,44 +559,88 @@ const updateProfile = async (req: Request, res: Response) => {
   }
 };
 
-const getAdmin = async (req: Request, res: Response)=>{
-const { id } = req.params;
+const getAdmin = async (req: Request, res: Response) => {
+  const { id } = req.params;
 
-console.log(id)
-try {
-  const admin = await Admin.findOne({ _id: id});
+  console.log(id);
+  try {
+    const admin = await Admin.findOne({ _id: id });
 
-  if (!admin) {
-    return res.status(404).json({
+    if (!admin) {
+      return res.status(404).json({
+        error: true,
+        message: "Admin not found",
+      });
+    }
+    return res.status(200).json({
+      error: false,
+      admin,
+    });
+  } catch (err) {
+    return res.status(500).json({
       error: true,
-      message: "Admin not found",
+      err,
+      message: "Internal Server error",
     });
   }
-  return res.status(200).json({
-    error: false,
-    admin
-
-    },)
-
-}catch(err){
-  return res.status(500).json({
-    error: true,
-    err,
-    message: "Internal Server error",
-  });
-
-}
-
 };
 
 const getAllAdmins = async (req: Request, res: Response) => {
   try {
-    const admins = await Admin.find({});
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const sortField = (req.query.sortField as string) || "createdAt";
+    const sortOrder = (req.query.sortOrder as string) === "asc" ? 1 : -1;
+    const search = req.query.search as string;
+
+    const skip = (page - 1) * limit;
+
+    const filter: any = {};
+
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    if (req.query.role) filter.role = req.query.role;
+    if (req.query.status) filter.status = req.query.status;
+    if (req.query.isActive !== undefined)
+      filter.isActive = req.query.isActive === "true";
+
+    if (req.query.startDate) {
+      filter.createdAt = {
+        ...filter.createdAt,
+        $gte: new Date(req.query.startDate as string),
+      };
+    }
+    if (req.query.endDate) {
+      filter.createdAt = {
+        ...filter.createdAt,
+        $lte: new Date(req.query.endDate as string),
+      };
+    }
+
+    const sort: any = {};
+    sort[sortField] = sortOrder;
+
+    const totalAdmins = await Admin.countDocuments(filter);
+
+    const admins = await Admin.find(filter).sort(sort).skip(skip).limit(limit);
+
     return res.status(200).json({
       error: false,
       admins,
+      pagination: {
+        total: totalAdmins,
+        page,
+        limit,
+        pages: Math.ceil(totalAdmins / limit),
+      },
     });
   } catch (error) {
+    console.error("Error fetching admins:", error);
     return res.status(500).json({
       error: true,
       message: "Internal server error",
@@ -700,11 +740,8 @@ const deleteAdmin = async (req: Request, res: Response) => {
   }
 };
 
-
-
-const getUserOrderByUserId = async (req: Request, res: Response)=>{
+const getUserOrderByUserId = async (req: Request, res: Response) => {
   const { id } = req.params;
-
 
   try {
     const orders = await Order.find({ user: id });
@@ -717,24 +754,16 @@ const getUserOrderByUserId = async (req: Request, res: Response)=>{
     }
     return res.status(200).json({
       error: false,
-      orders
-
-      },)
-
-  }catch(err){
+      orders,
+    });
+  } catch (err) {
     return res.status(500).json({
       error: true,
       err,
       message: "Internal Server error",
     });
-
   }
-
-
-
-  };
-
-
+};
 
 export {
   inviteAdmin,

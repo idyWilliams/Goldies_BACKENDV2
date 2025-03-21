@@ -1,3 +1,5 @@
+//
+
 import express from "express";
 import {
   inviteAdmin,
@@ -33,14 +35,31 @@ router.post("/reset-password", resetPassword);
 // Protected routes
 router.post("/invite", protect, authorize("super_admin"), inviteAdmin);
 router.put("/profile/:id", protect, updateProfile);
-router.get("/:id", protect, getAdmin);
-router.get("/orders/:id", getUserOrderByUserId);
-// admin route
 
-router.get("/admins", isSuperAdmin, getAllAdmins);
-router.get("/admins/:id", isSuperAdmin, getAdminById);
-router.put("/admins/revoke-access/:id", isSuperAdmin, revokeAdminAccess);
-router.put("/admins/unblock-access/:id", isSuperAdmin, unblockAdminAccess);
-router.delete("/admins/:id", isSuperAdmin, deleteAdmin);
+// Admin management routes
+// router.get("/admins", isSuperAdmin, getAllAdmins);
+// router.get("/admins/:id", isSuperAdmin, getAdminById);
+// router.put("/admins/revoke-access/:id", isSuperAdmin, revokeAdminAccess);
+// router.put("/admins/unblock-access/:id", isSuperAdmin, unblockAdminAccess);
+// router.delete("/admins/:id", isSuperAdmin, deleteAdmin);
+router.get("/admins", protect, isSuperAdmin, getAllAdmins);
+router.get("/admins/:id", protect, isSuperAdmin, getAdminById);
+router.put(
+  "/admins/revoke-access/:id",
+  protect,
+  isSuperAdmin,
+  revokeAdminAccess
+);
+router.put(
+  "/admins/unblock-access/:id",
+  protect,
+  isSuperAdmin,
+  unblockAdminAccess
+);
+router.delete("/admins/:id", protect, isSuperAdmin, deleteAdmin);
+
+// Generic parameter routes
+router.get("/orders/:id", getUserOrderByUserId);
+router.get("/:id", protect, getAdmin);
 
 export default router;

@@ -1,8 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-
-
-
 const adminSchema = new mongoose.Schema({
   userName: {
     type: String,
@@ -34,6 +31,15 @@ const adminSchema = new mongoose.Schema({
     required: false,
   },
   isBlocked: { type: Boolean, default: false },
+  isDeleted: { type: Boolean, default: false },
+  statusChanges: [
+    {
+      status: String,
+      timestamp: { type: Date, default: Date.now },
+      adminId: { type: mongoose.Schema.Types.ObjectId, ref: "Admin" },
+      reason: String,
+    },
+  ],
   role: {
     type: String,
     enum: ["super_admin", "admin"],

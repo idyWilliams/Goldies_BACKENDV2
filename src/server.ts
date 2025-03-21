@@ -34,13 +34,17 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 }));
-
+const MONGO_URI = process.env.MONGO_URI;
 app.use(express.json());
-
+console.log("MongoDB URI:", process.env.MONGO_URI);
+if (!MONGO_URI) {
+  console.error("MONGO_URI is not defined");
+  process.exit(1);
+}
 mongoose
-  .connect(process.env.connectionString as string)
+  .connect(MONGO_URI as string)
   .then(() => console.log("MongoDB connected"))
-  .catch((err: any) => console.log(err));
+  .catch((err: any) => console.error("MongoDB connection error:", err));
 
 app.get("/", (req: Request, res: Response) => {
   res.send("backend connected successfully");

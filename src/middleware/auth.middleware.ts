@@ -70,15 +70,43 @@ export const authorize = (...roles: string[]) => {
   };
 };
 
+// export const isSuperAdmin = async (
+//   req: AuthRequest,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   const adminId = req.admin?.id;
+
+//   try {
+//     const admin = await Admin.findById(adminId);
+//     if (!admin || admin.role !== "super_admin") {
+//       return res.status(403).json({
+//         error: true,
+//         message: "Access denied. Only super admins can perform this action.",
+//       });
+//     }
+//     next();
+//   } catch (error) {
+//     return res.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   }
+// };
 export const isSuperAdmin = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
-  const adminId = req.admin?.id;
+  if (!req.admin || !req.admin.id) {
+    return res.status(401).json({
+      error: true,
+      message: "Authentication required. Please log in.",
+    });
+  }
 
   try {
-    const admin = await Admin.findById(adminId);
+    const admin = await Admin.findById(req.admin.id);
     if (!admin || admin.role !== "super_admin") {
       return res.status(403).json({
         error: true,
