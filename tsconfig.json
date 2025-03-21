@@ -9,6 +9,6 @@
     "skipLibCheck": true,
     "typeRoots": ["node_modules/@types"]
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "src/scripts/migrateAdminStatus.ts"],
   "exclude": ["node_modules"]
 }
