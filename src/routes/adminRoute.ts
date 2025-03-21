@@ -16,6 +16,7 @@ import {
   revokeAdminAccess,
   unblockAdminAccess,
   deleteAdmin,
+  verifyAdmin,
 } from "../controllers/adminController";
 import {
   protect,
@@ -56,6 +57,7 @@ router.put(
   isSuperAdmin,
   unblockAdminAccess
 );
+router.put("/admins/verify-access/:id", protect, isSuperAdmin, verifyAdmin);
 router.delete("/admins/:id", protect, isSuperAdmin, deleteAdmin);
 
 // Generic parameter routes
