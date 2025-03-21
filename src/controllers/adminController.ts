@@ -6,6 +6,7 @@ dotenv.config();
 import nodemailer from "nodemailer";
 import bcryptjs from "bcryptjs";
 import Order from "../models/Order.model";
+import { AuthRequest, getAdminIdentifier } from "../middleware/auth.middleware";
 
 const inviteAdmin = async (req: Request, res: Response) => {
   const { email } = req.body;
@@ -37,7 +38,7 @@ const inviteAdmin = async (req: Request, res: Response) => {
       <p>Goldies has invited you to be part of the administration team.</p>
       <a
         href="${SignUpURL}"
-        style="display: inline-block; padding: 10px 20px; background-color: yellow; color: #fff; text-decoration: none; border-radius: 5px;">
+        style="display: inline-block; padding: 10px 20px; background-color: black; color: #fff; text-decoration: none; border-radius: 5px;">
         Join Now
       </a>
       <p>If you did not request this, please ignore this email.</p>
@@ -670,8 +671,82 @@ const getAdminById = async (req: Request, res: Response) => {
   }
 };
 
-const revokeAdminAccess = async (req: Request, res: Response) => {
+// const revokeAdminAccess = async (req: Request, res: Response) => {
+//   const { id } = req.params;
+//   try {
+//     const admin = await Admin.findById(id);
+//     if (!admin) {
+//       return res.status(404).json({
+//         error: true,
+//         message: "Admin not found",
+//       });
+//     }
+//     admin.isBlocked = true;
+//     await admin.save();
+//     return res.status(200).json({
+//       error: false,
+//       message: "Admin access revoked successfully",
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+// const unblockAdminAccess = async (req: Request, res: Response) => {
+//   const { id } = req.params;
+//   try {
+//     const admin = await Admin.findById(id);
+//     if (!admin) {
+//       return res.status(404).json({
+//         error: true,
+//         message: "Admin not found",
+//       });
+//     }
+//     admin.isBlocked = false;
+//     await admin.save();
+//     return res.status(200).json({
+//       error: false,
+//       message: "Admin access unblocked successfully",
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+// const deleteAdmin = async (req: Request, res: Response) => {
+//   const { id } = req.params;
+//   try {
+//     const admin = await Admin.findByIdAndDelete(id);
+//     if (!admin) {
+//       return res.status(404).json({
+//         error: true,
+//         message: "Admin not found",
+//       });
+//     }
+//     return res.status(200).json({
+//       error: false,
+//       message: "Admin deleted successfully",
+//     });
+//   } catch (error) {
+//     return res.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+
+const revokeAdminAccess = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const { reason } = req.body; // Optional reason for blocking
+  const performer = getAdminIdentifier(req);
+
   try {
     const admin = await Admin.findById(id);
     if (!admin) {
@@ -680,13 +755,37 @@ const revokeAdminAccess = async (req: Request, res: Response) => {
         message: "Admin not found",
       });
     }
-    admin.isBlocked = true;
-    await admin.save();
+
+    // Prevent self-blocking
+    if (performer.id === id) {
+      return res.status(400).json({
+        error: true,
+        message: "You cannot block your own account",
+      });
+    }
+
+    // Only update if not already blocked
+    if (!admin.isBlocked) {
+      admin.isBlocked = true;
+
+      // Add status change record with admin name
+      admin.statusChanges.push({
+        status: "blocked",
+        timestamp: new Date(),
+        adminId: performer.id,
+        adminName: performer.name, // Add the admin's name
+        reason: reason || `Access revoked by ${performer.name}`,
+      });
+
+      await admin.save();
+    }
+
     return res.status(200).json({
       error: false,
       message: "Admin access revoked successfully",
     });
   } catch (error) {
+    console.error("Error in revokeAdminAccess:", error);
     return res.status(500).json({
       error: true,
       message: "Internal server error",
@@ -694,8 +793,11 @@ const revokeAdminAccess = async (req: Request, res: Response) => {
   }
 };
 
-const unblockAdminAccess = async (req: Request, res: Response) => {
+const unblockAdminAccess = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const { reason } = req.body; // Optional reason for unblocking
+  const performer = getAdminIdentifier(req);
+
   try {
     const admin = await Admin.findById(id);
     if (!admin) {
@@ -704,13 +806,29 @@ const unblockAdminAccess = async (req: Request, res: Response) => {
         message: "Admin not found",
       });
     }
-    admin.isBlocked = false;
-    await admin.save();
+
+    // Only update if currently blocked
+    if (admin.isBlocked) {
+      admin.isBlocked = false;
+
+      // Add status change record with admin name
+      admin.statusChanges.push({
+        status: "unblocked",
+        timestamp: new Date(),
+        adminId: performer.id,
+        adminName: performer.name, // Add the admin's name
+        reason: reason || `Access restored by ${performer.name}`,
+      });
+
+      await admin.save();
+    }
+
     return res.status(200).json({
       error: false,
       message: "Admin access unblocked successfully",
     });
   } catch (error) {
+    console.error("Error in unblockAdminAccess:", error);
     return res.status(500).json({
       error: true,
       message: "Internal server error",
@@ -718,21 +836,91 @@ const unblockAdminAccess = async (req: Request, res: Response) => {
   }
 };
 
-const deleteAdmin = async (req: Request, res: Response) => {
+const deleteAdmin = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+  const { reason } = req.body; // Optional reason for deletion
+  const performer = getAdminIdentifier(req);
+
   try {
-    const admin = await Admin.findByIdAndDelete(id);
+    // First find the admin to add status change before deletion
+    const admin = await Admin.findById(id);
     if (!admin) {
       return res.status(404).json({
         error: true,
         message: "Admin not found",
       });
     }
+
+    // Prevent self-deletion
+    if (performer.id === id) {
+      return res.status(400).json({
+        error: true,
+        message: "You cannot delete your own account",
+      });
+    }
+
+    // Instead of hard deleting, update the isDeleted flag
+    admin.isDeleted = true;
+
+    // Add status change record with admin name
+    admin.statusChanges.push({
+      status: "deleted",
+      timestamp: new Date(),
+      adminId: performer.id,
+      adminName: performer.name, // Add the admin's name
+      reason: reason || `Account deleted by ${performer.name}`,
+    });
+
+    await admin.save();
+
     return res.status(200).json({
       error: false,
       message: "Admin deleted successfully",
     });
   } catch (error) {
+    console.error("Error in deleteAdmin:", error);
+    return res.status(500).json({
+      error: true,
+      message: "Internal server error",
+    });
+  }
+};
+
+const verifyAdmin = async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const performer = getAdminIdentifier(req);
+
+  try {
+    const admin = await Admin.findById(id);
+    if (!admin) {
+      return res.status(404).json({
+        error: true,
+        message: "Admin not found",
+      });
+    }
+
+    // Only update if not already verified
+    if (!admin.isVerified) {
+      admin.isVerified = true;
+
+      // Add status change record with admin name
+      admin.statusChanges.push({
+        status: "verified",
+        timestamp: new Date(),
+        adminId: performer.id,
+        adminName: performer.name, // Add the admin's name
+        reason: "Admin account verified",
+      });
+
+      await admin.save();
+    }
+
+    return res.status(200).json({
+      error: false,
+      message: "Admin verified successfully",
+    });
+  } catch (error) {
+    console.error("Error in verifyAdmin:", error);
     return res.status(500).json({
       error: true,
       message: "Internal server error",
@@ -776,6 +964,7 @@ export {
   getAdmin,
   getUserOrderByUserId,
   deleteAdmin,
+  verifyAdmin,
   unblockAdminAccess,
   revokeAdminAccess,
   getAllAdmins,
