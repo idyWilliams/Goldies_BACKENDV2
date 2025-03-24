@@ -44,7 +44,7 @@ router.put("/profile/:id", protect, updateProfile);
 // router.put("/admins/unblock-access/:id", isSuperAdmin, unblockAdminAccess);
 // router.delete("/admins/:id", isSuperAdmin, deleteAdmin);
 router.get("/admins", protect, isSuperAdmin, getAllAdmins);
-router.get("/admins/:id", protect, isSuperAdmin, getAdminById);
+// router.get("/admins/:id", protect, isSuperAdmin, getAdminById);
 router.put(
   "/admins/revoke-access/:id",
   protect,
@@ -62,6 +62,6 @@ router.delete("/admins/:id", protect, isSuperAdmin, deleteAdmin);
 
 // Generic parameter routes
 router.get("/orders/:id", getUserOrderByUserId);
-router.get("/:id", protect, getAdmin);
+// router.get("/:id", protect, getAdmin);
 
 export default router;
