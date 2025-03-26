@@ -586,66 +586,181 @@ const getAdmin = async (req: Request, res: Response) => {
   }
 };
 
+// const getAllAdmins = async (req: Request, res: Response) => {
+//   try {
+//     const page = parseInt(req.query.page as string) || 1;
+//     const limit = parseInt(req.query.limit as string) || 10;
+//     const sortField = (req.query.sortField as string) || "createdAt";
+//     const sortOrder = (req.query.sortOrder as string) === "asc" ? 1 : -1;
+//     const search = req.query.search as string;
+
+//     const skip = (page - 1) * limit;
+
+//     const filter: any = {};
+
+//     if (search) {
+//       filter.$or = [
+//         { name: { $regex: search, $options: "i" } },
+//         { email: { $regex: search, $options: "i" } },
+//       ];
+//     }
+
+//     if (req.query.role) filter.role = req.query.role;
+//     if (req.query.status) filter.status = req.query.status;
+//     if (req.query.isActive !== undefined)
+//       filter.isActive = req.query.isActive === "true";
+
+//     if (req.query.startDate) {
+//       filter.createdAt = {
+//         ...filter.createdAt,
+//         $gte: new Date(req.query.startDate as string),
+//       };
+//     }
+//     if (req.query.endDate) {
+//       filter.createdAt = {
+//         ...filter.createdAt,
+//         $lte: new Date(req.query.endDate as string),
+//       };
+//     }
+
+//     const sort: any = {};
+//     sort[sortField] = sortOrder;
+
+//     const totalAdmins = await Admin.countDocuments(filter);
+
+//     const admins = await Admin.find(filter).sort(sort).skip(skip).limit(limit);
+
+//     return res.status(200).json({
+//       error: false,
+//       admins,
+//       pagination: {
+//         total: totalAdmins,
+//         page,
+//         limit,
+//         pages: Math.ceil(totalAdmins / limit),
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching admins:", error);
+//     return res.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
 const getAllAdmins = async (req: Request, res: Response) => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 10;
+    // Logging for debugging
+    console.log("Full Query Parameters:", req.query);
+
+    // Safely parse pagination and limit
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.max(1, parseInt(req.query.limit as string) || 10);
     const sortField = (req.query.sortField as string) || "createdAt";
     const sortOrder = (req.query.sortOrder as string) === "asc" ? 1 : -1;
     const search = req.query.search as string;
 
+    console.log("Parsed Parameters:", { page, limit, sortField, sortOrder });
+
     const skip = (page - 1) * limit;
 
+    // Create a robust filter object
     const filter: any = {};
 
+    // Add search conditions
     if (search) {
       filter.$or = [
-        { name: { $regex: search, $options: "i" } },
+        { userName: { $regex: search, $options: "i" } },
         { email: { $regex: search, $options: "i" } },
       ];
     }
 
-    if (req.query.role) filter.role = req.query.role;
-    if (req.query.status) filter.status = req.query.status;
-    if (req.query.isActive !== undefined)
+    // Add additional filter conditions
+    if (req.query.role) {
+      filter.role = req.query.role;
+    }
+    if (req.query.status) {
+      filter.status = req.query.status;
+    }
+    if (req.query.isActive !== undefined) {
       filter.isActive = req.query.isActive === "true";
-
-    if (req.query.startDate) {
-      filter.createdAt = {
-        ...filter.createdAt,
-        $gte: new Date(req.query.startDate as string),
-      };
-    }
-    if (req.query.endDate) {
-      filter.createdAt = {
-        ...filter.createdAt,
-        $lte: new Date(req.query.endDate as string),
-      };
     }
 
+    // Date range filtering
+    if (req.query.startDate || req.query.endDate) {
+      filter.createdAt = {};
+      if (req.query.startDate) {
+        filter.createdAt.$gte = new Date(req.query.startDate as string);
+      }
+      if (req.query.endDate) {
+        filter.createdAt.$lte = new Date(req.query.endDate as string);
+      }
+    }
+
+    // Prepare sort object
     const sort: any = {};
     sort[sortField] = sortOrder;
 
-    const totalAdmins = await Admin.countDocuments(filter);
+    try {
+      // Count total documents matching the filter
+      const totalAdmins = await Admin.countDocuments(filter);
+      console.log("Total Admins Count:", totalAdmins);
 
-    const admins = await Admin.find(filter).sort(sort).skip(skip).limit(limit);
+      // Find admins with pagination and sorting
+      const admins = await Admin.find(filter)
+        .select("-password -OTP") // Exclude sensitive fields
+        .sort(sort)
+        .skip(skip)
+        .limit(limit);
 
-    return res.status(200).json({
-      error: false,
-      admins,
-      pagination: {
-        total: totalAdmins,
-        page,
-        limit,
-        pages: Math.ceil(totalAdmins / limit),
-      },
-    });
-  } catch (error) {
-    console.error("Error fetching admins:", error);
-    return res.status(500).json({
-      error: true,
-      message: "Internal server error",
-    });
+      console.log("Fetched Admins Count:", admins.length);
+
+      return res.status(200).json({
+        error: false,
+        admins,
+        pagination: {
+          total: totalAdmins,
+          page,
+          limit,
+          pages: Math.ceil(totalAdmins / limit),
+        },
+      });
+    } catch (findError: unknown) {
+      if (findError instanceof Error) {
+        console.error("Database Query Error:", findError.message);
+        console.error("Full Error:", findError);
+        return res.status(500).json({
+          error: true,
+          message: "Database query failed",
+          details: findError.message,
+        });
+      } else {
+        console.error("Unknown Database Error:", findError);
+        return res.status(500).json({
+          error: true,
+          message: "Unexpected database error",
+          details: String(findError),
+        });
+      }
+    }
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Unexpected Server Error:", error.message);
+      console.error("Full Error:", error);
+      return res.status(500).json({
+        error: true,
+        message: "Internal server error",
+        details: error.message,
+      });
+    } else {
+      console.error("Unknown Server Error:", error);
+      return res.status(500).json({
+        error: true,
+        message: "Unknown internal server error",
+        details: String(error),
+      });
+    }
   }
 };
 
@@ -740,7 +855,6 @@ const getAdminById = async (req: Request, res: Response) => {
 //     });
 //   }
 // };
-
 
 const revokeAdminAccess = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
