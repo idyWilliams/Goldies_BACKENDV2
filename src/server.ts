@@ -34,17 +34,13 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true,
 }));
-const MONGO_URI = process.env.MONGO_URI;
+
 app.use(express.json());
-console.log("MongoDB URI:", process.env.MONGO_URI);
-if (!MONGO_URI) {
-  console.error("MONGO_URI is not defined");
-  process.exit(1);
-}
+
 mongoose
-  .connect(MONGO_URI as string)
+  .connect(process.env.connectionString as string)
   .then(() => console.log("MongoDB connected"))
-  .catch((err: any) => console.error("MongoDB connection error:", err));
+  .catch((err: any) => console.log(err));
 
 app.get("/", (req: Request, res: Response) => {
   res.send("backend connected successfully");
@@ -60,9 +56,8 @@ app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/payments", paystackRouter);
 app.use("/api/mail", mailRouter);
-app.use("/api/favorites", userFavoritesRouter);
-app.use("/api/reviews", reviewRouter);
-
+app.use("/api/favorites", userFavoritesRouter)
+app.use("/api/reviews", reviewRouter)
 
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`));
 
