@@ -13,27 +13,31 @@ import orderRouter from "./routes/orderRoute";
 import paystackRouter from "./routes/paystackRoute";
 import mailRouter from "./routes/mailRoute";
 import userFavoritesRouter from "./routes/userFavoritesRoute";
-import reviewRouter from "./routes/reviewRoute"
+import reviewRouter from "./routes/reviewRoute";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 import cors from "cors";
 import { Script } from "vm";
 const PORT = process.env.PORT || 2030;
 
-
-const allowedOrigins = ["https://goldies-frontend-v3.vercel.app", "http://localhost:7009"];
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-}));
+const allowedOrigins = [
+  "https://goldies-frontend-v3.vercel.app",
+  "http://localhost:7009",
+];
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
@@ -41,6 +45,10 @@ mongoose
   .connect(process.env.connectionString as string)
   .then(() => console.log("MongoDB connected"))
   .catch((err: any) => console.log(err));
+// mongoose
+//   .connect(process.env.MONGO_URI as string)
+//   .then(() => console.log("MongoDB connected"))
+//   .catch((err) => console.error("MongoDB connection error:", err));
 
 app.get("/", (req: Request, res: Response) => {
   res.send("backend connected successfully");
@@ -56,11 +64,7 @@ app.use("/api/cart", cartRouter);
 app.use("/api/order", orderRouter);
 app.use("/api/payments", paystackRouter);
 app.use("/api/mail", mailRouter);
-app.use("/api/favorites", userFavoritesRouter)
-app.use("/api/reviews", reviewRouter)
+app.use("/api/favorites", userFavoritesRouter);
+app.use("/api/reviews", reviewRouter);
 
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`));
-
-
-
-

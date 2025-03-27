@@ -1,6 +1,6 @@
 //
 
-import express from "express";
+import express, { NextFunction } from "express";
 import {
   inviteAdmin,
   adminSignup,
@@ -26,6 +26,13 @@ import {
 
 const router = express.Router();
 
+// const logRouteInfo = (req: Request, res: Response, next: NextFunction) => {
+//   console.log(`Incoming ${req.method} request to ${req.path}`);
+//   console.log("Request Params:", req.params);
+//   console.log("Request Body:", req.body);
+//   next();
+// };
+// router.use(logRouteInfo);
 // Public routes
 router.post("/login", adminLogin);
 router.post("/signup", adminSignup);
@@ -43,22 +50,22 @@ router.put("/profile/:id", protect, updateProfile);
 // router.put("/admins/revoke-access/:id", isSuperAdmin, revokeAdminAccess);
 // router.put("/admins/unblock-access/:id", isSuperAdmin, unblockAdminAccess);
 // router.delete("/admins/:id", isSuperAdmin, deleteAdmin);
-router.get("/admins", protect, isSuperAdmin, getAllAdmins);
+router.get("/all", protect, isSuperAdmin, getAllAdmins);
 // router.get("/admins/:id", protect, isSuperAdmin, getAdminById);
 router.put(
-  "/admins/revoke-access/:id",
+  "/revoke-access/:id",
   protect,
   isSuperAdmin,
   revokeAdminAccess
 );
 router.put(
-  "/admins/unblock-access/:id",
+  "/unblock-access/:id",
   protect,
   isSuperAdmin,
   unblockAdminAccess
 );
-router.put("/admins/verify-access/:id", protect, isSuperAdmin, verifyAdmin);
-router.delete("/admins/:id", protect, isSuperAdmin, deleteAdmin);
+router.put("/verify-access/:id", protect, isSuperAdmin, verifyAdmin);
+router.delete("/:id", protect, isSuperAdmin, deleteAdmin);
 
 // Generic parameter routes
 router.get("/orders/:id", getUserOrderByUserId);

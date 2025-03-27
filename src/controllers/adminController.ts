@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 dotenv.config();
+import mongoose from "mongoose";
 import nodemailer from "nodemailer";
 import bcryptjs from "bcryptjs";
 import Order from "../models/Order.model";
@@ -586,69 +587,6 @@ const getAdmin = async (req: Request, res: Response) => {
   }
 };
 
-// const getAllAdmins = async (req: Request, res: Response) => {
-//   try {
-//     const page = parseInt(req.query.page as string) || 1;
-//     const limit = parseInt(req.query.limit as string) || 10;
-//     const sortField = (req.query.sortField as string) || "createdAt";
-//     const sortOrder = (req.query.sortOrder as string) === "asc" ? 1 : -1;
-//     const search = req.query.search as string;
-
-//     const skip = (page - 1) * limit;
-
-//     const filter: any = {};
-
-//     if (search) {
-//       filter.$or = [
-//         { name: { $regex: search, $options: "i" } },
-//         { email: { $regex: search, $options: "i" } },
-//       ];
-//     }
-
-//     if (req.query.role) filter.role = req.query.role;
-//     if (req.query.status) filter.status = req.query.status;
-//     if (req.query.isActive !== undefined)
-//       filter.isActive = req.query.isActive === "true";
-
-//     if (req.query.startDate) {
-//       filter.createdAt = {
-//         ...filter.createdAt,
-//         $gte: new Date(req.query.startDate as string),
-//       };
-//     }
-//     if (req.query.endDate) {
-//       filter.createdAt = {
-//         ...filter.createdAt,
-//         $lte: new Date(req.query.endDate as string),
-//       };
-//     }
-
-//     const sort: any = {};
-//     sort[sortField] = sortOrder;
-
-//     const totalAdmins = await Admin.countDocuments(filter);
-
-//     const admins = await Admin.find(filter).sort(sort).skip(skip).limit(limit);
-
-//     return res.status(200).json({
-//       error: false,
-//       admins,
-//       pagination: {
-//         total: totalAdmins,
-//         page,
-//         limit,
-//         pages: Math.ceil(totalAdmins / limit),
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Error fetching admins:", error);
-//     return res.status(500).json({
-//       error: true,
-//       message: "Internal server error",
-//     });
-//   }
-// };
-
 const getAllAdmins = async (req: Request, res: Response) => {
   try {
     // Logging for debugging
@@ -786,75 +724,7 @@ const getAdminById = async (req: Request, res: Response) => {
   }
 };
 
-// const revokeAdminAccess = async (req: Request, res: Response) => {
-//   const { id } = req.params;
-//   try {
-//     const admin = await Admin.findById(id);
-//     if (!admin) {
-//       return res.status(404).json({
-//         error: true,
-//         message: "Admin not found",
-//       });
-//     }
-//     admin.isBlocked = true;
-//     await admin.save();
-//     return res.status(200).json({
-//       error: false,
-//       message: "Admin access revoked successfully",
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       error: true,
-//       message: "Internal server error",
-//     });
-//   }
-// };
 
-// const unblockAdminAccess = async (req: Request, res: Response) => {
-//   const { id } = req.params;
-//   try {
-//     const admin = await Admin.findById(id);
-//     if (!admin) {
-//       return res.status(404).json({
-//         error: true,
-//         message: "Admin not found",
-//       });
-//     }
-//     admin.isBlocked = false;
-//     await admin.save();
-//     return res.status(200).json({
-//       error: false,
-//       message: "Admin access unblocked successfully",
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       error: true,
-//       message: "Internal server error",
-//     });
-//   }
-// };
-
-// const deleteAdmin = async (req: Request, res: Response) => {
-//   const { id } = req.params;
-//   try {
-//     const admin = await Admin.findByIdAndDelete(id);
-//     if (!admin) {
-//       return res.status(404).json({
-//         error: true,
-//         message: "Admin not found",
-//       });
-//     }
-//     return res.status(200).json({
-//       error: false,
-//       message: "Admin deleted successfully",
-//     });
-//   } catch (error) {
-//     return res.status(500).json({
-//       error: true,
-//       message: "Internal server error",
-//     });
-//   }
-// };
 
 const revokeAdminAccess = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
@@ -1000,8 +870,59 @@ const deleteAdmin = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// const verifyAdmin = async (req: AuthRequest, res: Response) => {
+//   const { id } = req.params;
+//   const performer = getAdminIdentifier(req);
+
+//   try {
+//     const admin = await Admin.findById(id);
+//     if (!admin) {
+//       return res.status(404).json({
+//         error: true,
+//         message: "Admin not found",
+//       });
+//     }
+
+//     // Only update if not already verified
+//     if (!admin.isVerified) {
+//       admin.isVerified = true;
+
+//       // Add status change record with admin name
+//       admin.statusChanges.push({
+//         status: "verified",
+//         timestamp: new Date(),
+//         adminId: performer.id,
+//         adminName: performer.name, // Add the admin's name
+//         reason: "Admin account verified",
+//       });
+
+//       await admin.save();
+//     }
+
+//     return res.status(200).json({
+//       error: false,
+//       message: "Admin verified successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error in verifyAdmin:", error);
+//     return res.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
 const verifyAdmin = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
+
+  // Add validation for ID format
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({
+      error: true,
+      message: "Invalid admin ID format",
+    });
+  }
+
   const performer = getAdminIdentifier(req);
 
   try {
@@ -1013,31 +934,44 @@ const verifyAdmin = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Only update if not already verified
-    if (!admin.isVerified) {
-      admin.isVerified = true;
-
-      // Add status change record with admin name
-      admin.statusChanges.push({
-        status: "verified",
-        timestamp: new Date(),
-        adminId: performer.id,
-        adminName: performer.name, // Add the admin's name
-        reason: "Admin account verified",
+    // Prevent verification of already verified admins
+    if (admin.isVerified) {
+      return res.status(400).json({
+        error: true,
+        message: "Admin is already verified",
       });
-
-      await admin.save();
     }
+
+    // Only update if not already verified
+    admin.isVerified = true;
+
+    // Add status change record with admin name
+    admin.statusChanges.push({
+      status: "verified",
+      timestamp: new Date(),
+      adminId: performer.id,
+      adminName: performer.name,
+      reason: "Admin account verified",
+    });
+
+    await admin.save();
 
     return res.status(200).json({
       error: false,
       message: "Admin verified successfully",
+      admin: {
+        id: admin._id,
+        userName: admin.userName,
+        email: admin.email,
+        isVerified: admin.isVerified,
+      },
     });
   } catch (error) {
     console.error("Error in verifyAdmin:", error);
     return res.status(500).json({
       error: true,
       message: "Internal server error",
+      details: error instanceof Error ? error.message : String(error),
     });
   }
 };
