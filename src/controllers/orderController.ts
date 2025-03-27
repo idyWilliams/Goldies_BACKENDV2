@@ -289,16 +289,16 @@ const getSpecificUserOrder = async (req: CustomRequest, res: Response) => {
       const user = req.id;
       const { page = 1, limit = 10, status, startDate, endDate } = req.query;
       const skip = (Number(page) - 1) * Number(limit);
-      const query: any = { user };
+      const query: any = {} ;
 
       if (status) {
-          query.status = status;
+          query.orderStatus = status;
       }
 
       if (startDate || endDate) {
-        filters.createdAt = {};
-        if (startDate) filters.createdAt.$gte = new Date(startDate as string);
-        if (endDate) filters.createdAt.$lte = new Date(endDate as string);
+        query.createdAt = {};
+        if (startDate) query.createdAt.$gte = new Date(startDate as string);
+        if (endDate) query.createdAt.$lte = new Date(endDate as string);
       }
   
   
