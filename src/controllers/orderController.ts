@@ -287,7 +287,7 @@ const deleteOrder = async (req: Request, res: Response) => {
 const getSpecificUserOrder = async (req: CustomRequest, res: Response) => {
   try {
       const user = req.id;
-      const { page = 1, limit = 10, status, dateFrom, dateTo } = req.query;
+      const { page = 1, limit = 10, status, startDate, endDate } = req.query;
       const skip = (Number(page) - 1) * Number(limit);
       const query: any = { user };
 
@@ -295,16 +295,13 @@ const getSpecificUserOrder = async (req: CustomRequest, res: Response) => {
           query.status = status;
       }
 
-      if (dateFrom && dateTo) {
-          query.createdAt = {
-              $gte: new Date(dateFrom),
-              $lte: new Date(dateTo)
-          };
-      } else if (dateFrom) {
-          query.createdAt = { $gte: new Date(dateFrom) };
-      } else if (dateTo) {
-          query.createdAt = { $lte: new Date(dateTo) };
+      if (startDate || endDate) {
+        filters.createdAt = {};
+        if (startDate) filters.createdAt.$gte = new Date(startDate as string);
+        if (endDate) filters.createdAt.$lte = new Date(endDate as string);
       }
+  
+  
 
       // Fetch user details
       const userDetails = await User.findOne({ _id: user });
