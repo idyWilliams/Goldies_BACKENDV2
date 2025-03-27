@@ -285,38 +285,64 @@ const deleteOrder = async (req: Request, res: Response) => {
 }
 
 const getSpecificUserOrder = async (req: CustomRequest, res: Response) => {
-    try {
-        const user = req.id
-        const userOrder = await Order.find({ user }).sort({ createdAt: -1 })
+  try {
+      const user = req.id;
+      const { page = 1, limit = 10, status, startDate, endDate } = req.query;
+      const skip = (Number(page) - 1) * Number(limit);
+      const query: any = {} ;
 
-        const userDetails = await User.findOne({ _id: user })
+      if (status) {
+          query.orderStatus = status;
+      }
 
-        if(!userDetails) {
-            return res.status(404).json({
-                error: true,
-                message: "User not found, please login and try again"
-            })
-        }
+      if (startDate || endDate) {
+        query.createdAt = {};
+        if (startDate) query.createdAt.$gte = new Date(startDate as string);
+        if (endDate) query.createdAt.$lte = new Date(endDate as string);
+      }
+  
+  
 
-        if(!userOrder){
-            return res.status(404).json({
-                error: true,
-                message: "No order found for this user"
-            })
-        }
+      // Fetch user details
+      const userDetails = await User.findOne({ _id: user });
 
-        return res.status(200).json({
-            error: false,
-            userOrder,
-            message: `${userDetails.firstName} ${userDetails.lastName} orders retrieved successfully`
-        })
-    } catch(error) {
-        return res.status(500).json({
-            error: true,
-            err: error,
-            message: "Internal server error, please try again"
-        })
-    }
-}
+      if (!userDetails) {
+          return res.status(404).json({
+              error: true,
+              message: "User not found, please login and try again"
+          });
+      }
+
+      const userOrders = await Order.find(query)
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(Number(limit));
+
+      const totalOrders = await Order.countDocuments(query);
+
+      if (userOrders.length === 0) {
+          return res.status(404).json({
+              error: true,
+              message: "No orders found for this user"
+          });
+      }
+
+      return res.status(200).json({
+          error: false,
+          userOrders,
+          totalOrders,
+          currentPage: Number(page),
+          totalPages: Math.ceil(totalOrders / Number(limit)),
+          message: `${userDetails.firstName} ${userDetails.lastName} orders retrieved successfully`
+      });
+  } catch (error) {
+      return res.status(500).json({
+          error: true,
+          err: error,
+          message: "Internal server error, please try again"
+      });
+  }
+};
+
 
 export { createOrder, updateOrderStatus, getAllOrders, getOrder, deleteOrder, getSpecificUserOrder }
