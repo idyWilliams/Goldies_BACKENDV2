@@ -203,6 +203,8 @@ const getCart = async (req: CustomRequest, res: Response) => {
 
 // New Merge Cart Endpoint
 const mergeLocalCart = async (req: CustomRequest, res: Response) => {
+    console.log("Merge Cart Request Body:", req.body);
+    console.log("User ID:", req.id);
   try {
     const userId = req.id;
     const localCartItems = req.body.localCartItems;

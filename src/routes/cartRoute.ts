@@ -16,6 +16,6 @@ router.patch("/update-cart", authenticateToken, updateCartItem);
 router.get("/", authenticateToken, getCart);
 router.delete("/clear", authenticateToken, clearCart);
 router.delete("/remove/:productId", authenticateToken, removeCartItem);
-router.post("/merge-local-cart", authenticateToken, mergeLocalCart);
+// router.post("/merge-local-cart", authenticateToken, mergeLocalCart);
 
 export default router;

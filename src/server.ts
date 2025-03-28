@@ -66,5 +66,9 @@ app.use("/api/payments", paystackRouter);
 app.use("/api/mail", mailRouter);
 app.use("/api/favorites", userFavoritesRouter);
 app.use("/api/reviews", reviewRouter);
+app.post("/api/cart/merge-local-cart", (req, res) => {
+  console.log("Received request:", req.body);
+  res.status(200).json({ message: "Route is working" });
+});
 
 app.listen(PORT, () => console.log(`server listening on port ${PORT}`));
