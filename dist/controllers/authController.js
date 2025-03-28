@@ -169,7 +169,7 @@ const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, functi
         const token = jsonwebtoken_1.default.sign({ id: user._id }, process.env.ACCESS_SECRET_TOKEN, {
             expiresIn: maxAge,
         });
-        const resetUrl = `${process.env.FRONTEND_URL}/reset_password/${token}`;
+        const resetUrl = `${process.env.FRONTEND_URL}/reset_password?email=${email}&token=${token}`;
         const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2 style="color: #007bff;">Password Reset Request</h2>
@@ -208,10 +208,9 @@ const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, functi
 });
 exports.forgottenPassword = forgottenPassword;
 const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const user = req.id;
-    const { password } = req.body;
+    const { email, password } = req.body;
     try {
-        const isUser = yield User_model_1.default.findOne({ _id: user });
+        const isUser = yield User_model_1.default.findOne({ email: email });
         if (!isUser) {
             return res.sendStatus(401);
         }

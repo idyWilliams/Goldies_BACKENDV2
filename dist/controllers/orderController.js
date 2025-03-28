@@ -116,20 +116,82 @@ const updateOrderStatus = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.updateOrderStatus = updateOrderStatus;
+// const getAllOrders = async (req: Request, res: Response) => {
+//     try {
+//         const orders = await Order.find().sort({ createdAt: -1 })
+//         return res.status(200).json({
+//             error: false,
+//             orders,
+//             message: "All order data fetched successfully"
+//         })
+//     } catch(error) {
+//         return res.status(500).json({
+//             error: true,
+//             err: error,
+//             message: "Internal server error, please try again"
+//         })
+//     }
+// }
 const getAllOrders = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { page = 1, limit = 10, searchQuery = '', status, minPrice, maxPrice, startDate, endDate } = req.query;
     try {
-        const orders = yield Order_model_1.default.find().sort({ createdAt: -1 });
+        const pageNumber = parseInt(page, 10);
+        const limitNumber = parseInt(limit, 10);
+        const skip = (pageNumber - 1) * limitNumber; // Calculate the number of records to skip
+        // Build the filters object based on searchQuery
+        const filters = {};
+        // Search by orderId or billing name (firstName, lastName)
+        if (searchQuery) {
+            filters.$or = [
+                { orderId: { $regex: searchQuery, $options: 'i' } },
+                { firstName: { $regex: searchQuery, $options: 'i' } },
+                { lastName: { $regex: searchQuery, $options: 'i' } }
+            ];
+        }
+        // Filter by status
+        if (status) {
+            filters.orderStatus = status;
+        }
+        // Filter by price range (assuming orders have a totalPrice field)
+        if (minPrice || maxPrice) {
+            filters.price = {};
+            if (minPrice)
+                filters.price.$gte = parseFloat(minPrice);
+            if (maxPrice)
+                filters.price.$lte = parseFloat(maxPrice);
+        }
+        // Filter by date range (assuming orders have a `createdAt` field)
+        if (startDate || endDate) {
+            filters.createdAt = {};
+            if (startDate)
+                filters.createdAt.$gte = new Date(startDate);
+            if (endDate)
+                filters.createdAt.$lte = new Date(endDate);
+        }
+        // Fetch the orders with pagination and search
+        const orders = yield Order_model_1.default.find(filters)
+            .skip(skip)
+            .limit(limitNumber)
+            .sort({ createdAt: -1 }) // Sort by createdAt in descending order
+            .populate('user', 'firstName lastName')
+            .exec();
+        // Get the total count of orders for pagination
+        const totalOrders = yield Order_model_1.default.countDocuments(filters);
+        const totalPages = Math.ceil(totalOrders / limitNumber);
         return res.status(200).json({
             error: false,
+            message: "All order data fetched successfully.",
             orders,
-            message: "All order data fetched successfully"
+            totalPages,
+            currentPage: pageNumber,
+            totalOrders,
         });
     }
     catch (error) {
         return res.status(500).json({
             error: true,
+            message: "Internal server error, please try again.",
             err: error,
-            message: "Internal server error, please try again"
         });
     }
 });
@@ -196,7 +258,20 @@ exports.deleteOrder = deleteOrder;
 const getSpecificUserOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const user = req.id;
-        const userOrder = yield Order_model_1.default.find({ user }).sort({ createdAt: -1 });
+        const { page = 1, limit = 10, status, startDate, endDate } = req.query;
+        const skip = (Number(page) - 1) * Number(limit);
+        const query = {};
+        if (status) {
+            query.orderStatus = status;
+        }
+        if (startDate || endDate) {
+            query.createdAt = {};
+            if (startDate)
+                query.createdAt.$gte = new Date(startDate);
+            if (endDate)
+                query.createdAt.$lte = new Date(endDate);
+        }
+        // Fetch user details
         const userDetails = yield User_model_1.default.findOne({ _id: user });
         if (!userDetails) {
             return res.status(404).json({
@@ -204,15 +279,23 @@ const getSpecificUserOrder = (req, res) => __awaiter(void 0, void 0, void 0, fun
                 message: "User not found, please login and try again"
             });
         }
-        if (!userOrder) {
+        const userOrders = yield Order_model_1.default.find(query)
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(Number(limit));
+        const totalOrders = yield Order_model_1.default.countDocuments(query);
+        if (userOrders.length === 0) {
             return res.status(404).json({
                 error: true,
-                message: "No order found for this user"
+                message: "No orders found for this user"
             });
         }
         return res.status(200).json({
             error: false,
-            userOrder,
+            userOrders,
+            totalOrders,
+            currentPage: Number(page),
+            totalPages: Math.ceil(totalOrders / Number(limit)),
             message: `${userDetails.firstName} ${userDetails.lastName} orders retrieved successfully`
         });
     }

@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteCategory = exports.getCategory = exports.getAllCategories = exports.editCategory = exports.createCategory = void 0;
 const Category_model_1 = __importDefault(require("../models/Category.model"));
 const SubCategory_model_1 = __importDefault(require("../models/SubCategory.model"));
+const Product_model_1 = __importDefault(require("../models/Product.model"));
 //  create category
 const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { name, description, image, categorySlug, status } = req.body;
@@ -97,17 +98,45 @@ const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, functio
     try {
         const page = req.query.page ? parseInt(req.query.page, 10) : null;
         const limit = req.query.limit ? parseInt(req.query.limit, 10) : null;
+        const search = req.query.search ? req.query.search.toString() : "";
+        const sortByStatus = req.query.sortByStatus ? req.query.sortByStatus.toString() : null;
+        const sortByProducts = req.query.sortByProducts ? req.query.sortByProducts.toString() : null;
+        const sortBySubcategories = req.query.sortBySubcategories ? req.query.sortBySubcategories.toString() : null;
         const skip = page && limit ? (page - 1) * limit : 0;
-        const totalCategories = yield Category_model_1.default.countDocuments();
-        const allCategoriesQuery = Category_model_1.default.find().sort({ createdAt: -1 });
-        const allCategories = page && limit
+        // Search query for category name
+        const searchQuery = search
+            ? { name: { $regex: search, $options: "i" } }
+            : {};
+        // Fetch categories with search filter
+        let allCategoriesQuery = Category_model_1.default.find(searchQuery).sort({ createdAt: -1 });
+        let allCategories = page && limit
             ? yield allCategoriesQuery.skip(skip).limit(limit).lean()
             : yield allCategoriesQuery.lean();
+        // Fetch subcategories
         const allSubCategories = yield SubCategory_model_1.default.find().lean();
-        const categoriesWithSubcategories = allCategories.map((category) => {
+        // Attach subcategories and count products
+        const categoriesWithSubcategories = yield Promise.all(allCategories.map((category) => __awaiter(void 0, void 0, void 0, function* () {
             const subCategories = allSubCategories.filter((subCategory) => subCategory.categoryId.toString() === category._id.toString());
-            return Object.assign(Object.assign({}, category), { subCategories });
-        });
+            // Count number of products in the category
+            const productCount = yield Product_model_1.default.countDocuments({ categoryId: category._id });
+            return Object.assign(Object.assign({}, category), { subCategories, subCategoryCount: subCategories.length, productCount });
+        })));
+        // Sorting by status
+        if (sortByStatus !== null) {
+            const statusBoolean = sortByStatus === "true"; // Convert to boolean
+            categoriesWithSubcategories.sort((a, b) => (a.status === statusBoolean ? -1 : 1));
+        }
+        // Sorting by number of products
+        if (sortByProducts !== null) {
+            const order = sortByProducts === "desc" ? -1 : 1;
+            categoriesWithSubcategories.sort((a, b) => (a.productCount - b.productCount) * order);
+        }
+        // Sorting by number of subcategories
+        if (sortBySubcategories !== null) {
+            const order = sortBySubcategories === "desc" ? -1 : 1;
+            categoriesWithSubcategories.sort((a, b) => (a.subCategoryCount - b.subCategoryCount) * order);
+        }
+        const totalCategories = yield Category_model_1.default.countDocuments(searchQuery);
         const totalPages = page && limit ? Math.ceil(totalCategories / limit) : 1;
         res.status(200).json({
             error: false,

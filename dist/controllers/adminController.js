@@ -12,14 +12,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getUserOrderByUserId = exports.getAdmin = exports.updateProfile = exports.resetPassword = exports.forgotPassword = exports.adminLogin = exports.verifyOTP = exports.adminSignup = exports.inviteAdmin = void 0;
+exports.getAdminById = exports.getAllAdmins = exports.revokeAdminAccess = exports.unblockAdminAccess = exports.verifyAdmin = exports.deleteAdmin = exports.getUserOrderByUserId = exports.getAdmin = exports.updateProfile = exports.resetPassword = exports.forgotPassword = exports.adminLogin = exports.verifyOTP = exports.adminSignup = exports.inviteAdmin = void 0;
 const Admin_model_1 = __importDefault(require("../models/Admin.model"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 dotenv_1.default.config();
+const mongoose_1 = __importDefault(require("mongoose"));
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const Order_model_1 = __importDefault(require("../models/Order.model"));
+const auth_middleware_1 = require("../middleware/auth.middleware");
 const inviteAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email } = req.body;
     try {
@@ -47,7 +49,7 @@ const inviteAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
       <p>Goldies has invited you to be part of the administration team.</p>
       <a
         href="${SignUpURL}"
-        style="display: inline-block; padding: 10px 20px; background-color: yellow; color: #fff; text-decoration: none; border-radius: 5px;">
+        style="display: inline-block; padding: 10px 20px; background-color: black; color: #fff; text-decoration: none; border-radius: 5px;">
         Join Now
       </a>
       <p>If you did not request this, please ignore this email.</p>
@@ -86,7 +88,7 @@ function generateOtp() {
     return otp;
 }
 const generateToken = (id) => {
-    const maxAge = '7d';
+    const maxAge = "30m";
     const secret = process.env.ACCESS_SECRET_TOKEN;
     if (!secret) {
         throw new Error("Secret key is not defined in environment variables.");
@@ -96,119 +98,6 @@ const generateToken = (id) => {
     });
     return token;
 };
-// const adminSignup = async (req: Request, res: Response) => {
-//   const { userName, email, password } = req.body;
-//   // Validate input
-//   if (!userName) {
-//     return res.status(400).json({
-//       error: true,
-//       message: "Email is required for this process",
-//     });
-//   }
-//   if (!email) {
-//     return res.status(400).json({
-//       error: true,
-//       message: "Email is required for this process",
-//     });
-//   }
-//   if (!password) {
-//     return res.status(400).json({
-//       error: true,
-//       message: "Password is required for this process",
-//     });
-//   }
-//   try {
-//     const user = await Admin.findOne({ email });
-//     const OTP = generateOtp(); // Assuming this function generates a 6-digit OTP
-//     // Create transporter for sending email
-//     const transporter = nodemailer.createTransport({
-//       host: "smtp.gmail.com",
-//       port: 465,
-//       secure: true,
-//       auth: {
-//         user: process.env.EMAIL,
-//         pass: process.env.PASSWORD,
-//       },
-//       tls: {
-//         rejectUnauthorized: false,
-//       },
-//     });
-//     // Function to send the verification email
-//     const sendVerificationEmail = async () => {
-//       const emailContent = `
-//       <div style="font-family: Arial, sans-serif; color: #333;">
-//         <h2 style="color: #007bff;">Email Verification</h2>
-//         <p>Do not share this with anyone.</p>
-//         <p> Verification code: <strong>${OTP}</strong> </p>
-//         <p>If you did not request this, please ignore this email.</p>
-//       </div>
-//     `;
-//       const mailOptions = {
-//         from: process.env.EMAIL,
-//         to: email,
-//         subject: "Goldies Team - Email Verification",
-//         text: "Email verification.",
-//         html: emailContent,
-//       };
-//       try {
-//         const info = await transporter.sendMail(mailOptions);
-//         console.log("Message sent: %s", info.messageId);
-//       } catch (err) {
-//         console.error("Error sending email: ", err);
-//         throw new Error("Failed to send verification email.");
-//       }
-//     };
-//     // If user does not exist, create new admin
-//     if (!user) {
-//       // verify JWT
-//       const { refCode } = req.query;
-//       try {
-//         jwt.verify(refCode as string, process.env.ADMINREFCODE as string);
-//       } catch (err) {
-//         return res.status(403).json({
-//           error: true,
-//           message: "Invalid or expired referral code.",
-//         });
-//       }
-//       const hashedPwd = bcryptjs.hashSync(password, 10);
-//       const admin = await Admin.create({
-//         email,
-//         fullName,
-//         password: hashedPwd,
-//         OTP,
-//       });
-//       // Send verification email
-//       await sendVerificationEmail();
-//       return res.status(200).json({
-//         error: false,
-//         message: `Admin created successfully. A 6-digit code has been sent to ${email}`,
-//       });
-//     } else {
-//       // Verify the password
-//       const passwordMatch = await bcryptjs.compare(password, user.password);
-//       if (!passwordMatch) {
-//         return res.status(400).json({
-//           error: true,
-//           message: "Password is incorrect",
-//         });
-//       }
-//       // Update OTP and send verification email
-//       user.OTP = OTP;
-//       await user.save();
-//       await sendVerificationEmail();
-//       return res.status(200).json({
-//         error: false,
-//         message: `New 6-digit code has been sent to ${email}`,
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Error in admin signup: ", error);
-//     return res.status(500).json({
-//       error: true,
-//       message: "Internal server error",
-//     });
-//   }
-// };
 const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userName, email, password } = req.body;
     if (!userName) {
@@ -349,7 +238,13 @@ const verifyOTP = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const token = generateToken(admin._id);
         return res.status(200).json({
             error: false,
-            admin,
+            admin: {
+                id: admin._id,
+                userName: admin.userName,
+                email: admin.email,
+                role: admin.role,
+                isVerified: admin.isVerified,
+            },
             token,
             message: `Admin Signup successful`,
         });
@@ -419,6 +314,12 @@ const adminLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 message: "Admin not found",
             });
         }
+        if (admin.isBlocked) {
+            return res.status(403).json({
+                error: true,
+                message: "Your account has been blocked. Contact the super admin.",
+            });
+        }
         if (!admin.isVerified) {
             return res.status(401).json({
                 error: true,
@@ -434,7 +335,6 @@ const adminLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         }
         admin.OTP = OTP;
         yield admin.save();
-        // Send verification email
         yield sendVerificationEmail();
         const token = generateToken(admin._id);
         return res.status(200).json({
@@ -626,7 +526,7 @@ const getAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         return res.status(200).json({
             error: false,
-            admin
+            admin,
         });
     }
     catch (err) {
@@ -638,6 +538,359 @@ const getAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.getAdmin = getAdmin;
+const getAllAdmins = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        // Logging for debugging
+        console.log("Full Query Parameters:", req.query);
+        // Safely parse pagination and limit
+        const page = Math.max(1, parseInt(req.query.page) || 1);
+        const limit = Math.max(1, parseInt(req.query.limit) || 10);
+        const sortField = req.query.sortField || "createdAt";
+        const sortOrder = req.query.sortOrder === "asc" ? 1 : -1;
+        const search = req.query.search;
+        console.log("Parsed Parameters:", { page, limit, sortField, sortOrder });
+        const skip = (page - 1) * limit;
+        // Create a robust filter object
+        const filter = {};
+        // Add search conditions
+        if (search) {
+            filter.$or = [
+                { userName: { $regex: search, $options: "i" } },
+                { email: { $regex: search, $options: "i" } },
+            ];
+        }
+        // Add additional filter conditions
+        if (req.query.role) {
+            filter.role = req.query.role;
+        }
+        if (req.query.status) {
+            filter.status = req.query.status;
+        }
+        if (req.query.isActive !== undefined) {
+            filter.isActive = req.query.isActive === "true";
+        }
+        // Date range filtering
+        if (req.query.startDate || req.query.endDate) {
+            filter.createdAt = {};
+            if (req.query.startDate) {
+                filter.createdAt.$gte = new Date(req.query.startDate);
+            }
+            if (req.query.endDate) {
+                filter.createdAt.$lte = new Date(req.query.endDate);
+            }
+        }
+        // Prepare sort object
+        const sort = {};
+        sort[sortField] = sortOrder;
+        try {
+            // Count total documents matching the filter
+            const totalAdmins = yield Admin_model_1.default.countDocuments(filter);
+            console.log("Total Admins Count:", totalAdmins);
+            // Find admins with pagination and sorting
+            const admins = yield Admin_model_1.default.find(filter)
+                .select("-password -OTP") // Exclude sensitive fields
+                .sort(sort)
+                .skip(skip)
+                .limit(limit);
+            console.log("Fetched Admins Count:", admins.length);
+            return res.status(200).json({
+                error: false,
+                admins,
+                pagination: {
+                    total: totalAdmins,
+                    page,
+                    limit,
+                    pages: Math.ceil(totalAdmins / limit),
+                },
+            });
+        }
+        catch (findError) {
+            if (findError instanceof Error) {
+                console.error("Database Query Error:", findError.message);
+                console.error("Full Error:", findError);
+                return res.status(500).json({
+                    error: true,
+                    message: "Database query failed",
+                    details: findError.message,
+                });
+            }
+            else {
+                console.error("Unknown Database Error:", findError);
+                return res.status(500).json({
+                    error: true,
+                    message: "Unexpected database error",
+                    details: String(findError),
+                });
+            }
+        }
+    }
+    catch (error) {
+        if (error instanceof Error) {
+            console.error("Unexpected Server Error:", error.message);
+            console.error("Full Error:", error);
+            return res.status(500).json({
+                error: true,
+                message: "Internal server error",
+                details: error.message,
+            });
+        }
+        else {
+            console.error("Unknown Server Error:", error);
+            return res.status(500).json({
+                error: true,
+                message: "Unknown internal server error",
+                details: String(error),
+            });
+        }
+    }
+});
+exports.getAllAdmins = getAllAdmins;
+const getAdminById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    try {
+        const admin = yield Admin_model_1.default.findById(id);
+        if (!admin) {
+            return res.status(404).json({
+                error: true,
+                message: "Admin not found",
+            });
+        }
+        return res.status(200).json({
+            error: false,
+            admin,
+        });
+    }
+    catch (error) {
+        return res.status(500).json({
+            error: true,
+            message: "Internal server error",
+        });
+    }
+});
+exports.getAdminById = getAdminById;
+const revokeAdminAccess = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const { reason } = req.body; // Optional reason for blocking
+    const performer = (0, auth_middleware_1.getAdminIdentifier)(req);
+    try {
+        const admin = yield Admin_model_1.default.findById(id);
+        if (!admin) {
+            return res.status(404).json({
+                error: true,
+                message: "Admin not found",
+            });
+        }
+        // Prevent self-blocking
+        if (performer.id === id) {
+            return res.status(400).json({
+                error: true,
+                message: "You cannot block your own account",
+            });
+        }
+        // Only update if not already blocked
+        if (!admin.isBlocked) {
+            admin.isBlocked = true;
+            // Add status change record with admin name
+            admin.statusChanges.push({
+                status: "blocked",
+                timestamp: new Date(),
+                adminId: performer.id,
+                adminName: performer.name, // Add the admin's name
+                reason: reason || `Access revoked by ${performer.name}`,
+            });
+            yield admin.save();
+        }
+        return res.status(200).json({
+            error: false,
+            message: "Admin access revoked successfully",
+        });
+    }
+    catch (error) {
+        console.error("Error in revokeAdminAccess:", error);
+        return res.status(500).json({
+            error: true,
+            message: "Internal server error",
+        });
+    }
+});
+exports.revokeAdminAccess = revokeAdminAccess;
+const unblockAdminAccess = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const { reason } = req.body; // Optional reason for unblocking
+    const performer = (0, auth_middleware_1.getAdminIdentifier)(req);
+    try {
+        const admin = yield Admin_model_1.default.findById(id);
+        if (!admin) {
+            return res.status(404).json({
+                error: true,
+                message: "Admin not found",
+            });
+        }
+        // Only update if currently blocked
+        if (admin.isBlocked) {
+            admin.isBlocked = false;
+            // Add status change record with admin name
+            admin.statusChanges.push({
+                status: "unblocked",
+                timestamp: new Date(),
+                adminId: performer.id,
+                adminName: performer.name, // Add the admin's name
+                reason: reason || `Access restored by ${performer.name}`,
+            });
+            yield admin.save();
+        }
+        return res.status(200).json({
+            error: false,
+            message: "Admin access unblocked successfully",
+        });
+    }
+    catch (error) {
+        console.error("Error in unblockAdminAccess:", error);
+        return res.status(500).json({
+            error: true,
+            message: "Internal server error",
+        });
+    }
+});
+exports.unblockAdminAccess = unblockAdminAccess;
+const deleteAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const { reason } = req.body; // Optional reason for deletion
+    const performer = (0, auth_middleware_1.getAdminIdentifier)(req);
+    try {
+        // First find the admin to add status change before deletion
+        const admin = yield Admin_model_1.default.findById(id);
+        if (!admin) {
+            return res.status(404).json({
+                error: true,
+                message: "Admin not found",
+            });
+        }
+        // Prevent self-deletion
+        if (performer.id === id) {
+            return res.status(400).json({
+                error: true,
+                message: "You cannot delete your own account",
+            });
+        }
+        // Instead of hard deleting, update the isDeleted flag
+        admin.isDeleted = true;
+        // Add status change record with admin name
+        admin.statusChanges.push({
+            status: "deleted",
+            timestamp: new Date(),
+            adminId: performer.id,
+            adminName: performer.name, // Add the admin's name
+            reason: reason || `Account deleted by ${performer.name}`,
+        });
+        yield admin.save();
+        return res.status(200).json({
+            error: false,
+            message: "Admin deleted successfully",
+        });
+    }
+    catch (error) {
+        console.error("Error in deleteAdmin:", error);
+        return res.status(500).json({
+            error: true,
+            message: "Internal server error",
+        });
+    }
+});
+exports.deleteAdmin = deleteAdmin;
+// const verifyAdmin = async (req: AuthRequest, res: Response) => {
+//   const { id } = req.params;
+//   const performer = getAdminIdentifier(req);
+//   try {
+//     const admin = await Admin.findById(id);
+//     if (!admin) {
+//       return res.status(404).json({
+//         error: true,
+//         message: "Admin not found",
+//       });
+//     }
+//     // Only update if not already verified
+//     if (!admin.isVerified) {
+//       admin.isVerified = true;
+//       // Add status change record with admin name
+//       admin.statusChanges.push({
+//         status: "verified",
+//         timestamp: new Date(),
+//         adminId: performer.id,
+//         adminName: performer.name, // Add the admin's name
+//         reason: "Admin account verified",
+//       });
+//       await admin.save();
+//     }
+//     return res.status(200).json({
+//       error: false,
+//       message: "Admin verified successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error in verifyAdmin:", error);
+//     return res.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+const verifyAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    // Add validation for ID format
+    if (!mongoose_1.default.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({
+            error: true,
+            message: "Invalid admin ID format",
+        });
+    }
+    const performer = (0, auth_middleware_1.getAdminIdentifier)(req);
+    try {
+        const admin = yield Admin_model_1.default.findById(id);
+        if (!admin) {
+            return res.status(404).json({
+                error: true,
+                message: "Admin not found",
+            });
+        }
+        // Prevent verification of already verified admins
+        if (admin.isVerified) {
+            return res.status(400).json({
+                error: true,
+                message: "Admin is already verified",
+            });
+        }
+        // Only update if not already verified
+        admin.isVerified = true;
+        // Add status change record with admin name
+        admin.statusChanges.push({
+            status: "verified",
+            timestamp: new Date(),
+            adminId: performer.id,
+            adminName: performer.name,
+            reason: "Admin account verified",
+        });
+        yield admin.save();
+        return res.status(200).json({
+            error: false,
+            message: "Admin verified successfully",
+            admin: {
+                id: admin._id,
+                userName: admin.userName,
+                email: admin.email,
+                isVerified: admin.isVerified,
+            },
+        });
+    }
+    catch (error) {
+        console.error("Error in verifyAdmin:", error);
+        return res.status(500).json({
+            error: true,
+            message: "Internal server error",
+            details: error instanceof Error ? error.message : String(error),
+        });
+    }
+});
+exports.verifyAdmin = verifyAdmin;
 const getUserOrderByUserId = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     try {
@@ -650,7 +903,7 @@ const getUserOrderByUserId = (req, res) => __awaiter(void 0, void 0, void 0, fun
         }
         return res.status(200).json({
             error: false,
-            orders
+            orders,
         });
     }
     catch (err) {

@@ -9,4 +9,5 @@ router.patch("/update-cart", verifyJWT_1.authenticateToken, cartController_1.upd
 router.get("/", verifyJWT_1.authenticateToken, cartController_1.getCart);
 router.delete("/clear", verifyJWT_1.authenticateToken, cartController_1.clearCart);
 router.delete("/remove/:productId", verifyJWT_1.authenticateToken, cartController_1.removeCartItem);
+router.post("/merge-local-cart", verifyJWT_1.authenticateToken, cartController_1.mergeLocalCart);
 exports.default = router;

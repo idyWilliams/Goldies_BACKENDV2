@@ -29,9 +29,10 @@ const cartSchema = new mongoose_1.Schema({
     products: [
         {
             product: { type: mongoose_1.Schema.Types.ObjectId, ref: "Product", required: true },
-            size: { type: String, required: [true, "Please provide cake size"] },
-            toppings: { type: [String], required: [true, "Please provide cake toppings"] },
-            flavour: { type: [String], required: [true, "Please provide cake flavour"] },
+            shapes: { type: String, required: false },
+            size: { type: String, required: false },
+            toppings: { type: [String], required: false },
+            flavour: { type: [String], required: false },
             dateNeeded: { type: String, required: false },
             details: { type: String, required: false },
             quantity: { type: Number, required: [true, "Please provide the quantity"], min: 1 },

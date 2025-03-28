@@ -8,10 +8,10 @@ const categoryT = new mongoose_1.Schema({
 const productSchema = new mongoose_1.Schema({
     name: { type: String, require: true },
     description: { type: String, require: true },
-    shapes: { type: Array, require: true },
-    sizes: { type: Array, require: true },
-    productType: { type: String, require: true },
-    toppings: { type: Array, require: true },
+    shapes: { type: Array, require: false },
+    sizes: { type: Array, require: false },
+    productType: { type: String, require: false },
+    toppings: { type: Array, require: false },
     category: {
         type: mongoose_1.Schema.Types.ObjectId,
         ref: 'Category',

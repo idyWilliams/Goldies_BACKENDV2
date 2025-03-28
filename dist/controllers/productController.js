@@ -24,6 +24,11 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         if (!name || !description || !category || !subCategories || !minPrice || !maxPrice || !status) {
             return res.status(400).json({ message: "All required fields must be provided." });
         }
+        if (productType === 'preorder') {
+            if (!shapes || !sizes || !toppings || !flavour) {
+                return res.status(400).json({ message: "All required fields must be provided." });
+            }
+        }
         // Check if category ID is valid
         if (!mongoose_1.default.Types.ObjectId.isValid(category)) {
             return res.status(400).json({ message: "Invalid category ID format." });
@@ -33,10 +38,8 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         if (subCategoryIds.length !== subCategories.length) {
             return res.status(400).json({ message: "One or more subcategories have an invalid ID format." });
         }
-        console.log('CATEGORY', category);
         // Check if category exists
         const existingCategory = yield Category_model_1.default.findOne({ _id: category });
-        console.log('CATEGORY', category);
         if (!existingCategory) {
             return res.status(404).json({ message: "Category not found." });
         }
@@ -206,7 +209,7 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
         }
         const skip = (parseInt(page) - 1) * parseInt(limit);
         // Ensure `sortBy` is a valid string and cast it
-        const validSortBy = typeof sortBy === 'string' ? sortBy : 'createdAt'; // Fallback to 'createdAt' if invalid
+        const validSortBy = typeof sortBy === 'string' ? sortBy : 'createdAt';
         const sortOrder = order === "asc" ? 1 : -1;
         // Apply sorting and populate category and subCategories
         const productDetails = yield Product_model_1.default.find(filters)
@@ -264,7 +267,7 @@ const getProductBySlug = (req, res) => __awaiter(void 0, void 0, void 0, functio
     const { slug } = req.params; // Get the slug from the URL parameter
     try {
         // Find the product by slug
-        const product = yield Product_model_1.default.findOne({ slug }).populate('category').populate('subCategories');
+        const product = yield Product_model_1.default.findOne({ slug: slug }).populate('category').populate('subCategories');
         if (!product) {
             return res.status(404).json({
                 error: true,
