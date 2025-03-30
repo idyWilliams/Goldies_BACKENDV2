@@ -2,9 +2,22 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 dotenv.config();
 import { Request, Response, NextFunction } from "express";
+import { Server } from "socket.io";
+
 
 export interface CustomRequest extends Request {
   id?: string;
+  user?: {
+    _id: string;
+    id?: string;
+    email: string;
+    role: string;
+    isAdmin: boolean;
+    isBlocked?: boolean;
+    isDeleted?: boolean;
+    isVerified?: boolean;
+  };
+  io?: Server;
 }
 
 // Require authentication

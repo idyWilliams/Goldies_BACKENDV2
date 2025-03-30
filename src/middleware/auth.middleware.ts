@@ -3,6 +3,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import Admin from "../models/Admin.model";
+import { CustomRequest } from "./verifyJWT";
 
 // Define the admin interface with all necessary properties
 interface IAdmin {
@@ -173,4 +174,25 @@ export const getAdminIdentifier = (
     id: req.admin._id || req.admin.id || "unknown",
     name: req.admin.userName || "Unknown Admin",
   };
+};
+export const isAdmin = (
+  req: CustomRequest,
+  res: Response,
+  next: NextFunction
+) => {
+  if (!req.user) {
+    return res.status(401).json({
+      error: true,
+      message: "Authentication required. Please log in.",
+    });
+  }
+
+  if (!["admin", "super_admin"].includes(req.user.role)) {
+    return res.status(403).json({
+      error: true,
+      message: "Access denied. Only admins can perform this action.",
+    });
+  }
+
+  next();
 };
