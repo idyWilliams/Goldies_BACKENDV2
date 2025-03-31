@@ -13,7 +13,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAdminIdentifier = exports.isSuperAdmin = exports.authorize = exports.protect = void 0;
+exports.isAdmin = exports.getAdminIdentifier = exports.isSuperAdmin = exports.authorize = exports.protect = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const Admin_model_1 = __importDefault(require("../models/Admin.model"));
 const protect = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
@@ -138,3 +138,19 @@ const getAdminIdentifier = (req) => {
     };
 };
 exports.getAdminIdentifier = getAdminIdentifier;
+const isAdmin = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({
+            error: true,
+            message: "Authentication required. Please log in.",
+        });
+    }
+    if (!["admin", "super_admin"].includes(req.user.role)) {
+        return res.status(403).json({
+            error: true,
+            message: "Access denied. Only admins can perform this action.",
+        });
+    }
+    next();
+};
+exports.isAdmin = isAdmin;

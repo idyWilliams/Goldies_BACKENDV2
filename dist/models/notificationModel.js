@@ -23,29 +23,19 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// models/notificationModel.ts
 const mongoose_1 = __importStar(require("mongoose"));
-const cartSchema = new mongoose_1.Schema({
-    userId: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
-    products: [
-        {
-            product: {
-                type: mongoose_1.Schema.Types.ObjectId,
-                ref: "Product",
-                required: true,
-            },
-            shape: { type: String, required: false },
-            size: { type: String, required: false },
-            toppings: { type: [String], required: false },
-            flavour: { type: [String], required: false },
-            dateNeeded: { type: String, required: false },
-            details: { type: String, required: false },
-            quantity: {
-                type: Number,
-                required: [true, "Please provide the quantity"],
-                min: 1,
-            },
-        },
-    ],
+const notificationSchema = new mongoose_1.Schema({
+    recipient: { type: mongoose_1.Schema.Types.ObjectId, required: true, ref: "Admin" },
+    title: { type: String, required: true },
+    message: { type: String, required: true },
+    type: {
+        type: String,
+        required: true,
+        enum: ["order", "user", "product", "system", "payment"],
+    },
+    relatedId: { type: mongoose_1.Schema.Types.ObjectId },
+    isRead: { type: Boolean, default: false },
 }, { timestamps: true });
-const Cart = mongoose_1.default.model("Cart", cartSchema);
-exports.default = Cart;
+const Notification = mongoose_1.default.model("Notification", notificationSchema);
+exports.default = Notification;

@@ -184,6 +184,8 @@ const getCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
 exports.getCart = getCart;
 // New Merge Cart Endpoint
 const mergeLocalCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("Merge Cart Request Body:", req.body);
+    console.log("User ID:", req.id);
     try {
         const userId = req.id;
         const localCartItems = req.body.localCartItems;
