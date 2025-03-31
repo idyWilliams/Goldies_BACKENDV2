@@ -122,10 +122,7 @@ mongoose
   .connect(process.env.connectionString as string)
   .then(() => console.log("MongoDB connected"))
   .catch((err: any) => console.log(err));
-// mongoose
-//   .connect(process.env.MONGO_URI as string)
-//   .then(() => console.log("MongoDB connected"))
-//   .catch((err) => console.error("MongoDB connection error:", err));
+
 
 app.get("/", (req: Request, res: Response) => {
   res.send("backend connected successfully");
