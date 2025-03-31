@@ -15,13 +15,13 @@ import paystackRouter from "./routes/paystackRoute";
 import mailRouter from "./routes/mailRoute";
 import userFavoritesRouter from "./routes/userFavoritesRoute";
 import reviewRouter from "./routes/reviewRoute";
-import notificationRouter from "./routes/notificationRoute";
 
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 import cors from "cors";
 import { Script } from "vm";
 import { createServer } from "http";
+import { notificationRouter } from "./routes/notificationRoute";
 const PORT = process.env.PORT || 2030;
 // const app = express();
 const httpServer = createServer(app);
@@ -143,7 +143,7 @@ app.use("/api/payments", paystackRouter);
 app.use("/api/mail", mailRouter);
 app.use("/api/favorites", userFavoritesRouter);
 app.use("/api/reviews", reviewRouter);
-app.use("/api/notifications", notificationRouter); // Add notification routes
+app.use("/api/notifications", notificationRouter(io));
 
 // Important: Use httpServer instead of app for listening
 // This is critical for Socket.io to work properly

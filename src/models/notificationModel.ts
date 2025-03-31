@@ -1,63 +1,35 @@
-
-import mongoose, { Schema, Document } from "mongoose";
+// models/notificationModel.ts
+import mongoose, { Document, Schema } from "mongoose";
 
 export interface INotification extends Document {
-  userId: mongoose.Types.ObjectId;
-  message: string;
+  recipient: mongoose.Schema.Types.ObjectId; // Admin or super_admin ID
   title: string;
-  type: "order" | "user" | "system" | "product" | "promotion";
-  read: boolean;
-  archived: boolean;
-  relatedEntityId?: string;
-  priority: "high" | "medium" | "low";
+  message: string;
+  type: "order" | "user" | "product" | "system" | "payment";
+  relatedId?: mongoose.Schema.Types.ObjectId; // ID of related entity (order, user, etc.)
+  isRead: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const NotificationSchema: Schema = new Schema(
+const notificationSchema = new Schema<INotification>(
   {
-    userId: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    message: {
-      type: String,
-      required: true,
-    },
-    title: {
-      type: String,
-      required: true,
-    },
+    recipient: { type: Schema.Types.ObjectId, required: true, ref: "Admin" },
+    title: { type: String, required: true },
+    message: { type: String, required: true },
     type: {
       type: String,
-      enum: ["order", "user", "system", "product", "promotion"],
-      default: "system",
+      required: true,
+      enum: ["order", "user", "product", "system", "payment"],
     },
-    read: {
-      type: Boolean,
-      default: false,
-    },
-    archived: {
-      type: Boolean,
-      default: false,
-    },
-    relatedEntityId: {
-      type: String,
-      default: null,
-    },
-    priority: {
-      type: String,
-      enum: ["high", "medium", "low"],
-      default: "medium",
-    },
+    relatedId: { type: Schema.Types.ObjectId },
+    isRead: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
 
 const Notification = mongoose.model<INotification>(
   "Notification",
-  NotificationSchema
+  notificationSchema
 );
-
 export default Notification;
