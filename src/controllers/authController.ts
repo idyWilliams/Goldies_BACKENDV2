@@ -201,6 +201,7 @@ await User.updateOne(
         style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px;">
         Reset Password
       </a>
+      <p>This link expires in 15 minutes</p>
       <p>If you did not request this, please ignore this email.</p>
     </div>
   `;
@@ -234,33 +235,45 @@ const resetPassword = async (req: Request, res: Response) => {
 
   try {
     // Validate inputs
-    if ( !emailToken || !password) {
+    if (!emailToken || !password) {
       return res.status(400).json({
         error: true,
-        message: "Email Token and new password are required"
+        message: "Email token and new password are required"
       });
     }
 
-    // Find user with matching email and OTP
-    const result = await User.updateOne(
-      { 
-        emailToken: emailToken,
-        emailTokenExpires: { $gt: new Date() } 
-      },
-      { 
-        $set: { password: bcryptjs.hashSync(password, 10) },
-        $unset: { emailToken: "", emailTokenExpires: "" } 
-      }
-    );
+    // Find user with valid OTP
+    const user = await User.findOne({
+      emailToken,
+      emailTokenExpires: { $gt: new Date() }
+    });
 
-    if (result.matchedCount === 0) {
+    if (!user) {
       return res.status(401).json({
         error: true,
         message: "Invalid OTP or OTP has expired"
       });
     }
- 
-  
+
+    // Check if new password is different from current password
+    const isSamePassword = bcryptjs.compareSync(password, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({
+        error: true,
+        message: "New password cannot be the same as current password"
+      });
+    }
+
+    // Update password and clear OTP fields
+    const hashedPassword = bcryptjs.hashSync(password, 10);
+    await User.updateOne(
+      { _id: user._id },
+      { 
+        $set: { password: hashedPassword },
+        $unset: { emailToken: "", emailTokenExpires: "" } 
+      }
+    );
+
     return res.status(200).json({
       error: false,
       message: "Password changed successfully",
