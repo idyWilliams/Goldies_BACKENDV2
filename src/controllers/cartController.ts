@@ -33,17 +33,17 @@ const addToCart = async (req: CustomRequest, res: Response) => {
 
     // Validate required fields
     if (checkProduct.productType === "preorder") {
-      if (!shape || !size || !toppings || !flavour)
+      if (!shape || !size || !toppings || !flavour){
         return res
           .status(400)
           .json({ message: "All required fields must be provided." });
     }
-    if (!size || !toppings || !flavour || !quantity) {
-      return res
-        .status(400)
-        .json({ error: true, message: "All fields are required." });
-    }
-
+    // if (!size || !toppings || !flavour || !quantity) {
+    //   return res
+    //     .status(400)
+    //     .json({ error: true, message: "All fields are required." });
+    // }
+  }
     let cart = await Cart.findOne({ userId });
 
     if (!cart) {
@@ -101,7 +101,7 @@ const addToCart = async (req: CustomRequest, res: Response) => {
       .status(500)
       .json({ error: true, message: "Internal server error.", err: error });
   }
-};
+}
 
 const updateCartItem = async (req: CustomRequest, res: Response) => {
   try {
@@ -190,8 +190,6 @@ const getCart = async (req: CustomRequest, res: Response) => {
       return res.status(401).json({ error: true, message: "Unauthorized." });
 
     const cart = await Cart.findOne({ userId }).populate("products.product");
-    if (!cart)
-      return res.status(404).json({ error: true, message: "Cart is empty." });
 
     return res.status(200).json({ error: false, cart });
   } catch (error) {
