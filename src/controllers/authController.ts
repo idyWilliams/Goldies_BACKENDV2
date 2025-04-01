@@ -152,18 +152,33 @@ const login = async (req: Request, res: Response) => {
 };
 
 const forgottenPassword = async (req: Request, res: Response) => {
- 
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+emailToken +emailTokenExpires');
 
     if (!user) {
-      return res
-        .status(404)
-        .json({ error: true, message: "Account does not exist" });
+      return res.status(404).json({ 
+        error: true, 
+        message: "Account does not exist" 
+      });
     }
 
-    // Create a transporter with direct SMTP settings
+    // Generate 6-digit OTP
+    const otp = generateOtp();
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes expiry
+
+await User.updateOne(
+  { _id: user._id },
+  { 
+    $set: { 
+      emailToken: otp,
+      emailTokenExpires: otpExpiry 
+    } 
+  }
+);
+    const resetUrl = `${process.env.FRONTEND_URL}/reset_password/${otp}?email=${email}`;
+
+    // Create email transporter
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
@@ -176,17 +191,6 @@ const forgottenPassword = async (req: Request, res: Response) => {
         rejectUnauthorized: false,
       },
     });
-
-    const maxAge = 60 * 15;
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.ACCESS_SECRET_TOKEN as string,
-      {
-        expiresIn: maxAge,
-      }
-    );
-
-    const resetUrl = `${process.env.FRONTEND_URL}/reset_password?email=${email}&token=${token}`;
 
     const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
@@ -201,66 +205,85 @@ const forgottenPassword = async (req: Request, res: Response) => {
     </div>
   `;
 
+
     const mailOptions = {
       from: process.env.EMAIL,
       to: email,
-      subject: "Forgotten Password",
-      text: "You requested a password reset.",
+      subject: "Password Reset OTP",
       html: emailContent,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Message sent: %s", info.messageId);
+    await transporter.sendMail(mailOptions);
+    
     return res.status(200).json({
       error: false,
-      message: "Message sent",
-      info: info.messageId,
+      message: "OTP sent to your email",
     });
+
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("Error in forgottenPassword:", error);
     return res.status(500).json({
       error: true,
       message: "Something went wrong",
-      err: error,
     });
   }
 };
 
 const resetPassword = async (req: Request, res: Response) => {
+  const { emailToken, password } = req.body;
 
-  const {email, password } = req.body;
   try {
-    const isUser = await User.findOne({ email: email });
-
-    if (!isUser) {
-      return res.sendStatus(401);
-    }
-
-    if (!password) {
-      return res.status(404).json({
+    // Validate inputs
+    if ( !emailToken || !password) {
+      return res.status(400).json({
         error: true,
-        message: "Please provide a password",
+        message: "Email Token and new password are required"
       });
     }
 
-    const hashedPwd = bcryptjs.hashSync(password, 10);
-    isUser.password = hashedPwd;
-    await isUser.save();
+    // Find user with matching email and OTP
+    const result = await User.updateOne(
+      { 
+        emailToken: emailToken,
+        emailTokenExpires: { $gt: new Date() } 
+      },
+      { 
+        $set: { password: bcryptjs.hashSync(password, 10) },
+        $unset: { emailToken: "", emailTokenExpires: "" } 
+      }
+    );
 
+    if (result.matchedCount === 0) {
+      return res.status(401).json({
+        error: true,
+        message: "Invalid OTP or OTP has expired"
+      });
+    }
+ 
+  
     return res.status(200).json({
       error: false,
       message: "Password changed successfully",
     });
+
   } catch (error) {
+    console.error("Error in resetPassword:", error);
     return res.status(500).json({
       error: true,
-      err: error,
       message: "Internal server error",
     });
   }
-
-
 };
+
+// Generate 6-digit OTP
+function generateOtp() {
+  const digits = "0123456789";
+  let otp = "";
+  for (let i = 0; i < 6; i++) {
+    otp += digits[Math.floor(Math.random() * 10)];
+  }
+  return otp;
+}
 
 const logout = async (req: Request, res: Response) => {
   try {
