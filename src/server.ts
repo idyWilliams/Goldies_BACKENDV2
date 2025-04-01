@@ -19,9 +19,11 @@ import reviewRouter from "./routes/reviewRoute";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 import cors from "cors";
-import { Script } from "vm";
+import jwt from "jsonwebtoken";
+// import Admin from "./models/adminModel";
 import { createServer } from "http";
 import { notificationRouter } from "./routes/notificationRoute";
+import AdminModel from "./models/Admin.model";
 const PORT = process.env.PORT || 2030;
 // const app = express();
 const httpServer = createServer(app);
@@ -65,24 +67,67 @@ app.use((req, _, next) => {
 });
 
 // Add authentication middleware for Socket.IO
+// io.use(async (socket, next) => {
+//   try {
+//     const token = socket.handshake.auth.token;
+
+//     console.log(token)
+//     // Verify token using your existing auth logic
+//     // const decoded = verifyToken(token);
+//     // socket.data.user = decoded;
+
+//     // If this is an admin user, we should join them to their user-specific room
+//     if (
+//       socket.data?.user?.role === "admin" ||
+//       socket.data?.user?.role === "super_admin"
+//     ) {
+//       socket.join(socket.data.user._id);
+//     }
+
+//     next();
+//   } catch (err) {
+//     next(new Error("Authentication error"));
+//   }
+// });
+
+// Update the Socket.IO middleware in server.ts
 io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth.token;
-    // Verify token using your existing auth logic
-    // const decoded = verifyToken(token);
-    // socket.data.user = decoded;
 
-    // If this is an admin user, we should join them to their user-specific room
-    if (
-      socket.data?.user?.role === "admin" ||
-      socket.data?.user?.role === "super_admin"
-    ) {
-      socket.join(socket.data.user._id);
+    if (!token) {
+      throw new Error('Authentication error: No token provided');
+    }
+
+    // Use your existing token verification logic
+    const decoded = jwt.verify(token, process.env.ACCESS_SECRET_TOKEN as string) as {
+      id: string;
+      role?: string;
+    };
+
+    // Fetch the admin/user from database to verify
+    const admin = await AdminModel.findById(decoded.id).select('role isBlocked isDeleted');
+
+    if (!admin || admin.isBlocked || admin.isDeleted) {
+      throw new Error('Authentication error: Invalid admin');
+    }
+
+    // Attach user data to socket
+    socket.data.user = {
+      _id: admin._id.toString(),
+      role: admin.role,
+    };
+
+    // Join admin to their personal room
+    if (admin.role === 'admin' || admin.role === 'super_admin') {
+      socket.join(admin._id.toString());
+      console.log(`Admin ${admin._id} joined their room`);
     }
 
     next();
   } catch (err) {
-    next(new Error("Authentication error"));
+    console.error('Socket authentication error:', err);
+    next(new Error('Authentication error'));
   }
 });
 

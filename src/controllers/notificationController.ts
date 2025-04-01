@@ -1,8 +1,7 @@
-// controllers/notificationController.ts
 import { Request, Response, NextFunction } from "express";
 
 import { Server } from "socket.io";
-import { AuthRequest } from "../middleware/auth.middleware"; // Import your custom request type
+import Notification from "../models/notificationModel";
 import { NotificationService } from "../service/notificationService";
 
 export class NotificationController {
@@ -12,21 +11,21 @@ export class NotificationController {
     this.notificationService = new NotificationService(io);
   }
 
-  // Get all notifications for the current admin
+  // Get all notifications for current admin
   public getNotifications = async (
-    req: AuthRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ) => {
     try {
-      if (!req.admin) {
+      if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
       const notifications =
         await this.notificationService.getAdminNotifications(
-          req.admin._id,
-          req.admin.role
+          req.user._id,
+          req.user.role
         );
       res.status(200).json(notifications);
     } catch (error) {
@@ -34,20 +33,20 @@ export class NotificationController {
     }
   };
 
-  // Mark a notification as read
+  // Mark notification as read
   public markNotificationAsRead = async (
-    req: AuthRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ) => {
     try {
-      if (!req.admin) {
+      if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
       const notification = await this.notificationService.markAsRead(
         req.params.id,
-        req.admin._id
+        req.user._id
       );
 
       if (!notification) {
@@ -62,44 +61,47 @@ export class NotificationController {
 
   // Mark all notifications as read
   public markAllNotificationsAsRead = async (
-    req: AuthRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ) => {
     try {
-      if (!req.admin) {
+      if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      await this.notificationService.markAllAsRead(req.admin._id);
+      // Now passing both adminId and adminRole
+      await this.notificationService.markAllAsRead(req.user._id, req.user.role);
       res.status(200).json({ message: "All notifications marked as read" });
     } catch (error) {
       next(error);
     }
   };
 
-  // Create an admin alert (super_admin only)
-  public createAdminAlert = async (
-    req: AuthRequest,
+  // Create new notification
+  public createNotification = async (
+    req: Request,
     res: Response,
     next: NextFunction
   ) => {
     try {
-      if (!req.admin) {
+      if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
-      const { title, message, recipientId } = req.body;
+      const { title, message, type, visibility, recipientId, relatedId } =
+        req.body;
 
-      const notification = await this.notificationService.createNotification({
+      const notifications = await this.notificationService.createNotification({
         title,
         message,
-        type: "system",
-        visibility: recipientId ? "all" : "super_admin",
+        type,
+        visibility: visibility || "all",
         recipientId,
+        relatedId,
       });
 
-      res.status(201).json(notification);
+      res.status(201).json(notifications);
     } catch (error) {
       next(error);
     }
