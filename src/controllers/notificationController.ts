@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 
 import { Server } from "socket.io";
-import Notification from "../models/notificationModel";
+
 import { NotificationService } from "../service/notificationService";
 
 export class NotificationController {
