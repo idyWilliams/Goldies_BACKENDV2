@@ -181,7 +181,7 @@ const createOrder = async (req: CustomRequest, res: Response) => {
           try {
               // Get admin emails
               const admins = await User.find({
-                  role: { $in: ['admin', 'superAdmin'] },
+                  role: { $in: ['admin', 'super_admin'] },
                   isActive: true
               }).select('email');
 
@@ -487,13 +487,6 @@ const getSpecificUserOrder = async (req: CustomRequest, res: Response) => {
           .limit(Number(limit));
 
       const totalOrders = await Order.countDocuments(query);
-
-      if (userOrders.length === 0) {
-          return res.status(404).json({
-              error: true,
-              message: "No orders found for this user"
-          });
-      }
 
       return res.status(200).json({
           error: false,

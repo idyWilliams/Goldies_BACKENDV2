@@ -130,6 +130,11 @@ const login = async (req: Request, res: Response) => {
       expiresIn: maxAge,
     });
 
+    const refreshToken = jwt.sign({id: user._id}, secret, {
+      expiresIn: '7d',
+    })
+
+
     return res.status(200).json({
       error: false,
       message: "Login successful",
@@ -140,6 +145,7 @@ const login = async (req: Request, res: Response) => {
         _id: user._id,
       },
       token,
+      refreshToken
     });
   } catch (error) {
     console.error("Login Error:", error); // Log the error to console
