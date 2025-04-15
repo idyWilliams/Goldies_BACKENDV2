@@ -41,9 +41,9 @@ const OrderSchema = new Schema<OrderSchemaI>({
     orderedItems: [
         {
           product: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
-          size: { type: String, required: true },
-          toppings: { type: [String], required: true },
-          flavour: { type: [String], required: true },
+          size: { type: String, required: false },
+          toppings: { type: [String], required: false },
+          flavour: { type: [String], required: false },
           dateNeeded: { type: String, required: false },
           details: { type: String, required: false },
           quantity: { type: Number, required: true }

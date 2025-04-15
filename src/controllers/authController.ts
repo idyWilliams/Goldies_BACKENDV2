@@ -130,6 +130,11 @@ const login = async (req: Request, res: Response) => {
       expiresIn: maxAge,
     });
 
+    const refreshToken = jwt.sign({id: user._id}, secret, {
+      expiresIn: '7d',
+    })
+
+
     return res.status(200).json({
       error: false,
       message: "Login successful",
@@ -140,6 +145,7 @@ const login = async (req: Request, res: Response) => {
         _id: user._id,
       },
       token,
+      refreshToken
     });
   } catch (error) {
     console.error("Login Error:", error); // Log the error to console
@@ -152,18 +158,33 @@ const login = async (req: Request, res: Response) => {
 };
 
 const forgottenPassword = async (req: Request, res: Response) => {
- 
   try {
     const { email } = req.body;
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select('+emailToken +emailTokenExpires');
 
     if (!user) {
-      return res
-        .status(404)
-        .json({ error: true, message: "Account does not exist" });
+      return res.status(404).json({ 
+        error: true, 
+        message: "Account does not exist" 
+      });
     }
 
-    // Create a transporter with direct SMTP settings
+    // Generate 6-digit OTP
+    const otp = generateOtp();
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes expiry
+
+await User.updateOne(
+  { _id: user._id },
+  { 
+    $set: { 
+      emailToken: otp,
+      emailTokenExpires: otpExpiry 
+    } 
+  }
+);
+    const resetUrl = `${process.env.FRONTEND_URL}/reset_password/${otp}?email=${email}`;
+
+    // Create email transporter
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 465,
@@ -177,17 +198,6 @@ const forgottenPassword = async (req: Request, res: Response) => {
       },
     });
 
-    const maxAge = 60 * 15;
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.ACCESS_SECRET_TOKEN as string,
-      {
-        expiresIn: maxAge,
-      }
-    );
-
-    const resetUrl = `${process.env.FRONTEND_URL}/reset_password?email=${email}&token=${token}`;
-
     const emailContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2 style="color: #007bff;">Password Reset Request</h2>
@@ -197,70 +207,102 @@ const forgottenPassword = async (req: Request, res: Response) => {
         style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 5px;">
         Reset Password
       </a>
+      <p>This link expires in 15 minutes</p>
       <p>If you did not request this, please ignore this email.</p>
     </div>
   `;
 
+
     const mailOptions = {
       from: process.env.EMAIL,
       to: email,
-      subject: "Forgotten Password",
-      text: "You requested a password reset.",
+      subject: "Password Reset OTP",
       html: emailContent,
     };
 
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Message sent: %s", info.messageId);
+    await transporter.sendMail(mailOptions);
+    
     return res.status(200).json({
       error: false,
-      message: "Message sent",
-      info: info.messageId,
+      message: "OTP sent to your email",
     });
+
   } catch (error) {
-    console.error("Error sending email:", error);
+    console.error("Error in forgottenPassword:", error);
     return res.status(500).json({
       error: true,
       message: "Something went wrong",
-      err: error,
     });
   }
 };
 
 const resetPassword = async (req: Request, res: Response) => {
+  const { emailToken, password } = req.body;
 
-  const {email, password } = req.body;
   try {
-    const isUser = await User.findOne({ email: email });
-
-    if (!isUser) {
-      return res.sendStatus(401);
-    }
-
-    if (!password) {
-      return res.status(404).json({
+    // Validate inputs
+    if (!emailToken || !password) {
+      return res.status(400).json({
         error: true,
-        message: "Please provide a password",
+        message: "Email token and new password are required"
       });
     }
 
-    const hashedPwd = bcryptjs.hashSync(password, 10);
-    isUser.password = hashedPwd;
-    await isUser.save();
+    // Find user with valid OTP
+    const user = await User.findOne({
+      emailToken,
+      emailTokenExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        error: true,
+        message: "Invalid OTP or OTP has expired"
+      });
+    }
+
+    // Check if new password is different from current password
+    const isSamePassword = bcryptjs.compareSync(password, user.password);
+    if (isSamePassword) {
+      return res.status(400).json({
+        error: true,
+        message: "New password cannot be the same as current password"
+      });
+    }
+
+    // Update password and clear OTP fields
+    const hashedPassword = bcryptjs.hashSync(password, 10);
+    await User.updateOne(
+      { _id: user._id },
+      { 
+        $set: { password: hashedPassword },
+        $unset: { emailToken: "", emailTokenExpires: "" } 
+      }
+    );
 
     return res.status(200).json({
       error: false,
       message: "Password changed successfully",
     });
+
   } catch (error) {
+    console.error("Error in resetPassword:", error);
     return res.status(500).json({
       error: true,
-      err: error,
       message: "Internal server error",
     });
   }
-
-
 };
+
+// Generate 6-digit OTP
+function generateOtp() {
+  const digits = "0123456789";
+  let otp = "";
+  for (let i = 0; i < 6; i++) {
+    otp += digits[Math.floor(Math.random() * 10)];
+  }
+  return otp;
+}
 
 const logout = async (req: Request, res: Response) => {
   try {
