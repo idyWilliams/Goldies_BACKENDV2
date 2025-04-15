@@ -13,26 +13,27 @@ exports.NotificationController = void 0;
 const notificationService_1 = require("../service/notificationService");
 class NotificationController {
     constructor(io) {
-        // Get all notifications for the current admin
+        // Get all notifications for current admin
         this.getNotifications = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
             try {
-                if (!req.admin) {
+                console.log({ req }, "kkk");
+                if (!req.user) {
                     return res.status(401).json({ message: "Unauthorized" });
                 }
-                const notifications = yield this.notificationService.getAdminNotifications(req.admin._id, req.admin.role);
+                const notifications = yield this.notificationService.getAdminNotifications(req.user._id, req.user.role);
                 res.status(200).json(notifications);
             }
             catch (error) {
                 next(error);
             }
         });
-        // Mark a notification as read
+        // Mark notification as read
         this.markNotificationAsRead = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
             try {
-                if (!req.admin) {
+                if (!req.user) {
                     return res.status(401).json({ message: "Unauthorized" });
                 }
-                const notification = yield this.notificationService.markAsRead(req.params.id, req.admin._id);
+                const notification = yield this.notificationService.markAsRead(req.params.id, req.user._id);
                 if (!notification) {
                     return res.status(404).json({ message: "Notification not found" });
                 }
@@ -45,31 +46,33 @@ class NotificationController {
         // Mark all notifications as read
         this.markAllNotificationsAsRead = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
             try {
-                if (!req.admin) {
+                if (!req.user) {
                     return res.status(401).json({ message: "Unauthorized" });
                 }
-                yield this.notificationService.markAllAsRead(req.admin._id);
+                // Now passing both adminId and adminRole
+                yield this.notificationService.markAllAsRead(req.user._id, req.user.role);
                 res.status(200).json({ message: "All notifications marked as read" });
             }
             catch (error) {
                 next(error);
             }
         });
-        // Create an admin alert (super_admin only)
-        this.createAdminAlert = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
+        // Create new notification
+        this.createNotification = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
             try {
-                if (!req.admin) {
+                if (!req.user) {
                     return res.status(401).json({ message: "Unauthorized" });
                 }
-                const { title, message, recipientId } = req.body;
-                const notification = yield this.notificationService.createNotification({
+                const { title, message, type, visibility, recipientId, relatedId } = req.body;
+                const notifications = yield this.notificationService.createNotification({
                     title,
                     message,
-                    type: "system",
-                    visibility: recipientId ? "all" : "super_admin",
+                    type,
+                    visibility: visibility || "all",
                     recipientId,
+                    relatedId,
                 });
-                res.status(201).json(notification);
+                res.status(201).json(notifications);
             }
             catch (error) {
                 next(error);

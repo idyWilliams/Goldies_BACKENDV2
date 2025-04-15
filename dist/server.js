@@ -29,10 +29,14 @@ const paystackRoute_1 = __importDefault(require("./routes/paystackRoute"));
 const mailRoute_1 = __importDefault(require("./routes/mailRoute"));
 const userFavoritesRoute_1 = __importDefault(require("./routes/userFavoritesRoute"));
 const reviewRoute_1 = __importDefault(require("./routes/reviewRoute"));
+const analytics_route_1 = __importDefault(require("./routes/analytics.route"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const cors_1 = __importDefault(require("cors"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+// import Admin from "./models/adminModel";
 const http_1 = require("http");
 const notificationRoute_1 = require("./routes/notificationRoute");
+const Admin_model_1 = __importDefault(require("./models/Admin.model"));
 const PORT = process.env.PORT || 2030;
 // const app = express();
 const httpServer = (0, http_1.createServer)(app);
@@ -44,45 +48,80 @@ const allowedOrigins = [
 const io = new socket_io_1.Server(httpServer, {
     cors: {
         origin: allowedOrigins,
-        methods: ["GET", "POST"],
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
         credentials: true,
     },
+    path: "/socket.io", // Make sure path matches client
+    connectTimeout: 10000, // Increase timeout
+    pingTimeout: 30000,
+    pingInterval: 25000,
+});
+// Add debug logs
+io.engine.on("connection_error", (err) => {
+    console.log("Connection error:", err);
+});
+io.use((socket, next) => __awaiter(void 0, void 0, void 0, function* () {
+    console.log("New connection attempt:", socket.id);
+    console.log("Client headers:", socket.handshake.headers);
+    console.log("Auth token present:", !!socket.handshake.auth.token);
+    try {
+        const token = socket.handshake.auth.token;
+        if (!token) {
+            throw new Error("No token provided");
+        }
+        console.log("Verifying token length:", token.length);
+        const decoded = jsonwebtoken_1.default.verify(token, process.env.ACCESS_SECRET_TOKEN);
+        console.log("Token decoded, looking up admin:", decoded.id);
+        const admin = yield Admin_model_1.default.findById(decoded.id).select('role isBlocked isDeleted');
+        if (!admin) {
+            console.log("Admin not found:", decoded.id);
+            throw new Error("Admin not found");
+        }
+        if (admin.isBlocked || admin.isDeleted) {
+            console.log("Admin account issue - blocked:", admin.isBlocked, "deleted:", admin.isDeleted);
+            throw new Error("Admin account is blocked or deleted");
+        }
+        socket.data.user = {
+            _id: admin._id.toString(),
+            role: admin.role,
+        };
+        console.log(`Authenticated admin ${admin._id} with role ${admin.role}`);
+        next();
+    }
+    catch (err) {
+        console.error("Socket auth error:", err.message);
+        console.error("Stack:", err.stack);
+        next(new Error(`Authentication failed: ${err.message}`));
+    }
+}));
+// Simplified connection handler with more logging
+io.on("connection", (socket) => {
+    var _a;
+    console.log(`Client connected: ${socket.id}`);
+    console.log("User data:", socket.data.user);
+    // Join admin to their personal room for notifications
+    if ((_a = socket.data.user) === null || _a === void 0 ? void 0 : _a._id) {
+        const roomId = socket.data.user._id.toString();
+        socket.join(roomId);
+        console.log(`Admin ${roomId} joined room: ${roomId}`);
+        // Send a test notification to confirm room joining
+        socket.emit("connection-success", {
+            message: "Successfully connected to notification service",
+            userId: roomId,
+            timestamp: new Date()
+        });
+    }
+    socket.on("disconnect", (reason) => {
+        console.log(`Client disconnected (${socket.id}): ${reason}`);
+    });
+    socket.on("error", (err) => {
+        console.error(`Socket error (${socket.id}):`, err);
+    });
 });
 // Attach io to requests
 app.use((req, _, next) => {
     req.io = io;
     next();
-});
-// Add authentication middleware for Socket.IO
-io.use((socket, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c, _d;
-    try {
-        const token = socket.handshake.auth.token;
-        // Verify token using your existing auth logic
-        // const decoded = verifyToken(token);
-        // socket.data.user = decoded;
-        // If this is an admin user, we should join them to their user-specific room
-        if (((_b = (_a = socket.data) === null || _a === void 0 ? void 0 : _a.user) === null || _b === void 0 ? void 0 : _b.role) === "admin" ||
-            ((_d = (_c = socket.data) === null || _c === void 0 ? void 0 : _c.user) === null || _d === void 0 ? void 0 : _d.role) === "super_admin") {
-            socket.join(socket.data.user._id);
-        }
-        next();
-    }
-    catch (err) {
-        next(new Error("Authentication error"));
-    }
-}));
-// Socket.IO connection handler
-io.on("connection", (socket) => {
-    console.log("Client connected:", socket.id);
-    // Join user-specific room
-    socket.on("join-user-room", (userId) => {
-        socket.join(userId);
-        console.log(`User ${userId} joined their room`);
-    });
-    socket.on("disconnect", () => {
-        console.log("Client disconnected:", socket.id);
-    });
 });
 app.use((0, cors_1.default)({
     origin: function (origin, callback) {
@@ -102,10 +141,6 @@ mongoose_1.default
     .connect(process.env.connectionString)
     .then(() => console.log("MongoDB connected"))
     .catch((err) => console.log(err));
-// mongoose
-//   .connect(process.env.MONGO_URI as string)
-//   .then(() => console.log("MongoDB connected"))
-//   .catch((err) => console.error("MongoDB connection error:", err));
 app.get("/", (req, res) => {
     res.send("backend connected successfully");
 });
@@ -122,6 +157,5 @@ app.use("/api/mail", mailRoute_1.default);
 app.use("/api/favorites", userFavoritesRoute_1.default);
 app.use("/api/reviews", reviewRoute_1.default);
 app.use("/api/notifications", (0, notificationRoute_1.notificationRouter)(io));
-// Important: Use httpServer instead of app for listening
-// This is critical for Socket.io to work properly
+app.use("/api/analytics", analytics_route_1.default);
 httpServer.listen(PORT, () => console.log(`server listening on port ${PORT}`));

@@ -33,15 +33,16 @@ const addToCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         // Validate required fields
         if (checkProduct.productType === "preorder") {
-            if (!shape || !size || !toppings || !flavour)
+            if (!shape || !size || !toppings || !flavour) {
                 return res
                     .status(400)
                     .json({ message: "All required fields must be provided." });
-        }
-        if (!size || !toppings || !flavour || !quantity) {
-            return res
-                .status(400)
-                .json({ error: true, message: "All fields are required." });
+            }
+            // if (!size || !toppings || !flavour || !quantity) {
+            //   return res
+            //     .status(400)
+            //     .json({ error: true, message: "All fields are required." });
+            // }
         }
         let cart = yield Cart_model_1.default.findOne({ userId });
         if (!cart) {
@@ -171,8 +172,6 @@ const getCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         if (!userId)
             return res.status(401).json({ error: true, message: "Unauthorized." });
         const cart = yield Cart_model_1.default.findOne({ userId }).populate("products.product");
-        if (!cart)
-            return res.status(404).json({ error: true, message: "Cart is empty." });
         return res.status(200).json({ error: false, cart });
     }
     catch (error) {
