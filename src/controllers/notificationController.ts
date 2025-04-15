@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import { Server } from "socket.io";
 
 import { NotificationService } from "../service/notificationService";
+import { CustomRequest } from "../middleware/verifyJWT";
 
 export class NotificationController {
   private notificationService: NotificationService;
@@ -13,11 +14,12 @@ export class NotificationController {
 
   // Get all notifications for current admin
   public getNotifications = async (
-    req: Request,
+    req: CustomRequest,
     res: Response,
     next: NextFunction
   ) => {
     try {
+      console.log({ req }, "kkk");
       if (!req.user) {
         return res.status(401).json({ message: "Unauthorized" });
       }

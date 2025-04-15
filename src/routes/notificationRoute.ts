@@ -44,12 +44,12 @@ export const notificationRouter = (io: Server) => {
   );
 
   /**
-   * @route POST /api/notifications
+   * @route POST /api/notifications/admin-alert
    * @desc Create a new notification
    * @access Private (admin or super_admin)
    */
   router.post(
-    "/",
+    "/admin-alert",
     authorize("admin", "super_admin"),
     notificationController.createNotification
   );

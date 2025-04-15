@@ -8,14 +8,158 @@ import nodemailer from "nodemailer";
 import bcryptjs from "bcryptjs";
 import Order from "../models/Order.model";
 import { AuthRequest, getAdminIdentifier } from "../middleware/auth.middleware";
+import { NotificationService } from "../service/notificationService";
+
+
+// Configure transporter for sending emails
+const configureTransporter = () => {
+  return nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+      user: process.env.EMAIL,
+      pass: process.env.PASSWORD,
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
+  });
+};
+
+// Helper function to send admin action emails
+const sendAdminActionEmail = async (
+  targetAdminEmail: string,
+  action: string,
+  performer: { id: string; name: string },
+  reason?: string
+) => {
+  const transporter = configureTransporter();
+
+  const isPerformerSelf = performer.id === targetAdminEmail;
+  const performerText = isPerformerSelf ? "you" : performer.name;
+
+  const emailTitle = {
+    "revoked": "🚫 Admin Access Revoked",
+    "unblocked": "✅ Admin Access Restored",
+    "deleted": "❌ Admin Account Deleted",
+    "verified": "✓ Admin Account Verified"
+  }[action] || "Admin Account Update";
+
+  const actionDescription = {
+    "revoked": "Your admin access to Cake App has been revoked",
+    "unblocked": "Your admin access to Cake App has been restored",
+    "deleted": "Your admin account in Cake App has been deleted",
+    "verified": "Your admin account in Cake App has been verified"
+  }[action] || "Your admin account has been updated";
+
+  const actionColor = {
+    "revoked": "#FF5757",
+    "unblocked": "#57C057",
+    "deleted": "#D12F2F",
+    "verified": "#3E8ED0"
+  }[action] || "#D18237";
+
+  const emailContent = `
+    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #FFF9EE; border-radius: 10px; border: 5px solid #63340C;">
+      <div style="text-align: center; padding: 15px 0;">
+        <h1 style="color: #63340C; font-size: 28px; margin-bottom: 5px; font-family: 'Georgia', serif;">🧁 Cake App 🧁</h1>
+        <h2 style="color: ${actionColor}; font-size: 22px; margin-top: 0;">${emailTitle}</h2>
+      </div>
+
+      <div style="background-color: #FFFFFF; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid ${actionColor};">
+        <p style="color: #63340C; font-size: 16px; line-height: 1.6;">${actionDescription} by <strong style="color: #D18237;">${performerText}</strong>.</p>
+
+        ${reason ? `<p style="color: #63340C; font-size: 16px; line-height: 1.6;"><strong>Reason:</strong> ${reason}</p>` : ''}
+
+        <p style="color: #63340C; font-size: 16px; line-height: 1.6;">If you have any questions about this action, please contact your system administrator.</p>
+      </div>
+
+      <div style="background-color: #F9E7D2; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 14px; color: #63340C; text-align: center;">
+        <p style="margin: 5px 0;">This is an automated notification from the Cake App admin system.</p>
+        <p style="margin: 5px 0;">Please do not reply to this email.</p>
+      </div>
+
+      <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 2px dashed #D18237;">
+        <p style="color: #63340C; font-size: 14px;">Cake App Admin Team</p>
+        <p style="color: #8B5927; font-size: 12px;">Making every day a little sweeter 🍰</p>
+      </div>
+    </div>
+  `;
+
+  const mailOptions = {
+    from: process.env.EMAIL,
+    to: targetAdminEmail,
+    subject: `${emailTitle} | Cake App`,
+    text: `${actionDescription} by ${performerText}. ${reason ? `Reason: ${reason}` : ''}`,
+    html: emailContent,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`Admin action email sent: ${info.messageId}`);
+    return true;
+  } catch (error) {
+    console.error("Error sending admin action email:", error);
+    return false;
+  }
+};
+
+// Helper function to create and send notifications for admin actions
+const notifyAdmins = async (
+  req: AuthRequest,
+  action: string,
+  targetAdmin: {
+    _id: mongoose.Types.ObjectId;
+    userName: string;
+    email: string;
+    role: string;
+  },
+  performer: { id: string; name: string },
+  reason?: string
+) => {
+  if (!req.io) {
+    console.warn("Socket.io instance not available, skipping notifications");
+    return;
+  }
+
+  const notificationService = new NotificationService(req.io);
+  const isPerformerSelf = performer.id === targetAdmin._id.toString();
+  const performerText = isPerformerSelf ? "you" : performer.name;
+
+  const actionVerb = {
+    "revoked": "revoked",
+    "unblocked": "restored",
+    "deleted": "deleted",
+    "verified": "verified"
+  }[action] || "updated";
+
+  const message = `Admin ${targetAdmin.userName}'s (${targetAdmin.role}) access has been ${actionVerb} by ${performerText}${reason ? `: ${reason}` : ''}`;
+
+  // Notify all super admins except the target admin
+  const adminNotification = {
+    title: `Admin ${action.charAt(0).toUpperCase() + action.slice(1)}`,
+    message,
+    type: "admin",
+    visibility: "super_admin",
+    recipientId:"",
+    relatedId: targetAdmin._id.toString(),
+  };
+
+  // Create notification for all admins
+  //@ts-ignore
+  await notificationService.createNotification(adminNotification);
+
+  console.log(`Admin action notification sent: ${action} on ${targetAdmin.userName}`);
+};
 
 const inviteAdmin = async (req: Request, res: Response) => {
-  const { email } = req.body;
+  const { email, role } = req.body;
   try {
     const refCode = process.env.ADMINREFCODE;
 
     const maxAge = 60 * 15;
-    const token = jwt.sign({ email }, refCode as string, {
+    const token = jwt.sign({ email, role }, refCode as string, {
       expiresIn: maxAge,
     });
     const transporter = nodemailer.createTransport({
@@ -31,26 +175,44 @@ const inviteAdmin = async (req: Request, res: Response) => {
       },
     });
 
-    const SignUpURL = `${process.env.FRONTEND_URL}/admin-signup?refCode=${token}&email=${email}`;
+    const SignUpURL = `${process.env.FRONTEND_URL}/admin-signup?refCode=${token}&email=${email}&role=${role}`;
 
     const emailContent = `
-    <div style="font-family: Arial, sans-serif; color: #333;">
-      <h2 style="color: #007bff;">Goldies Admin Invitation</h2>
-      <p>Goldies has invited you to be part of the administration team.</p>
-      <a
-        href="${SignUpURL}"
-        style="display: inline-block; padding: 10px 20px; background-color: black; color: #fff; text-decoration: none; border-radius: 5px;">
-        Join Now
-      </a>
-      <p>If you did not request this, please ignore this email.</p>
+    <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #FFF9EE; border-radius: 10px; border: 5px solid #63340C;">
+      <div style="text-align: center; padding: 15px 0;">
+        <h1 style="color: #63340C; font-size: 28px; margin-bottom: 5px; font-family: 'Georgia', serif;">🧁 Cake App 🧁</h1>
+        <h2 style="color: #D18237; font-size: 22px; margin-top: 0;">Admin Team Invitation</h2>
+      </div>
+
+      <div style="background-color: #FFFFFF; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid #D18237;">
+        <p style="color: #63340C; font-size: 16px; line-height: 1.6;">Sweet news! You've been invited to join the Cake App team as a <strong style="color: #D18237;">${role}</strong>!</p>
+
+        <p style="color: #63340C; font-size: 16px; line-height: 1.6;">Your expertise will help us create the perfect recipe for success. Together, we'll make Cake App the most delightful cake experience for our customers!</p>
+      </div>
+
+      <div style="text-align: center; margin: 25px 0;">
+        <a href="${SignUpURL}" style="display: inline-block; padding: 12px 28px; background: linear-gradient(to right, #63340C, #D18237); color: #FFF9EE; text-decoration: none; border-radius: 25px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 8px rgba(99, 52, 12, 0.2);">
+          Join Our Sweet Team
+        </a>
+      </div>
+
+      <div style="background-color: #F9E7D2; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 14px; color: #63340C; text-align: center;">
+        <p style="margin: 5px 0;">This invitation expires in 15 minutes.</p>
+        <p style="margin: 5px 0;">If you didn't expect this invitation, please ignore this email.</p>
+      </div>
+
+      <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 2px dashed #D18237;">
+        <p style="color: #63340C; font-size: 14px;">With love from the Cake App Team</p>
+        <p style="color: #8B5927; font-size: 12px;">Making every day a little sweeter 🍰</p>
+      </div>
     </div>
   `;
 
     const mailOptions = {
       from: process.env.EMAIL,
       to: email,
-      subject: "Goldies Admin Invitation",
-      text: "Goldies has invited you to be part of the administration team.",
+      subject: "🧁 Join the Cake App Admin Team!",
+      text: `Sweet news! You've been invited to join the Cake App team as a ${role}! Your expertise will help us create the perfect recipe for success. Together, we'll make Cake App the most delightful cake experience for our customers! To accept this invitation, please visit: ${SignUpURL} (This invitation expires in 15 minutes)`,
       html: emailContent,
     };
 
@@ -59,7 +221,7 @@ const inviteAdmin = async (req: Request, res: Response) => {
 
     return res.status(200).json({
       error: false,
-      message: "Message sent",
+      message: "Invitation sent successfully",
       info: info.messageId,
     });
   } catch (error) {
@@ -97,6 +259,7 @@ const generateToken = (id: unknown) => {
 
 const adminSignup = async (req: Request, res: Response) => {
   const { userName, email, password } = req.body;
+  const { refCode } = req.query;
 
   if (!userName) {
     return res.status(400).json({
@@ -151,7 +314,7 @@ const adminSignup = async (req: Request, res: Response) => {
       const mailOptions = {
         from: process.env.EMAIL,
         to: email,
-        subject: "Goldies Team - Email Verification",
+        subject: "Cake App Team - Email Verification",
         text: "Email verification.",
         html: emailContent,
       };
@@ -167,17 +330,40 @@ const adminSignup = async (req: Request, res: Response) => {
 
     // If user does not exist, create new admin
     if (!user) {
-      // Verify JWT referral code (optional step based on your logic)
-      const { refCode } = req.query;
+      // Default role
+      let role = "admin";
+
+      // Verify JWT referral code and extract role if available
       if (refCode) {
         try {
-          jwt.verify(refCode as string, process.env.ADMINREFCODE as string);
+          const decodedToken = jwt.verify(
+            refCode as string,
+            process.env.ADMINREFCODE as string
+          ) as { email: string; role: string };
+
+          // Check if the email in token matches the signup email
+          if (decodedToken.email === email) {
+            // Use the role from invitation
+            role = decodedToken.role;
+            console.log(`Using role from invitation: ${role}`);
+          } else {
+            return res.status(403).json({
+              error: true,
+              message: "Email does not match the invitation.",
+            });
+          }
         } catch (err) {
           return res.status(403).json({
             error: true,
             message: "Invalid or expired referral code.",
           });
         }
+      } else {
+        // No refCode provided - this might be an unauthorized signup attempt
+        return res.status(403).json({
+          error: true,
+          message: "Admin signup requires a valid invitation code.",
+        });
       }
 
       const hashedPwd = bcryptjs.hashSync(password, 10);
@@ -185,15 +371,40 @@ const adminSignup = async (req: Request, res: Response) => {
         userName,
         email,
         password: hashedPwd,
+        role, // Use the extracted role
         OTP,
       });
+
+      console.log(`Admin created with role: ${role}`);
 
       // Send verification email
       await sendVerificationEmail();
 
+      if (req.io) {
+        const notificationService = new NotificationService(req.io);
+
+        // Get all super admins
+        const superAdmins = await Admin.find({
+          role: "super_admin",
+          isDeleted: false,
+          isBlocked: false,
+        }).select("_id");
+
+        // Create and send notification to each super admin
+        await notificationService.createNotification({
+          title: "New Admin Registration",
+          message: `New admin registered: ${userName} (${email}) with role: ${role}`,
+          type: "user",
+          visibility: "super_admin", // Only super admins will see this
+          relatedId: admin?._id.toString(), // Link to the new admin's ID
+        });
+
+        console.log(`Notification sent to ${superAdmins.length} super admins`);
+      }
+
       return res.status(201).json({
         error: false,
-        message: `Admin created successfully. A 6-digit code has been sent to ${email}`,
+        message: `Admin created successfully with role: ${role}. A 6-digit code has been sent to ${email}`,
       });
     } else {
       // Verify the password
@@ -311,7 +522,7 @@ const adminLogin = async (req: Request, res: Response) => {
       const mailOptions = {
         from: process.env.EMAIL,
         to: email,
-        subject: "Goldies Team - Email Verification",
+        subject: "Cake App Team - Email Verification",
         text: "Email verification.",
         html: emailContent,
       };
@@ -724,11 +935,260 @@ const getAdminById = async (req: Request, res: Response) => {
   }
 };
 
+// const revokeAdminAccess = async (req: AuthRequest, res: Response) => {
+//   const { id } = req.params;
+//   const { reason } = req.body; // Optional reason for blocking
+//   const performer = getAdminIdentifier(req);
+
+//   try {
+//     const admin = await Admin.findById(id);
+//     if (!admin) {
+//       return res.status(404).json({
+//         error: true,
+//         message: "Admin not found",
+//       });
+//     }
+
+//     // Prevent self-blocking
+//     if (performer.id === id) {
+//       return res.status(400).json({
+//         error: true,
+//         message: "You cannot block your own account",
+//       });
+//     }
+
+//     // Only update if not already blocked
+//     if (!admin.isBlocked) {
+//       admin.isBlocked = true;
+
+//       // Add status change record with admin name
+//       admin.statusChanges.push({
+//         status: "blocked",
+//         timestamp: new Date(),
+//         adminId: performer.id,
+//         adminName: performer.name, // Add the admin's name
+//         reason: reason || `Access revoked by ${performer.name}`,
+//       });
+
+//       await admin.save();
+//     }
+
+//     return res.status(200).json({
+//       error: false,
+//       message: "Admin access revoked successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error in revokeAdminAccess:", error);
+//     return res.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+// const unblockAdminAccess = async (req: AuthRequest, res: Response) => {
+//   const { id } = req.params;
+//   const { reason } = req.body; // Optional reason for unblocking
+//   const performer = getAdminIdentifier(req);
+
+//   try {
+//     const admin = await Admin.findById(id);
+//     if (!admin) {
+//       return res.status(404).json({
+//         error: true,
+//         message: "Admin not found",
+//       });
+//     }
+
+//     // Only update if currently blocked
+//     if (admin.isBlocked) {
+//       admin.isBlocked = false;
+
+//       // Add status change record with admin name
+//       admin.statusChanges.push({
+//         status: "unblocked",
+//         timestamp: new Date(),
+//         adminId: performer.id,
+//         adminName: performer.name, // Add the admin's name
+//         reason: reason || `Access restored by ${performer.name}`,
+//       });
+
+//       await admin.save();
+//     }
+
+//     return res.status(200).json({
+//       error: false,
+//       message: "Admin access unblocked successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error in unblockAdminAccess:", error);
+//     return res.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+// const deleteAdmin = async (req: AuthRequest, res: Response) => {
+//   const { id } = req.params;
+//   const { reason } = req.body; // Optional reason for deletion
+//   const performer = getAdminIdentifier(req);
+
+//   try {
+//     // First find the admin to add status change before deletion
+//     const admin = await Admin.findById(id);
+//     if (!admin) {
+//       return res.status(404).json({
+//         error: true,
+//         message: "Admin not found",
+//       });
+//     }
+
+//     // Prevent self-deletion
+//     if (performer.id === id) {
+//       return res.status(400).json({
+//         error: true,
+//         message: "You cannot delete your own account",
+//       });
+//     }
+
+//     // Instead of hard deleting, update the isDeleted flag
+//     admin.isDeleted = true;
+
+//     // Add status change record with admin name
+//     admin.statusChanges.push({
+//       status: "deleted",
+//       timestamp: new Date(),
+//       adminId: performer.id,
+//       adminName: performer.name, // Add the admin's name
+//       reason: reason || `Account deleted by ${performer.name}`,
+//     });
+
+//     await admin.save();
+
+//     return res.status(200).json({
+//       error: false,
+//       message: "Admin deleted successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error in deleteAdmin:", error);
+//     return res.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
+// // const verifyAdmin = async (req: AuthRequest, res: Response) => {
+// //   const { id } = req.params;
+// //   const performer = getAdminIdentifier(req);
+
+// //   try {
+// //     const admin = await Admin.findById(id);
+// //     if (!admin) {
+// //       return res.status(404).json({
+// //         error: true,
+// //         message: "Admin not found",
+// //       });
+// //     }
+
+// //     // Only update if not already verified
+// //     if (!admin.isVerified) {
+// //       admin.isVerified = true;
+
+// //       // Add status change record with admin name
+// //       admin.statusChanges.push({
+// //         status: "verified",
+// //         timestamp: new Date(),
+// //         adminId: performer.id,
+// //         adminName: performer.name, // Add the admin's name
+// //         reason: "Admin account verified",
+// //       });
+
+// //       await admin.save();
+// //     }
+
+// //     return res.status(200).json({
+// //       error: false,
+// //       message: "Admin verified successfully",
+// //     });
+// //   } catch (error) {
+// //     console.error("Error in verifyAdmin:", error);
+// //     return res.status(500).json({
+// //       error: true,
+// //       message: "Internal server error",
+// //     });
+// //   }
+// // };
+
+// const verifyAdmin = async (req: AuthRequest, res: Response) => {
+//   const { id } = req.params;
+
+//   // Add validation for ID format
+//   if (!mongoose.Types.ObjectId.isValid(id)) {
+//     return res.status(400).json({
+//       error: true,
+//       message: "Invalid admin ID format",
+//     });
+//   }
+
+//   const performer = getAdminIdentifier(req);
+
+//   try {
+//     const admin = await Admin.findById(id);
+//     if (!admin) {
+//       return res.status(404).json({
+//         error: true,
+//         message: "Admin not found",
+//       });
+//     }
+
+//     // Prevent verification of already verified admins
+//     if (admin.isVerified) {
+//       return res.status(400).json({
+//         error: true,
+//         message: "Admin is already verified",
+//       });
+//     }
+
+//     // Only update if not already verified
+//     admin.isVerified = true;
+
+//     // Add status change record with admin name
+//     admin.statusChanges.push({
+//       status: "verified",
+//       timestamp: new Date(),
+//       adminId: performer.id,
+//       adminName: performer.name,
+//       reason: "Admin account verified",
+//     });
+
+//     await admin.save();
+
+//     return res.status(200).json({
+//       error: false,
+//       message: "Admin verified successfully",
+//       admin: {
+//         id: admin._id,
+//         userName: admin.userName,
+//         email: admin.email,
+//         isVerified: admin.isVerified,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error in verifyAdmin:", error);
+//     return res.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//       details: error instanceof Error ? error.message : String(error),
+//     });
+//   }
+// };
 
 
 const revokeAdminAccess = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const { reason } = req.body; // Optional reason for blocking
+  const { reason } = req.body;
   const performer = getAdminIdentifier(req);
 
   try {
@@ -757,11 +1217,17 @@ const revokeAdminAccess = async (req: AuthRequest, res: Response) => {
         status: "blocked",
         timestamp: new Date(),
         adminId: performer.id,
-        adminName: performer.name, // Add the admin's name
+        adminName: performer.name,
         reason: reason || `Access revoked by ${performer.name}`,
       });
 
       await admin.save();
+
+      // Send notification to all super admins
+      await notifyAdmins(req, "revoked", admin, performer, reason);
+
+      // Send email to the affected admin
+      await sendAdminActionEmail(admin.email, "revoked", performer, reason);
     }
 
     return res.status(200).json({
@@ -777,9 +1243,10 @@ const revokeAdminAccess = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// 2. Enhanced unblockAdminAccess
 const unblockAdminAccess = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const { reason } = req.body; // Optional reason for unblocking
+  const { reason } = req.body;
   const performer = getAdminIdentifier(req);
 
   try {
@@ -800,11 +1267,17 @@ const unblockAdminAccess = async (req: AuthRequest, res: Response) => {
         status: "unblocked",
         timestamp: new Date(),
         adminId: performer.id,
-        adminName: performer.name, // Add the admin's name
+        adminName: performer.name,
         reason: reason || `Access restored by ${performer.name}`,
       });
 
       await admin.save();
+
+      // Send notification to all super admins
+      await notifyAdmins(req, "unblocked", admin, performer, reason);
+
+      // Send email to the affected admin
+      await sendAdminActionEmail(admin.email, "unblocked", performer, reason);
     }
 
     return res.status(200).json({
@@ -820,13 +1293,13 @@ const unblockAdminAccess = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// 3. Enhanced deleteAdmin
 const deleteAdmin = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
-  const { reason } = req.body; // Optional reason for deletion
+  const { reason } = req.body;
   const performer = getAdminIdentifier(req);
 
   try {
-    // First find the admin to add status change before deletion
     const admin = await Admin.findById(id);
     if (!admin) {
       return res.status(404).json({
@@ -843,6 +1316,14 @@ const deleteAdmin = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Store admin information before changes for notifications
+    const adminInfo = {
+      _id: admin._id,
+      userName: admin.userName,
+      email: admin.email,
+      role: admin.role,
+    };
+
     // Instead of hard deleting, update the isDeleted flag
     admin.isDeleted = true;
 
@@ -851,11 +1332,17 @@ const deleteAdmin = async (req: AuthRequest, res: Response) => {
       status: "deleted",
       timestamp: new Date(),
       adminId: performer.id,
-      adminName: performer.name, // Add the admin's name
+      adminName: performer.name,
       reason: reason || `Account deleted by ${performer.name}`,
     });
 
     await admin.save();
+
+    // Send notification to all super admins
+    await notifyAdmins(req, "deleted", adminInfo, performer, reason);
+
+    // Send email to the affected admin
+    await sendAdminActionEmail(admin.email, "deleted", performer, reason);
 
     return res.status(200).json({
       error: false,
@@ -870,48 +1357,7 @@ const deleteAdmin = async (req: AuthRequest, res: Response) => {
   }
 };
 
-// const verifyAdmin = async (req: AuthRequest, res: Response) => {
-//   const { id } = req.params;
-//   const performer = getAdminIdentifier(req);
-
-//   try {
-//     const admin = await Admin.findById(id);
-//     if (!admin) {
-//       return res.status(404).json({
-//         error: true,
-//         message: "Admin not found",
-//       });
-//     }
-
-//     // Only update if not already verified
-//     if (!admin.isVerified) {
-//       admin.isVerified = true;
-
-//       // Add status change record with admin name
-//       admin.statusChanges.push({
-//         status: "verified",
-//         timestamp: new Date(),
-//         adminId: performer.id,
-//         adminName: performer.name, // Add the admin's name
-//         reason: "Admin account verified",
-//       });
-
-//       await admin.save();
-//     }
-
-//     return res.status(200).json({
-//       error: false,
-//       message: "Admin verified successfully",
-//     });
-//   } catch (error) {
-//     console.error("Error in verifyAdmin:", error);
-//     return res.status(500).json({
-//       error: true,
-//       message: "Internal server error",
-//     });
-//   }
-// };
-
+// 4. Enhanced verifyAdmin
 const verifyAdmin = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
 
@@ -956,6 +1402,12 @@ const verifyAdmin = async (req: AuthRequest, res: Response) => {
 
     await admin.save();
 
+    // Send notification to all super admins
+    await notifyAdmins(req, "verified", admin, performer);
+
+    // Send email to the affected admin
+    await sendAdminActionEmail(admin.email, "verified", performer);
+
     return res.status(200).json({
       error: false,
       message: "Admin verified successfully",
@@ -975,7 +1427,6 @@ const verifyAdmin = async (req: AuthRequest, res: Response) => {
     });
   }
 };
-
 const getUserOrderByUserId = async (req: Request, res: Response) => {
   const { id } = req.params;
 
