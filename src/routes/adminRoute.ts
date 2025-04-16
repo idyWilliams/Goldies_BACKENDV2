@@ -17,6 +17,8 @@ import {
   unblockAdminAccess,
   deleteAdmin,
   verifyAdmin,
+  refreshAccessToken,
+  adminLogout,
 } from "../controllers/adminController";
 import {
   protect,
@@ -26,30 +28,19 @@ import {
 
 const router = express.Router();
 
-// const logRouteInfo = (req: Request, res: Response, next: NextFunction) => {
-//   console.log(`Incoming ${req.method} request to ${req.path}`);
-//   console.log("Request Params:", req.params);
-//   console.log("Request Body:", req.body);
-//   next();
-// };
-// router.use(logRouteInfo);
+
 // Public routes
 router.post("/login", adminLogin);
 router.post("/signup", adminSignup);
 router.post("/verify", verifyOTP);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
-
+router.post("/refresh-token", refreshAccessToken); 
 // Protected routes
 router.post("/invite", protect, authorize("super_admin"), inviteAdmin);
 router.put("/profile/:id", protect, updateProfile);
+router.post("/logout", protect, adminLogout);
 
-// Admin management routes
-// router.get("/admins", isSuperAdmin, getAllAdmins);
-// router.get("/admins/:id", isSuperAdmin, getAdminById);
-// router.put("/admins/revoke-access/:id", isSuperAdmin, revokeAdminAccess);
-// router.put("/admins/unblock-access/:id", isSuperAdmin, unblockAdminAccess);
-// router.delete("/admins/:id", isSuperAdmin, deleteAdmin);
 router.get("/all", protect, isSuperAdmin, getAllAdmins);
 // router.get("/admins/:id", protect, isSuperAdmin, getAdminById);
 router.put(
