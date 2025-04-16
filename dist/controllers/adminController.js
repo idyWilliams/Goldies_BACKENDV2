@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAdminById = exports.getAllAdmins = exports.revokeAdminAccess = exports.unblockAdminAccess = exports.verifyAdmin = exports.deleteAdmin = exports.getUserOrderByUserId = exports.getAdmin = exports.updateProfile = exports.resetPassword = exports.forgotPassword = exports.adminLogin = exports.verifyOTP = exports.adminSignup = exports.inviteAdmin = void 0;
+exports.adminLogout = exports.refreshAccessToken = exports.getAdminById = exports.getAllAdmins = exports.revokeAdminAccess = exports.unblockAdminAccess = exports.verifyAdmin = exports.deleteAdmin = exports.getUserOrderByUserId = exports.getAdmin = exports.updateProfile = exports.resetPassword = exports.forgotPassword = exports.adminLogin = exports.verifyOTP = exports.adminSignup = exports.inviteAdmin = exports.generateRefreshToken = void 0;
 const Admin_model_1 = __importDefault(require("../models/Admin.model"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
@@ -44,22 +44,22 @@ const sendAdminActionEmail = (targetAdminEmail, action, performer, reason) => __
     const isPerformerSelf = performer.id === targetAdminEmail;
     const performerText = isPerformerSelf ? "you" : performer.name;
     const emailTitle = {
-        "revoked": "🚫 Admin Access Revoked",
-        "unblocked": "✅ Admin Access Restored",
-        "deleted": "❌ Admin Account Deleted",
-        "verified": "✓ Admin Account Verified"
+        revoked: "🚫 Admin Access Revoked",
+        unblocked: "✅ Admin Access Restored",
+        deleted: "❌ Admin Account Deleted",
+        verified: "✓ Admin Account Verified",
     }[action] || "Admin Account Update";
     const actionDescription = {
-        "revoked": "Your admin access to Cake App has been revoked",
-        "unblocked": "Your admin access to Cake App has been restored",
-        "deleted": "Your admin account in Cake App has been deleted",
-        "verified": "Your admin account in Cake App has been verified"
+        revoked: "Your admin access to Cake App has been revoked",
+        unblocked: "Your admin access to Cake App has been restored",
+        deleted: "Your admin account in Cake App has been deleted",
+        verified: "Your admin account in Cake App has been verified",
     }[action] || "Your admin account has been updated";
     const actionColor = {
-        "revoked": "#FF5757",
-        "unblocked": "#57C057",
-        "deleted": "#D12F2F",
-        "verified": "#3E8ED0"
+        revoked: "#FF5757",
+        unblocked: "#57C057",
+        deleted: "#D12F2F",
+        verified: "#3E8ED0",
     }[action] || "#D18237";
     const emailContent = `
     <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #FFF9EE; border-radius: 10px; border: 5px solid #63340C;">
@@ -71,7 +71,9 @@ const sendAdminActionEmail = (targetAdminEmail, action, performer, reason) => __
       <div style="background-color: #FFFFFF; border-radius: 8px; padding: 20px; margin: 20px 0; border-left: 4px solid ${actionColor};">
         <p style="color: #63340C; font-size: 16px; line-height: 1.6;">${actionDescription} by <strong style="color: #D18237;">${performerText}</strong>.</p>
 
-        ${reason ? `<p style="color: #63340C; font-size: 16px; line-height: 1.6;"><strong>Reason:</strong> ${reason}</p>` : ''}
+        ${reason
+        ? `<p style="color: #63340C; font-size: 16px; line-height: 1.6;"><strong>Reason:</strong> ${reason}</p>`
+        : ""}
 
         <p style="color: #63340C; font-size: 16px; line-height: 1.6;">If you have any questions about this action, please contact your system administrator.</p>
       </div>
@@ -91,7 +93,7 @@ const sendAdminActionEmail = (targetAdminEmail, action, performer, reason) => __
         from: process.env.EMAIL,
         to: targetAdminEmail,
         subject: `${emailTitle} | Cake App`,
-        text: `${actionDescription} by ${performerText}. ${reason ? `Reason: ${reason}` : ''}`,
+        text: `${actionDescription} by ${performerText}. ${reason ? `Reason: ${reason}` : ""}`,
         html: emailContent,
     };
     try {
@@ -114,12 +116,12 @@ const notifyAdmins = (req, action, targetAdmin, performer, reason) => __awaiter(
     const isPerformerSelf = performer.id === targetAdmin._id.toString();
     const performerText = isPerformerSelf ? "you" : performer.name;
     const actionVerb = {
-        "revoked": "revoked",
-        "unblocked": "restored",
-        "deleted": "deleted",
-        "verified": "verified"
+        revoked: "revoked",
+        unblocked: "restored",
+        deleted: "deleted",
+        verified: "verified",
     }[action] || "updated";
-    const message = `Admin ${targetAdmin.userName}'s (${targetAdmin.role}) access has been ${actionVerb} by ${performerText}${reason ? `: ${reason}` : ''}`;
+    const message = `Admin ${targetAdmin.userName}'s (${targetAdmin.role}) access has been ${actionVerb} by ${performerText}${reason ? `: ${reason}` : ""}`;
     // Notify all super admins except the target admin
     const adminNotification = {
         title: `Admin ${action.charAt(0).toUpperCase() + action.slice(1)}`,
@@ -228,6 +230,13 @@ const generateToken = (id) => {
     });
     return token;
 };
+// Generate refresh token (7d expiry)
+const generateRefreshToken = (id) => {
+    return jsonwebtoken_1.default.sign({ id }, process.env.REFRESH_SECRET_TOKEN, {
+        expiresIn: "7d",
+    });
+};
+exports.generateRefreshToken = generateRefreshToken;
 const adminSignup = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userName, email, password } = req.body;
     const { refCode } = req.query;
@@ -405,7 +414,16 @@ const verifyOTP = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             });
         }
         admin.isVerified = true;
+        const refreshToken = (0, exports.generateRefreshToken)(admin._id.toString());
+        const hashedRefreshToken = yield bcryptjs_1.default.hash(refreshToken, 10);
+        admin.refreshToken = hashedRefreshToken;
         yield admin.save();
+        res.cookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
         const token = generateToken(admin._id);
         return res.status(200).json({
             error: false,
@@ -429,6 +447,33 @@ const verifyOTP = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 exports.verifyOTP = verifyOTP;
+const refreshAccessToken = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { refreshToken } = req.cookies;
+    if (!refreshToken) {
+        return res.status(401).json({ error: true, message: "No refresh token" });
+    }
+    try {
+        // Decode the refresh token
+        const decoded = jsonwebtoken_1.default.verify(refreshToken, process.env.REFRESH_SECRET_TOKEN);
+        // Find the admin
+        const admin = yield Admin_model_1.default.findById(decoded.id);
+        if (!admin || !admin.refreshToken) {
+            return res.status(403).json({ error: true, message: "Invalid token" });
+        }
+        // Compare the provided refresh token with the hashed one in the DB
+        const isValid = yield bcryptjs_1.default.compare(refreshToken, admin.refreshToken);
+        if (!isValid) {
+            return res.status(403).json({ error: true, message: "Invalid token" });
+        }
+        // Generate new access token
+        const newAccessToken = jsonwebtoken_1.default.sign({ id: admin._id }, process.env.ACCESS_SECRET_TOKEN, { expiresIn: "30m" });
+        res.json({ accessToken: newAccessToken });
+    }
+    catch (error) {
+        return res.status(403).json({ error: true, message: "Invalid token" });
+    }
+});
+exports.refreshAccessToken = refreshAccessToken;
 const adminLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -529,6 +574,17 @@ const adminLogin = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
     }
 });
 exports.adminLogin = adminLogin;
+const adminLogout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.params;
+    const admin = yield Admin_model_1.default.findOne({ _id: id });
+    if (admin) {
+        admin.refreshToken = null;
+        yield admin.save();
+    }
+    res.clearCookie("refreshToken");
+    res.status(200).json({ message: "Logged out successfully" });
+});
+exports.adminLogout = adminLogout;
 const forgotPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email } = req.body;
     if (!email) {
@@ -839,221 +895,6 @@ const getAdminById = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.getAdminById = getAdminById;
-// const revokeAdminAccess = async (req: AuthRequest, res: Response) => {
-//   const { id } = req.params;
-//   const { reason } = req.body; // Optional reason for blocking
-//   const performer = getAdminIdentifier(req);
-//   try {
-//     const admin = await Admin.findById(id);
-//     if (!admin) {
-//       return res.status(404).json({
-//         error: true,
-//         message: "Admin not found",
-//       });
-//     }
-//     // Prevent self-blocking
-//     if (performer.id === id) {
-//       return res.status(400).json({
-//         error: true,
-//         message: "You cannot block your own account",
-//       });
-//     }
-//     // Only update if not already blocked
-//     if (!admin.isBlocked) {
-//       admin.isBlocked = true;
-//       // Add status change record with admin name
-//       admin.statusChanges.push({
-//         status: "blocked",
-//         timestamp: new Date(),
-//         adminId: performer.id,
-//         adminName: performer.name, // Add the admin's name
-//         reason: reason || `Access revoked by ${performer.name}`,
-//       });
-//       await admin.save();
-//     }
-//     return res.status(200).json({
-//       error: false,
-//       message: "Admin access revoked successfully",
-//     });
-//   } catch (error) {
-//     console.error("Error in revokeAdminAccess:", error);
-//     return res.status(500).json({
-//       error: true,
-//       message: "Internal server error",
-//     });
-//   }
-// };
-// const unblockAdminAccess = async (req: AuthRequest, res: Response) => {
-//   const { id } = req.params;
-//   const { reason } = req.body; // Optional reason for unblocking
-//   const performer = getAdminIdentifier(req);
-//   try {
-//     const admin = await Admin.findById(id);
-//     if (!admin) {
-//       return res.status(404).json({
-//         error: true,
-//         message: "Admin not found",
-//       });
-//     }
-//     // Only update if currently blocked
-//     if (admin.isBlocked) {
-//       admin.isBlocked = false;
-//       // Add status change record with admin name
-//       admin.statusChanges.push({
-//         status: "unblocked",
-//         timestamp: new Date(),
-//         adminId: performer.id,
-//         adminName: performer.name, // Add the admin's name
-//         reason: reason || `Access restored by ${performer.name}`,
-//       });
-//       await admin.save();
-//     }
-//     return res.status(200).json({
-//       error: false,
-//       message: "Admin access unblocked successfully",
-//     });
-//   } catch (error) {
-//     console.error("Error in unblockAdminAccess:", error);
-//     return res.status(500).json({
-//       error: true,
-//       message: "Internal server error",
-//     });
-//   }
-// };
-// const deleteAdmin = async (req: AuthRequest, res: Response) => {
-//   const { id } = req.params;
-//   const { reason } = req.body; // Optional reason for deletion
-//   const performer = getAdminIdentifier(req);
-//   try {
-//     // First find the admin to add status change before deletion
-//     const admin = await Admin.findById(id);
-//     if (!admin) {
-//       return res.status(404).json({
-//         error: true,
-//         message: "Admin not found",
-//       });
-//     }
-//     // Prevent self-deletion
-//     if (performer.id === id) {
-//       return res.status(400).json({
-//         error: true,
-//         message: "You cannot delete your own account",
-//       });
-//     }
-//     // Instead of hard deleting, update the isDeleted flag
-//     admin.isDeleted = true;
-//     // Add status change record with admin name
-//     admin.statusChanges.push({
-//       status: "deleted",
-//       timestamp: new Date(),
-//       adminId: performer.id,
-//       adminName: performer.name, // Add the admin's name
-//       reason: reason || `Account deleted by ${performer.name}`,
-//     });
-//     await admin.save();
-//     return res.status(200).json({
-//       error: false,
-//       message: "Admin deleted successfully",
-//     });
-//   } catch (error) {
-//     console.error("Error in deleteAdmin:", error);
-//     return res.status(500).json({
-//       error: true,
-//       message: "Internal server error",
-//     });
-//   }
-// };
-// // const verifyAdmin = async (req: AuthRequest, res: Response) => {
-// //   const { id } = req.params;
-// //   const performer = getAdminIdentifier(req);
-// //   try {
-// //     const admin = await Admin.findById(id);
-// //     if (!admin) {
-// //       return res.status(404).json({
-// //         error: true,
-// //         message: "Admin not found",
-// //       });
-// //     }
-// //     // Only update if not already verified
-// //     if (!admin.isVerified) {
-// //       admin.isVerified = true;
-// //       // Add status change record with admin name
-// //       admin.statusChanges.push({
-// //         status: "verified",
-// //         timestamp: new Date(),
-// //         adminId: performer.id,
-// //         adminName: performer.name, // Add the admin's name
-// //         reason: "Admin account verified",
-// //       });
-// //       await admin.save();
-// //     }
-// //     return res.status(200).json({
-// //       error: false,
-// //       message: "Admin verified successfully",
-// //     });
-// //   } catch (error) {
-// //     console.error("Error in verifyAdmin:", error);
-// //     return res.status(500).json({
-// //       error: true,
-// //       message: "Internal server error",
-// //     });
-// //   }
-// // };
-// const verifyAdmin = async (req: AuthRequest, res: Response) => {
-//   const { id } = req.params;
-//   // Add validation for ID format
-//   if (!mongoose.Types.ObjectId.isValid(id)) {
-//     return res.status(400).json({
-//       error: true,
-//       message: "Invalid admin ID format",
-//     });
-//   }
-//   const performer = getAdminIdentifier(req);
-//   try {
-//     const admin = await Admin.findById(id);
-//     if (!admin) {
-//       return res.status(404).json({
-//         error: true,
-//         message: "Admin not found",
-//       });
-//     }
-//     // Prevent verification of already verified admins
-//     if (admin.isVerified) {
-//       return res.status(400).json({
-//         error: true,
-//         message: "Admin is already verified",
-//       });
-//     }
-//     // Only update if not already verified
-//     admin.isVerified = true;
-//     // Add status change record with admin name
-//     admin.statusChanges.push({
-//       status: "verified",
-//       timestamp: new Date(),
-//       adminId: performer.id,
-//       adminName: performer.name,
-//       reason: "Admin account verified",
-//     });
-//     await admin.save();
-//     return res.status(200).json({
-//       error: false,
-//       message: "Admin verified successfully",
-//       admin: {
-//         id: admin._id,
-//         userName: admin.userName,
-//         email: admin.email,
-//         isVerified: admin.isVerified,
-//       },
-//     });
-//   } catch (error) {
-//     console.error("Error in verifyAdmin:", error);
-//     return res.status(500).json({
-//       error: true,
-//       message: "Internal server error",
-//       details: error instanceof Error ? error.message : String(error),
-//     });
-//   }
-// };
 const revokeAdminAccess = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     const { reason } = req.body;
@@ -1104,7 +945,6 @@ const revokeAdminAccess = (req, res) => __awaiter(void 0, void 0, void 0, functi
     }
 });
 exports.revokeAdminAccess = revokeAdminAccess;
-// 2. Enhanced unblockAdminAccess
 const unblockAdminAccess = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     const { reason } = req.body;
@@ -1148,7 +988,6 @@ const unblockAdminAccess = (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 });
 exports.unblockAdminAccess = unblockAdminAccess;
-// 3. Enhanced deleteAdmin
 const deleteAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     const { reason } = req.body;
@@ -1204,7 +1043,6 @@ const deleteAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.deleteAdmin = deleteAdmin;
-// 4. Enhanced verifyAdmin
 const verifyAdmin = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { id } = req.params;
     // Add validation for ID format
