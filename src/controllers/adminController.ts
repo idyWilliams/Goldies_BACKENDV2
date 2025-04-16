@@ -273,7 +273,13 @@ const generateToken = (id: unknown) => {
 };
 // Generate refresh token (7d expiry)
 export const generateRefreshToken = (id: string) => {
-  return jwt.sign({ id }, process.env.REFRESH_SECRET_TOKEN!, {
+  const refreshSecret = process.env.REFRESH_SECRET_TOKEN;
+  if (!refreshSecret) {
+    throw new Error(
+      "Refresh token secret is not defined in environment variables."
+    );
+  }
+  return jwt.sign({ id }, refreshSecret, {
     expiresIn: "7d",
   });
 };
@@ -501,7 +507,7 @@ const verifyOTP = async (req: Request, res: Response) => {
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: true, 
+      secure: true,
       sameSite: "none",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });

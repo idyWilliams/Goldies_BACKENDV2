@@ -232,7 +232,11 @@ const generateToken = (id) => {
 };
 // Generate refresh token (7d expiry)
 const generateRefreshToken = (id) => {
-    return jsonwebtoken_1.default.sign({ id }, process.env.REFRESH_SECRET_TOKEN, {
+    const refreshSecret = process.env.REFRESH_SECRET_TOKEN;
+    if (!refreshSecret) {
+        throw new Error("Refresh token secret is not defined in environment variables.");
+    }
+    return jsonwebtoken_1.default.sign({ id }, refreshSecret, {
         expiresIn: "7d",
     });
 };
