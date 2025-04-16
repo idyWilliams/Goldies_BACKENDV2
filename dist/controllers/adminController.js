@@ -407,7 +407,7 @@ const verifyOTP = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 message: "Admin not found",
             });
         }
-        if (otp != admin.OTP) {
+        if (String(otp) !== String(admin.OTP)) {
             return res.status(401).json({
                 error: true,
                 message: "Wrong OTP",
@@ -415,13 +415,25 @@ const verifyOTP = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         admin.isVerified = true;
         const refreshToken = (0, exports.generateRefreshToken)(admin._id.toString());
-        const hashedRefreshToken = yield bcryptjs_1.default.hash(refreshToken, 10);
-        admin.refreshToken = hashedRefreshToken;
-        yield admin.save();
+        // const hashedRefreshToken = await bcryptjs.hash(refreshToken, 10);
+        // admin.refreshToken = hashedRefreshToken;
+        // await admin.save();
+        try {
+            const hashedRefreshToken = yield bcryptjs_1.default.hash(refreshToken, 10);
+            admin.refreshToken = hashedRefreshToken;
+            yield admin.save();
+        }
+        catch (saveError) {
+            console.error("Token Hashing/Save Error:", saveError);
+            return res.status(500).json({
+                error: true,
+                message: "Failed to persist session",
+            });
+        }
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
+            sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
         const token = generateToken(admin._id);
@@ -439,11 +451,8 @@ const verifyOTP = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
-        return res.status(500).json({
-            error: true,
-            err: error,
-            message: "Internal server error",
-        });
+        console.error("VerifyOTP Error:", error);
+        return res.status(500).json(Object.assign({ error: true, err: error, message: "Internal server error" }, (process.env.NODE_ENV === "development" && { debug: error })));
     }
 });
 exports.verifyOTP = verifyOTP;

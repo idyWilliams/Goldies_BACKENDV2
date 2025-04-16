@@ -468,7 +468,7 @@ const verifyOTP = async (req: Request, res: Response) => {
       });
     }
 
-    if (otp != admin.OTP) {
+    if (String(otp) !== String(admin.OTP)) {
       return res.status(401).json({
         error: true,
         message: "Wrong OTP",
@@ -478,16 +478,27 @@ const verifyOTP = async (req: Request, res: Response) => {
     admin.isVerified = true;
 
     const refreshToken = generateRefreshToken(admin._id.toString());
-    const hashedRefreshToken = await bcryptjs.hash(refreshToken, 10);
-    admin.refreshToken = hashedRefreshToken;
-    await admin.save();
-
+    // const hashedRefreshToken = await bcryptjs.hash(refreshToken, 10);
+    // admin.refreshToken = hashedRefreshToken;
+    // await admin.save();
+    try {
+      const hashedRefreshToken = await bcryptjs.hash(refreshToken, 10);
+      admin.refreshToken = hashedRefreshToken;
+      await admin.save();
+    } catch (saveError) {
+      console.error("Token Hashing/Save Error:", saveError);
+      return res.status(500).json({
+        error: true,
+        message: "Failed to persist session",
+      });
+    }
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+
     const token = generateToken(admin._id);
     return res.status(200).json({
       error: false,
@@ -502,15 +513,15 @@ const verifyOTP = async (req: Request, res: Response) => {
       message: `Admin Signup successful`,
     });
   } catch (error) {
+    console.error("VerifyOTP Error:", error);
     return res.status(500).json({
       error: true,
       err: error,
       message: "Internal server error",
+      ...(process.env.NODE_ENV === "development" && { debug: error }),
     });
   }
 };
-
-
 
 const refreshAccessToken = async (req: Request, res: Response) => {
   const { refreshToken } = req.cookies;
