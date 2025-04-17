@@ -24,6 +24,7 @@ import jwt from "jsonwebtoken";
 import { createServer } from "http";
 import { notificationRouter } from "./routes/notificationRoute";
 import AdminModel from "./models/Admin.model";
+import adminAnalytics from "./routes/adminAnalytics.route";
 const PORT = process.env.PORT || 2030;
 // const app = express();
 const httpServer = createServer(app);
@@ -193,5 +194,6 @@ app.use("/api/favorites", userFavoritesRouter);
 app.use("/api/reviews", reviewRouter);
 app.use("/api/notifications", notificationRouter(io));
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/analytics", adminAnalytics);
 
 httpServer.listen(PORT, () => console.log(`server listening on port ${PORT}`));
