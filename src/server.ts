@@ -19,7 +19,7 @@ import analyticsRoutes from "./routes/analytics.route";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 import cors from "cors";
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 import { createServer } from "http";
 import { notificationRouter } from "./routes/notificationRoute";
 import AdminModel from "./models/Admin.model";
@@ -30,7 +30,6 @@ const allowedOrigins = [
   "https://goldies-frontend-v3.vercel.app",
   "http://localhost:7009",
 ];
-
 
 const io = new Server(httpServer, {
   cors: {

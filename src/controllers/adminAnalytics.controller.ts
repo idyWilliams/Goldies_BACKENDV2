@@ -8,7 +8,7 @@ export class SalesAnalyticsController {
    */
   async getTodaySummary(req: Request, res: Response) {
     try {
-      const summary = await SalesAnalyticsService.getTodaySummary();
+      const summary = await SalesAnalyticsService.getTotalSummary();
       return res.status(200).json(summary);
     } catch (error) {
       console.error("Error getting sales summary:", error);
@@ -53,7 +53,7 @@ export class SalesAnalyticsController {
   async getDashboardData(req: Request, res: Response) {
     try {
       const [summary, revenueReport, bestSellingProducts] = await Promise.all([
-        SalesAnalyticsService.getTodaySummary(),
+        SalesAnalyticsService.getTotalSummary(),
         SalesAnalyticsService.getRevenueReport(),
         SalesAnalyticsService.getBestSellingProducts(5),
       ]);
@@ -68,18 +68,7 @@ export class SalesAnalyticsController {
       return res.status(500).json({ message: "Failed to get dashboard data" });
     }
   }
-  //   async getCategoryDistribution(req: Request, res: Response) {
-  //     try {
-  //       const categoryData =
-  //         await SalesAnalyticsService.getCategoryDistribution();
-  //       return res.status(200).json(categoryData);
-  //     } catch (error) {
-  //       console.error("Error getting category distribution:", error);
-  //       return res
-  //         .status(500)
-  //         .json({ message: "Failed to get category distribution" });
-  //     }
-  //   }
+
   /**
    * Get category distribution for pie chart
    */
@@ -202,14 +191,34 @@ export class SalesAnalyticsController {
   /**
    * Get all extended dashboard data in a single request
    */
+  // async getExtendedDashboardData(req: Request, res: Response) {
+  //   try {
+  //     const dashboardData =
+  //       await SalesAnalyticsService.getExtendedDashboardData();
+  //     return res.status(200).json(dashboardData);
+  //   } catch (error) {
+  //     console.error("Error getting extended dashboard data:", error);
+  //     return res.status(500).json({ message: "Failed to get dashboard data" });
+  //   }
+  // }
+
   async getExtendedDashboardData(req: Request, res: Response) {
     try {
+    
+     const { period = "all" } = req.query;
+
+      // Pass the period to the service
       const dashboardData =
-        await SalesAnalyticsService.getExtendedDashboardData();
+        await SalesAnalyticsService.getExtendedDashboardData(
+          period as string | undefined
+        );
+
       return res.status(200).json(dashboardData);
     } catch (error) {
-      console.error("Error getting extended dashboard data:", error);
-      return res.status(500).json({ message: "Failed to get dashboard data" });
+      console.error("Error fetching extended dashboard data:", error);
+      return res
+        .status(500)
+        .json({ message: "Failed to fetch dashboard data" });
     }
   }
 }

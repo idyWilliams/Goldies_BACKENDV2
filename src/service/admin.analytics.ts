@@ -6,6 +6,9 @@ import {
   startOfMonth,
   endOfMonth,
   format,
+  subMonths,
+  startOfYear,
+  endOfYear,
 } from "date-fns";
 import User from "../models/User.model";
 import Order from "../models/Order.model";
@@ -13,69 +16,171 @@ import Category from "../models/Category.model";
 import Product from "../models/Product.model";
 
 export class SalesAnalyticsService {
-  // Get today's summary data
-  async getTodaySummary() {
+  // Get total summary data with period comparison
+  async getTotalSummary(period = "month") {
     const today = new Date();
-    const yesterday = subDays(today, 1);
+    let currentPeriodStart: Date;
+    let currentPeriodEnd: Date;
+    let previousPeriodStart: Date;
+    let previousPeriodEnd: Date;
 
-    // Today's data
-    const todayStart = startOfDay(today);
-    const todayEnd = endOfDay(today);
-    const todayOrders = await this.getOrdersInPeriod(todayStart, todayEnd);
+    switch (period) {
+      case "all":
+        try {
+          const firstOrder = await Order.findOne().sort({ createdAt: 1 });
 
-    // Yesterday's data for comparison
-    const yesterdayStart = startOfDay(yesterday);
-    const yesterdayEnd = endOfDay(yesterday);
-    const yesterdayOrders = await this.getOrdersInPeriod(
-      yesterdayStart,
-      yesterdayEnd
+          // Check if firstOrder exists and has createdAt property
+          currentPeriodStart =
+            firstOrder && firstOrder.createdAt
+              ? new Date(firstOrder.createdAt)
+              : new Date(2020, 0, 1); // default to Jan 1, 2020 if no orders
+
+          currentPeriodEnd = endOfDay(today);
+
+          // For comparison, use the same time span but previous period
+          const timeDiff = today.getTime() - currentPeriodStart.getTime();
+          previousPeriodStart = new Date(
+            currentPeriodStart.getTime() - timeDiff
+          );
+          previousPeriodEnd = new Date(currentPeriodStart.getTime() - 1); // day before current period starts
+        } catch (error) {
+          console.error("Error determining all-time period:", error);
+          // Fallback values if there's an error
+          currentPeriodStart = new Date(2020, 0, 1);
+          currentPeriodEnd = endOfDay(today);
+          previousPeriodStart = new Date(2015, 0, 1);
+          previousPeriodEnd = new Date(2019, 11, 31);
+        }
+        break;
+      case "week":
+        currentPeriodStart = startOfDay(subDays(today, 6));
+        currentPeriodEnd = endOfDay(today);
+        previousPeriodStart = startOfDay(subDays(today, 13));
+        previousPeriodEnd = endOfDay(subDays(today, 7));
+        break;
+      case "month":
+        currentPeriodStart = startOfMonth(today);
+        currentPeriodEnd = endOfDay(today);
+        previousPeriodStart = startOfMonth(subMonths(today, 1));
+        previousPeriodEnd = endOfMonth(subMonths(today, 1));
+        break;
+      case "year":
+        currentPeriodStart = startOfYear(today);
+        currentPeriodEnd = endOfDay(today);
+        previousPeriodStart = startOfYear(subMonths(today, 12));
+        previousPeriodEnd = endOfYear(subMonths(today, 12));
+        break;
+      default: // Default to 'all' if invalid period
+        try {
+          const defaultFirstOrder = await Order.findOne().sort({
+            createdAt: 1,
+          });
+          currentPeriodStart =
+            defaultFirstOrder && defaultFirstOrder.createdAt
+              ? new Date(defaultFirstOrder.createdAt)
+              : new Date(2020, 0, 1);
+          currentPeriodEnd = endOfDay(today);
+          const defaultTimeDiff =
+            today.getTime() - currentPeriodStart.getTime();
+          previousPeriodStart = new Date(
+            currentPeriodStart.getTime() - defaultTimeDiff
+          );
+          previousPeriodEnd = new Date(currentPeriodStart.getTime() - 1);
+        } catch (error) {
+          console.error("Error in default case:", error);
+          // Fallback values
+          currentPeriodStart = new Date(2020, 0, 1);
+          currentPeriodEnd = endOfDay(today);
+          previousPeriodStart = new Date(2015, 0, 1);
+          previousPeriodEnd = new Date(2019, 11, 31);
+        }
+    }
+
+    // Current period data
+    const currentPeriodOrders = await this.getOrdersInPeriod(
+      currentPeriodStart,
+      currentPeriodEnd
     );
 
-    // Calculate metrics
-    const todayTotalSales = this.calculateTotalSales(todayOrders);
-    const todayTotalOrders = todayOrders.length;
-    const todayNewCustomers = await this.countNewCustomers(
-      todayStart,
-      todayEnd
+    // Previous period data for comparison
+    const previousPeriodOrders = await this.getOrdersInPeriod(
+      previousPeriodStart,
+      previousPeriodEnd
     );
 
-    // Calculate metrics for yesterday
-    const yesterdayTotalSales = this.calculateTotalSales(yesterdayOrders);
-    const yesterdayTotalOrders = yesterdayOrders.length;
-    const yesterdayNewCustomers = await this.countNewCustomers(
-      yesterdayStart,
-      yesterdayEnd
+    // Calculate metrics for current period
+    const currentTotalSales = this.calculateTotalSales(currentPeriodOrders);
+    const currentTotalOrders = currentPeriodOrders.length;
+    const currentNewCustomers = await this.countNewCustomers(
+      currentPeriodStart,
+      currentPeriodEnd
     );
+
+    // Calculate average order value for current period
+    const currentAverageOrderValue =
+      currentTotalOrders > 0 ? currentTotalSales / currentTotalOrders : 0;
+
+    // Calculate metrics for previous period
+    const previousTotalSales = this.calculateTotalSales(previousPeriodOrders);
+    const previousTotalOrders = previousPeriodOrders.length;
+    const previousNewCustomers = await this.countNewCustomers(
+      previousPeriodStart,
+      previousPeriodEnd
+    );
+
+    // Calculate average order value for previous period
+    const previousAverageOrderValue =
+      previousTotalOrders > 0 ? previousTotalSales / previousTotalOrders : 0;
 
     // Calculate percentage changes
     const salesPercentChange = this.calculatePercentChange(
-      todayTotalSales,
-      yesterdayTotalSales
+      currentTotalSales,
+      previousTotalSales
     );
     const ordersPercentChange = this.calculatePercentChange(
-      todayTotalOrders,
-      yesterdayTotalOrders
+      currentTotalOrders,
+      previousTotalOrders
     );
     const customersPercentChange = this.calculatePercentChange(
-      todayNewCustomers,
-      yesterdayNewCustomers
+      currentNewCustomers,
+      previousNewCustomers
+    );
+    const aovPercentChange = this.calculatePercentChange(
+      currentAverageOrderValue,
+      previousAverageOrderValue
     );
 
     return {
+      period: {
+        type: period,
+        current: {
+          start: format(currentPeriodStart, "yyyy-MM-dd"),
+          end: format(currentPeriodEnd, "yyyy-MM-dd"),
+        },
+        previous: {
+          start: format(previousPeriodStart, "yyyy-MM-dd"),
+          end: format(previousPeriodEnd, "yyyy-MM-dd"),
+        },
+      },
       totalSales: {
-        value: todayTotalSales,
+        value: currentTotalSales,
         percentChange: salesPercentChange,
-        yesterday: yesterdayTotalSales,
+        previous: previousTotalSales,
       },
       totalOrders: {
-        value: todayTotalOrders,
+        value: currentTotalOrders,
         percentChange: ordersPercentChange,
-        yesterday: yesterdayTotalOrders,
+        previous: previousTotalOrders,
       },
       newCustomers: {
-        value: todayNewCustomers,
+        value: currentNewCustomers,
         percentChange: customersPercentChange,
-        yesterday: yesterdayNewCustomers,
+        previous: previousNewCustomers,
+      },
+      averageOrderValue: {
+        value: currentAverageOrderValue,
+        percentChange: aovPercentChange,
+        previous: previousAverageOrderValue,
       },
     };
   }
@@ -181,51 +286,6 @@ export class SalesAnalyticsService {
     return topProducts;
   }
 
-  // Get category distribution for cakes
-  //   async getCategoryDistribution() {
-  //     // Get all categories and their products
-  //     const categories = await Category.find({ status: true });
-
-  //     const categoryData = await Promise.all(
-  //       categories.map(async (category) => {
-  //         // Count orders that include products from this category
-  //         const ordersCount = await Order.aggregate([
-  //           { $unwind: "$orderedItems" },
-  //           {
-  //             $lookup: {
-  //               from: "products",
-  //               localField: "orderedItems.product",
-  //               foreignField: "_id",
-  //               as: "product",
-  //             },
-  //           },
-  //           { $unwind: "$product" },
-  //           {
-  //             $match: {
-  //               "product.category": category._id,
-  //               orderStatus: { $ne: "cancelled" },
-  //             },
-  //           },
-  //           {
-  //             $group: {
-  //               _id: null,
-  //               count: { $sum: 1 },
-  //             },
-  //           },
-  //         ]);
-
-  //         return {
-  //           name: category.name,
-  //           value: ordersCount.length > 0 ? ordersCount[0].count : 0,
-  //           id: category._id,
-  //         };
-  //       })
-  //     );
-
-  //     return categoryData;
-  //   }
-
-  // Get category distribution for cakes
   async getCategoryDistribution() {
     // Get all cake categories
     const cakeCategories = await Category.find({ status: true });
@@ -246,28 +306,6 @@ export class SalesAnalyticsService {
 
     return categoryData;
   }
-  // Get monthly order counts for the current year
-  //   async getMonthlyOrderCounts() {
-  //     const currentYear = new Date().getFullYear();
-  //     const monthlyData = [];
-
-  //     for (let month = 0; month < 12; month++) {
-  //       const startDate = new Date(currentYear, month, 1);
-  //       const endDate = endOfMonth(startDate);
-
-  //       const orderCount = await Order.countDocuments({
-  //         createdAt: { $gte: startDate, $lte: endDate },
-  //         orderStatus: { $ne: "cancelled" },
-  //       });
-
-  //       monthlyData.push({
-  //         month: format(startDate, "MMM"),
-  //         orders: orderCount,
-  //       });
-  //     }
-
-  //     return monthlyData;
-  //   }
 
   // Get monthly order analytics
   async getOrderAnalytics() {
@@ -292,28 +330,6 @@ export class SalesAnalyticsService {
     return monthlyData;
   }
 
-  // Get monthly customer counts (new registrations)
-  //   async getMonthlyCustomerCounts() {
-  //     const currentYear = new Date().getFullYear();
-  //     const monthlyData = [];
-
-  //     for (let month = 0; month < 12; month++) {
-  //       const startDate = new Date(currentYear, month, 1);
-  //       const endDate = endOfMonth(startDate);
-
-  //       const customerCount = await User.countDocuments({
-  //         createdAt: { $gte: startDate, $lte: endDate },
-  //       });
-
-  //       monthlyData.push({
-  //         month: format(startDate, "MMM"),
-  //         customers: customerCount,
-  //       });
-  //     }
-
-  //     return monthlyData;
-  //   }
-
   // Get monthly customer analytics
   async getCustomerAnalytics() {
     const currentYear = new Date().getFullYear();
@@ -335,61 +351,6 @@ export class SalesAnalyticsService {
 
     return monthlyData;
   }
-
-  // Get top selling products distribution
-  //   async getTopProductsSalesDistribution() {
-  //     // Aggregate to find top products by sales quantity
-  //     const topProducts = await Order.aggregate([
-  //       { $unwind: "$orderedItems" },
-  //       {
-  //         $group: {
-  //           _id: "$orderedItems.product",
-  //           totalSold: { $sum: "$orderedItems.quantity" },
-  //         },
-  //       },
-  //       { $sort: { totalSold: -1 } },
-  //       { $limit: 10 },
-  //       {
-  //         $lookup: {
-  //           from: "products",
-  //           localField: "_id",
-  //           foreignField: "_id",
-  //           as: "productDetails",
-  //         },
-  //       },
-  //       { $unwind: "$productDetails" },
-  //       {
-  //         $project: {
-  //           name: "$productDetails.name",
-  //           value: "$totalSold",
-  //           category: "$productDetails.category",
-  //         },
-  //       },
-  //     ]);
-
-  //     // Further group top products by their categories
-  //     const productsByCategory = await Category.populate(topProducts, {
-  //       path: "category",
-  //       select: "name",
-  //     });
-
-  //     // Group products by their category names
-  //     const groupedProducts = productsByCategory.reduce((result, product) => {
-  //       const categoryName = product.category ? product.category.name : "Other";
-
-  //       if (!result[categoryName]) {
-  //         result[categoryName] = {
-  //           name: categoryName,
-  //           value: 0,
-  //         };
-  //       }
-
-  //       result[categoryName].value += product.value;
-  //       return result;
-  //     }, {});
-
-  //     return Object.values(groupedProducts);
-  //   }
 
   // Get top product sales distribution
   async getTopProductSalesDistribution() {
@@ -458,58 +419,32 @@ export class SalesAnalyticsService {
     return topProductData;
   }
 
-  // Get full dashboard analytics data
-//   async getFullDashboardAnalytics() {
-//     const [
-//       todaySummary,
-//       revenueReport,
-//       categoryDistribution,
-//       monthlyOrderCounts,
-//       monthlyCustomerCounts,
-//       topProductsSales,
-//     ] = await Promise.all([
-//       this.getTodaySummary(),
-//       this.getRevenueReport(),
-//       this.getCategoryDistribution(),
-//       this.getMonthlyOrderCounts(),
-//       this.getMonthlyCustomerCounts(),
-//       this.getTopProductsSalesDistribution(),
-//     ]);
 
-//     return {
-//       todaySummary,
-//       revenueReport,
-//       categoryDistribution,
-//       monthlyOrderCounts,
-//       monthlyCustomerCounts,
-//       topProductsSales,
-//     };
-    //   }
 
-    async getExtendedDashboardData() {
+  async getExtendedDashboardData(period = "all") {
     const [
-      todaySummary,
+      totalSummary,
       revenueReport,
       categoryDistribution,
       orderAnalytics,
       customerAnalytics,
-      topProductSales
+      topProductSales,
     ] = await Promise.all([
-      this.getTodaySummary(),
+      this.getTotalSummary(period),
       this.getRevenueReport(),
       this.getCategoryDistribution(),
       this.getOrderAnalytics(),
       this.getCustomerAnalytics(),
-      this.getTopProductSalesDistribution()
+      this.getTopProductSalesDistribution(),
     ]);
 
     return {
-      todaySummary,
+      totalSummary,
       revenueReport,
       categoryDistribution,
       orderAnalytics,
       customerAnalytics,
-      topProductSales
+      topProductSales,
     };
   }
 }
