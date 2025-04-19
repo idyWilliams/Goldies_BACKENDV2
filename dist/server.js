@@ -43,14 +43,13 @@ const allowedOrigins = [
     "https://goldies-frontend-v3.vercel.app",
     "http://localhost:7009",
 ];
-// Socket.IO setup with CORS
 const io = new socket_io_1.Server(httpServer, {
     cors: {
         origin: allowedOrigins,
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
         credentials: true,
     },
-    path: "/socket.io", // Make sure path matches client
+    path: "/socket.io",
     connectTimeout: 10000,
     pingTimeout: 30000,
     pingInterval: 25000,
