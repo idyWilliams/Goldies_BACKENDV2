@@ -33,13 +33,11 @@ const analytics_route_1 = __importDefault(require("./routes/analytics.route"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const cors_1 = __importDefault(require("cors"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-// import Admin from "./models/adminModel";
 const http_1 = require("http");
 const notificationRoute_1 = require("./routes/notificationRoute");
 const Admin_model_1 = __importDefault(require("./models/Admin.model"));
 const adminAnalytics_route_1 = __importDefault(require("./routes/adminAnalytics.route"));
 const PORT = process.env.PORT || 2030;
-// const app = express();
 const httpServer = (0, http_1.createServer)(app);
 const allowedOrigins = [
     "https://goldies-frontend-v3.vercel.app",
@@ -53,7 +51,7 @@ const io = new socket_io_1.Server(httpServer, {
         credentials: true,
     },
     path: "/socket.io", // Make sure path matches client
-    connectTimeout: 10000, // Increase timeout
+    connectTimeout: 10000,
     pingTimeout: 30000,
     pingInterval: 25000,
 });
@@ -73,7 +71,7 @@ io.use((socket, next) => __awaiter(void 0, void 0, void 0, function* () {
         console.log("Verifying token length:", token.length);
         const decoded = jsonwebtoken_1.default.verify(token, process.env.ACCESS_SECRET_TOKEN);
         console.log("Token decoded, looking up admin:", decoded.id);
-        const admin = yield Admin_model_1.default.findById(decoded.id).select('role isBlocked isDeleted');
+        const admin = yield Admin_model_1.default.findById(decoded.id).select("role isBlocked isDeleted");
         if (!admin) {
             console.log("Admin not found:", decoded.id);
             throw new Error("Admin not found");
@@ -109,7 +107,7 @@ io.on("connection", (socket) => {
         socket.emit("connection-success", {
             message: "Successfully connected to notification service",
             userId: roomId,
-            timestamp: new Date()
+            timestamp: new Date(),
         });
     }
     socket.on("disconnect", (reason) => {
@@ -159,5 +157,5 @@ app.use("/api/favorites", userFavoritesRoute_1.default);
 app.use("/api/reviews", reviewRoute_1.default);
 app.use("/api/notifications", (0, notificationRoute_1.notificationRouter)(io));
 app.use("/api/analytics", analytics_route_1.default);
-app.use("/api/analytics", adminAnalytics_route_1.default);
+app.use("/api/admin-analytics", adminAnalytics_route_1.default);
 httpServer.listen(PORT, () => console.log(`server listening on port ${PORT}`));

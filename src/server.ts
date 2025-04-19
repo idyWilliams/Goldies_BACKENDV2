@@ -19,21 +19,17 @@ import analyticsRoutes from "./routes/analytics.route";
 import mongoose from "mongoose";
 import { Request, Response } from "express";
 import cors from "cors";
-import jwt from "jsonwebtoken";
-// import Admin from "./models/adminModel";
+import jwt from "jsonwebtoken"
 import { createServer } from "http";
 import { notificationRouter } from "./routes/notificationRoute";
 import AdminModel from "./models/Admin.model";
 import adminAnalytics from "./routes/adminAnalytics.route";
 const PORT = process.env.PORT || 2030;
-// const app = express();
 const httpServer = createServer(app);
 const allowedOrigins = [
   "https://goldies-frontend-v3.vercel.app",
   "http://localhost:7009",
 ];
-
-
 
 // Socket.IO setup with CORS
 const io = new Server(httpServer, {
@@ -43,7 +39,7 @@ const io = new Server(httpServer, {
     credentials: true,
   },
   path: "/socket.io", // Make sure path matches client
-  connectTimeout: 10000, // Increase timeout
+  connectTimeout: 10000,
   pingTimeout: 30000,
   pingInterval: 25000,
 });
@@ -52,7 +48,6 @@ const io = new Server(httpServer, {
 io.engine.on("connection_error", (err) => {
   console.log("Connection error:", err);
 });
-
 
 io.use(async (socket, next) => {
   console.log("New connection attempt:", socket.id);
@@ -66,13 +61,18 @@ io.use(async (socket, next) => {
     }
 
     console.log("Verifying token length:", token.length);
-    const decoded = jwt.verify(token, process.env.ACCESS_SECRET_TOKEN as string) as {
+    const decoded = jwt.verify(
+      token,
+      process.env.ACCESS_SECRET_TOKEN as string
+    ) as {
       id: string;
       role?: string;
     };
 
     console.log("Token decoded, looking up admin:", decoded.id);
-    const admin = await AdminModel.findById(decoded.id).select('role isBlocked isDeleted');
+    const admin = await AdminModel.findById(decoded.id).select(
+      "role isBlocked isDeleted"
+    );
 
     if (!admin) {
       console.log("Admin not found:", decoded.id);
@@ -80,7 +80,12 @@ io.use(async (socket, next) => {
     }
 
     if (admin.isBlocked || admin.isDeleted) {
-      console.log("Admin account issue - blocked:", admin.isBlocked, "deleted:", admin.isDeleted);
+      console.log(
+        "Admin account issue - blocked:",
+        admin.isBlocked,
+        "deleted:",
+        admin.isDeleted
+      );
       throw new Error("Admin account is blocked or deleted");
     }
 
@@ -113,7 +118,7 @@ io.on("connection", (socket) => {
     socket.emit("connection-success", {
       message: "Successfully connected to notification service",
       userId: roomId,
-      timestamp: new Date()
+      timestamp: new Date(),
     });
   }
 
@@ -151,8 +156,6 @@ app.use((req, _, next) => {
   next();
 });
 
-
-
 app.use(
   cors({
     origin: function (origin, callback) {
@@ -175,7 +178,6 @@ mongoose
   .then(() => console.log("MongoDB connected"))
   .catch((err: any) => console.log(err));
 
-
 app.get("/", (req: Request, res: Response) => {
   res.send("backend connected successfully");
 });
@@ -194,6 +196,6 @@ app.use("/api/favorites", userFavoritesRouter);
 app.use("/api/reviews", reviewRouter);
 app.use("/api/notifications", notificationRouter(io));
 app.use("/api/analytics", analyticsRoutes);
-app.use("/api/analytics", adminAnalytics);
+app.use("/api/admin-analytics", adminAnalytics);
 
 httpServer.listen(PORT, () => console.log(`server listening on port ${PORT}`));

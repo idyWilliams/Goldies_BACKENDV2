@@ -1,7 +1,7 @@
 // src/routes/salesAnalyticsRoutes.ts
 import { Router } from "express";
 import SalesAnalyticsController from "../controllers/adminAnalytics.controller";
-import { protect, authorize } from "../middleware/auth.middleware"; // Using your auth middleware
+import { protect, authorize } from "../middleware/auth.middleware";
 
 const router = Router();
 
