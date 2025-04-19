@@ -1,19 +1,19 @@
-// src/routes/salesAnalyticsRoutes.ts
+
 import { Router } from "express";
 import SalesAnalyticsController from "../controllers/adminAnalytics.controller";
 import { protect, authorize } from "../middleware/auth.middleware";
 
 const router = Router();
 
-// Apply authentication middleware to all analytics routes
+
 router.use(protect);
 router.use(authorize("admin", "super_admin"));
 
-// Basic analytics routes
+
 router.get("/today-summary", SalesAnalyticsController.getTodaySummary);
 router.get("/revenue-report", SalesAnalyticsController.getRevenueReport);
 
-// Extended analytics routes
+
 router.get(
   "/category-distribution",
   SalesAnalyticsController.getCategoryDistribution
