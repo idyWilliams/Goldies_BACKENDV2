@@ -11,3 +11,4 @@ router.patch("/update_cart", verifyJWT_1.authenticateToken, cartController_1.upd
 router.delete("/clear", verifyJWT_1.authenticateToken, cartController_1.clearCart);
 router.delete("/remove/:productId", verifyJWT_1.authenticateToken, cartController_1.removeCartItem);
 exports.default = router;
+//# sourceMappingURL=cartRoute.js.map

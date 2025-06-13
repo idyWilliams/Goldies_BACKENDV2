@@ -1,6 +1,6 @@
-import Category, { categorySchemaI } from "../models/Category.model";
+import Category from "../models/Category.model";
 import { Request, Response } from "express";
-import SubCategory, { subCategorySchemaI } from "../models/SubCategory.model";
+import SubCategory from "../models/SubCategory.model";
 import Product from "../models/Product.model";
 
 //  create category

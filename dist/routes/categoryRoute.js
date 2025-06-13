@@ -10,3 +10,4 @@ router.get("/get_category/:categoryId", categoryController_1.getCategory);
 router.put("/edit_category/:categoryId", verifyJWT_1.authenticateToken, categoryController_1.editCategory);
 router.delete("/delete_category/:categoryId", verifyJWT_1.authenticateToken, categoryController_1.deleteCategory);
 exports.default = router;
+//# sourceMappingURL=categoryRoute.js.map

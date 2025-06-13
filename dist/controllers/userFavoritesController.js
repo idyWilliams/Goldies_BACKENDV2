@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -15,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getFavorites = exports.removeFavorite = exports.addFavorite = void 0;
 const Product_model_1 = __importDefault(require("../models/Product.model"));
 const User_model_1 = __importDefault(require("../models/User.model"));
-const addFavorite = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const addFavorite = async (req, res) => {
     const { productId } = req.body;
     const user = req.id;
     try {
@@ -25,14 +16,14 @@ const addFavorite = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         //     message: "Invalid Product ID format.",
         //   });
         // }
-        const userDetails = yield User_model_1.default.findOne({ _id: user });
+        const userDetails = await User_model_1.default.findOne({ _id: user });
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
                 message: "User not found, please log in and try again."
             });
         }
-        const product = yield Product_model_1.default.findById(productId);
+        const product = await Product_model_1.default.findById(productId);
         if (!product) {
             return res.status(404).json({
                 error: true,
@@ -46,8 +37,8 @@ const addFavorite = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             });
         }
         userDetails.favorites.push(productId);
-        yield userDetails.save();
-        yield userDetails.populate('favorites');
+        await userDetails.save();
+        await userDetails.populate('favorites');
         return res.status(200).json({
             error: false,
             message: 'Product added to favorites',
@@ -62,20 +53,20 @@ const addFavorite = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             message: "Internal server error, please try again"
         });
     }
-});
+};
 exports.addFavorite = addFavorite;
-const removeFavorite = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const removeFavorite = async (req, res) => {
     const { productId } = req.params;
     const user = req.id;
     try {
-        const userDetails = yield User_model_1.default.findOne({ _id: user });
+        const userDetails = await User_model_1.default.findOne({ _id: user });
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
                 message: "User not found, please log in and try again."
             });
         }
-        const product = yield Product_model_1.default.findOne({ _id: productId });
+        const product = await Product_model_1.default.findOne({ _id: productId });
         if (!product) {
             return res.status(404).json({
                 error: true,
@@ -83,8 +74,8 @@ const removeFavorite = (req, res) => __awaiter(void 0, void 0, void 0, function*
             });
         }
         userDetails.favorites = userDetails.favorites.filter((id) => id.toString() !== productId);
-        yield userDetails.save();
-        yield userDetails.populate('favorites');
+        await userDetails.save();
+        await userDetails.populate('favorites');
         return res.status(200).json({
             error: false,
             message: "Product removed from favorites successfully",
@@ -99,12 +90,12 @@ const removeFavorite = (req, res) => __awaiter(void 0, void 0, void 0, function*
             message: "Internal server error, please try again"
         });
     }
-});
+};
 exports.removeFavorite = removeFavorite;
-const getFavorites = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getFavorites = async (req, res) => {
     const user = req.id;
     try {
-        const userDetails = yield User_model_1.default.findOne({ _id: user }).populate('favorites');
+        const userDetails = await User_model_1.default.findOne({ _id: user }).populate('favorites');
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
@@ -124,5 +115,6 @@ const getFavorites = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             message: "Internal server error, please try again"
         });
     }
-});
+};
 exports.getFavorites = getFavorites;
+//# sourceMappingURL=userFavoritesController.js.map

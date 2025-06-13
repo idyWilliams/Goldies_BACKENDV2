@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -17,7 +8,7 @@ const Category_model_1 = __importDefault(require("../models/Category.model"));
 const SubCategory_model_1 = __importDefault(require("../models/SubCategory.model"));
 const Product_model_1 = __importDefault(require("../models/Product.model"));
 //  create category
-const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const createCategory = async (req, res) => {
     const { name, description, image, categorySlug, status } = req.body;
     if (!name)
         return res.status(200).json({
@@ -35,7 +26,7 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
             message: "Please provide category images",
         });
     try {
-        const category = yield Category_model_1.default.create({
+        const category = await Category_model_1.default.create({
             name,
             description,
             image,
@@ -55,14 +46,14 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
             message: "Internal server error, Please try again",
         });
     }
-});
+};
 exports.createCategory = createCategory;
 // update category
-const editCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const editCategory = async (req, res) => {
     const { categoryId } = req.params;
     const { name, description, image, categorySlug, status } = req.body;
     try {
-        const categoryDetails = yield Category_model_1.default.findOne({ _id: categoryId });
+        const categoryDetails = await Category_model_1.default.findOne({ _id: categoryId });
         if (!categoryDetails)
             return res.status(404).json({
                 error: true,
@@ -77,7 +68,7 @@ const editCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         if (categorySlug)
             categoryDetails.categorySlug = categorySlug;
         categoryDetails.status = status;
-        yield categoryDetails.save();
+        await categoryDetails.save();
         res.status(200).json({
             error: false,
             category: categoryDetails,
@@ -91,10 +82,10 @@ const editCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             message: "Internal server error",
         });
     }
-});
+};
 exports.editCategory = editCategory;
 // Get all categories with pagination
-const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getAllCategories = async (req, res) => {
     try {
         const page = req.query.page ? parseInt(req.query.page, 10) : null;
         const limit = req.query.limit ? parseInt(req.query.limit, 10) : null;
@@ -110,17 +101,22 @@ const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, functio
         // Fetch categories with search filter
         let allCategoriesQuery = Category_model_1.default.find(searchQuery).sort({ createdAt: -1 });
         let allCategories = page && limit
-            ? yield allCategoriesQuery.skip(skip).limit(limit).lean()
-            : yield allCategoriesQuery.lean();
+            ? await allCategoriesQuery.skip(skip).limit(limit).lean()
+            : await allCategoriesQuery.lean();
         // Fetch subcategories
-        const allSubCategories = yield SubCategory_model_1.default.find().lean();
+        const allSubCategories = await SubCategory_model_1.default.find().lean();
         // Attach subcategories and count products
-        const categoriesWithSubcategories = yield Promise.all(allCategories.map((category) => __awaiter(void 0, void 0, void 0, function* () {
+        const categoriesWithSubcategories = await Promise.all(allCategories.map(async (category) => {
             const subCategories = allSubCategories.filter((subCategory) => subCategory.categoryId.toString() === category._id.toString());
             // Count number of products in the category
-            const productCount = yield Product_model_1.default.countDocuments({ categoryId: category._id });
-            return Object.assign(Object.assign({}, category), { subCategories, subCategoryCount: subCategories.length, productCount });
-        })));
+            const productCount = await Product_model_1.default.countDocuments({ categoryId: category._id });
+            return {
+                ...category,
+                subCategories,
+                subCategoryCount: subCategories.length,
+                productCount,
+            };
+        }));
         // Sorting by status
         if (sortByStatus !== null) {
             const statusBoolean = sortByStatus === "true"; // Convert to boolean
@@ -136,7 +132,7 @@ const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, functio
             const order = sortBySubcategories === "desc" ? -1 : 1;
             categoriesWithSubcategories.sort((a, b) => (a.subCategoryCount - b.subCategoryCount) * order);
         }
-        const totalCategories = yield Category_model_1.default.countDocuments(searchQuery);
+        const totalCategories = await Category_model_1.default.countDocuments(searchQuery);
         const totalPages = page && limit ? Math.ceil(totalCategories / limit) : 1;
         res.status(200).json({
             error: false,
@@ -154,14 +150,14 @@ const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, functio
             message: "Internal server error",
         });
     }
-});
+};
 exports.getAllCategories = getAllCategories;
 // Get category
-const getCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getCategory = async (req, res) => {
     const { categoryId } = req.params;
     try {
         // Find the category by ID
-        const category = yield Category_model_1.default.findById(categoryId).lean(); // Use `.lean()` to get a plain JavaScript object
+        const category = await Category_model_1.default.findById(categoryId).lean(); // Use `.lean()` to get a plain JavaScript object
         if (!category) {
             return res.status(404).json({
                 error: true,
@@ -169,9 +165,12 @@ const getCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             });
         }
         // Find all subcategories associated with this category
-        const subCategories = yield SubCategory_model_1.default.find({ categoryId: category._id }).lean();
+        const subCategories = await SubCategory_model_1.default.find({ categoryId: category._id }).lean();
         // Combine category data with its subcategories
-        const categoryWithSubcategories = Object.assign(Object.assign({}, category), { subCategories });
+        const categoryWithSubcategories = {
+            ...category,
+            subCategories,
+        };
         res.status(200).json({
             error: false,
             category: categoryWithSubcategories,
@@ -185,13 +184,13 @@ const getCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             message: "Internal server error",
         });
     }
-});
+};
 exports.getCategory = getCategory;
 // Delete category
-const deleteCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const deleteCategory = async (req, res) => {
     const { categoryId } = req.params;
     try {
-        const categoryDetails = yield Category_model_1.default.deleteOne({ _id: categoryId });
+        const categoryDetails = await Category_model_1.default.deleteOne({ _id: categoryId });
         if (!categoryDetails) {
             return res.status(404).json({
                 error: true,
@@ -210,5 +209,6 @@ const deleteCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
             message: "Internal server Error",
         });
     }
-});
+};
 exports.deleteCategory = deleteCategory;
+//# sourceMappingURL=categoryController.js.map

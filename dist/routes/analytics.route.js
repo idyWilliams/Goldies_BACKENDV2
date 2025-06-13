@@ -5,3 +5,4 @@ const analytics_controller_1 = require("../controllers/analytics.controller");
 const router = (0, express_1.Router)();
 router.get("/summary", analytics_controller_1.getSummaryAnalytics);
 exports.default = router;
+//# sourceMappingURL=analytics.route.js.map

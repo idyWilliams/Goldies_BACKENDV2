@@ -7,35 +7,76 @@ const FeeSchema = new mongoose_1.Schema({
     deliveryFee: { type: Number, required: true },
 });
 const OrderSchema = new mongoose_1.Schema({
-    firstName: { type: String, require: [true, "Please provide billing first name to complete this process"] },
-    lastName: { type: String, require: [true, "Please provide billing last name to complete this process"] },
-    email: { type: String, require: [true, "Please provide billing email to complete this process"] },
-    country: { type: String, require: [true, "Please provide country to complete this process"] },
-    state: { type: String, require: [true, "Please provide city or town to complete this process"] },
-    cityOrTown: { type: String, require: [true, "Please provide city or town to complete this process"] },
-    streetAddress: { type: String, require: [true, "Please provide street address to complete this process"] },
-    phoneNumber: { type: String, require: [true, "Please provide phone number to complete this process"] },
+    firstName: {
+        type: String,
+        require: [
+            true,
+            "Please provide billing first name to complete this process",
+        ],
+    },
+    lastName: {
+        type: String,
+        require: [
+            true,
+            "Please provide billing last name to complete this process",
+        ],
+    },
+    email: {
+        type: String,
+        require: [true, "Please provide billing email to complete this process"],
+    },
+    country: {
+        type: String,
+        require: [true, "Please provide country to complete this process"],
+    },
+    state: {
+        type: String,
+        require: [true, "Please provide city or town to complete this process"],
+    },
+    cityOrTown: {
+        type: String,
+        require: [true, "Please provide city or town to complete this process"],
+    },
+    streetAddress: {
+        type: String,
+        require: [true, "Please provide street address to complete this process"],
+    },
+    phoneNumber: {
+        type: String,
+        require: [true, "Please provide phone number to complete this process"],
+    },
     orderedItems: [
         {
-            product: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Product', required: true },
+            product: {
+                type: mongoose_1.Schema.Types.ObjectId,
+                ref: "Product",
+                required: true,
+            },
             size: { type: String, required: false },
             toppings: { type: [String], required: false },
             flavour: { type: [String], required: false },
             dateNeeded: { type: String, required: false },
             details: { type: String, required: false },
-            quantity: { type: Number, required: true }
-        }
+            quantity: { type: Number, required: true },
+        },
     ],
-    fee: { type: FeeSchema, require: [true, "Please provide all the necessary fees to complete this process"] },
+    fee: {
+        type: FeeSchema,
+        require: [
+            true,
+            "Please provide all the necessary fees to complete this process",
+        ],
+    },
     user: { type: mongoose_1.Schema.Types.ObjectId, ref: "User", required: true },
     orderStatus: {
         type: String,
         enum: ["pending", "completed", "cancelled"],
-        default: "pending"
+        default: "pending",
     },
-    orderId: { type: String, required: true }
+    orderId: { type: String, required: true },
 }, {
-    timestamps: true
+    timestamps: true,
 });
 const Order = (0, mongoose_1.model)("Orders", OrderSchema);
 exports.default = Order;
+//# sourceMappingURL=Order.model.js.map

@@ -56,3 +56,4 @@ const optionalAuthenticateToken = (req, res, next) => {
     });
 };
 exports.optionalAuthenticateToken = optionalAuthenticateToken;
+//# sourceMappingURL=verifyJWT.js.map

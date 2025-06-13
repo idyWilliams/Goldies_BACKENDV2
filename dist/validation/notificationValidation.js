@@ -26,3 +26,4 @@ exports.createNotificationSchema = zod_1.z.object({
 exports.markAsReadSchema = zod_1.z.object({
     ids: zod_1.z.array(zod_1.z.string().refine((val) => mongoose_1.default.Types.ObjectId.isValid(val))),
 });
+//# sourceMappingURL=notificationValidation.js.map

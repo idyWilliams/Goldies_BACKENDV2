@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -19,7 +10,7 @@ const dotenv_1 = __importDefault(require("dotenv"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 dotenv_1.default.config();
 const nodemailer_1 = __importDefault(require("nodemailer"));
-const create_acct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const create_acct = async (req, res) => {
     const { firstName, lastName, email, password, phoneNumber } = req.body;
     if (!firstName) {
         return res
@@ -48,7 +39,7 @@ const create_acct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             .json({ error: true, message: "Phone Number is required" });
     }
     try {
-        const isUser = yield User_model_1.default.findOne({ email });
+        const isUser = await User_model_1.default.findOne({ email });
         if (isUser) {
             console.log(isUser);
             return res.status(409).json({
@@ -64,7 +55,7 @@ const create_acct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             password: hashedPwd,
             phoneNumber
         });
-        yield user.save();
+        await user.save();
         return res.json({
             error: false,
             user: {
@@ -84,9 +75,9 @@ const create_acct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             message: "internal server error",
         });
     }
-});
+};
 exports.create_acct = create_acct;
-const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const login = async (req, res) => {
     const { email, password } = req.body;
     if (!email) {
         return res.status(400).json({
@@ -101,13 +92,13 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     }
     console.log("Access Token Secret:", process.env.ACCESS_SECRET_TOKEN);
     try {
-        const user = yield User_model_1.default.findOne({ email });
+        const user = await User_model_1.default.findOne({ email });
         if (!user) {
             return res
                 .status(404)
                 .json({ error: true, message: "Email or Password is incorrect" });
         }
-        const passwordMatch = yield bcryptjs_1.default.compare(password, user.password);
+        const passwordMatch = await bcryptjs_1.default.compare(password, user.password);
         if (!passwordMatch) {
             return res
                 .status(400)
@@ -145,12 +136,12 @@ const login = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             err: error,
         });
     }
-});
+};
 exports.login = login;
-const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const forgottenPassword = async (req, res) => {
     try {
         const { email } = req.body;
-        const user = yield User_model_1.default.findOne({ email }).select('+emailToken +emailTokenExpires');
+        const user = await User_model_1.default.findOne({ email }).select('+emailToken +emailTokenExpires');
         if (!user) {
             return res.status(404).json({
                 error: true,
@@ -160,7 +151,7 @@ const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, functi
         // Generate 6-digit OTP
         const otp = generateOtp();
         const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes expiry
-        yield User_model_1.default.updateOne({ _id: user._id }, {
+        await User_model_1.default.updateOne({ _id: user._id }, {
             $set: {
                 emailToken: otp,
                 emailTokenExpires: otpExpiry
@@ -199,7 +190,7 @@ const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, functi
             subject: "Password Reset OTP",
             html: emailContent,
         };
-        yield transporter.sendMail(mailOptions);
+        await transporter.sendMail(mailOptions);
         return res.status(200).json({
             error: false,
             message: "OTP sent to your email",
@@ -212,9 +203,9 @@ const forgottenPassword = (req, res) => __awaiter(void 0, void 0, void 0, functi
             message: "Something went wrong",
         });
     }
-});
+};
 exports.forgottenPassword = forgottenPassword;
-const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const resetPassword = async (req, res) => {
     const { emailToken, password } = req.body;
     try {
         // Validate inputs
@@ -225,7 +216,7 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             });
         }
         // Find user with valid OTP
-        const user = yield User_model_1.default.findOne({
+        const user = await User_model_1.default.findOne({
             emailToken,
             emailTokenExpires: { $gt: new Date() }
         });
@@ -245,7 +236,7 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         }
         // Update password and clear OTP fields
         const hashedPassword = bcryptjs_1.default.hashSync(password, 10);
-        yield User_model_1.default.updateOne({ _id: user._id }, {
+        await User_model_1.default.updateOne({ _id: user._id }, {
             $set: { password: hashedPassword },
             $unset: { emailToken: "", emailTokenExpires: "" }
         });
@@ -261,7 +252,7 @@ const resetPassword = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             message: "Internal server error",
         });
     }
-});
+};
 exports.resetPassword = resetPassword;
 // Generate 6-digit OTP
 function generateOtp() {
@@ -272,10 +263,9 @@ function generateOtp() {
     }
     return otp;
 }
-const logout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+const logout = async (req, res) => {
     try {
-        const token = (_a = req.headers.authorization) === null || _a === void 0 ? void 0 : _a.split(" ")[1];
+        const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
             return res.status(400).json({
                 error: true,
@@ -293,5 +283,6 @@ const logout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             message: "Internal server error. Please try again.",
         });
     }
-});
+};
 exports.logout = logout;
+//# sourceMappingURL=authController.js.map

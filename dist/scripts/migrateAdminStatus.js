@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -26,9 +17,9 @@ mongoose_1.default
     process.exit(1);
 });
 // Migration function
-const migrateExistingAdmins = () => __awaiter(void 0, void 0, void 0, function* () {
+const migrateExistingAdmins = async () => {
     try {
-        const admins = yield Admin_model_1.default.find({
+        const admins = await Admin_model_1.default.find({
             "statusChanges.0": { $exists: false },
         });
         console.log(`Found ${admins.length} admins without status history.`);
@@ -39,7 +30,7 @@ const migrateExistingAdmins = () => __awaiter(void 0, void 0, void 0, function* 
                 timestamp: admin.createdAt, // Use their creation date
                 reason: "Initial migration",
             });
-            yield admin.save();
+            await admin.save();
             count++;
             if (count % 10 === 0) {
                 console.log(`Processed ${count}/${admins.length} admins...`);
@@ -55,6 +46,7 @@ const migrateExistingAdmins = () => __awaiter(void 0, void 0, void 0, function* 
         mongoose_1.default.connection.close();
         console.log("MongoDB connection closed.");
     }
-});
+};
 // Run the migration
 migrateExistingAdmins();
+//# sourceMappingURL=migrateAdminStatus.js.map

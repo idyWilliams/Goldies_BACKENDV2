@@ -8,3 +8,4 @@ router.post("/add", verifyJWT_1.authenticateToken, userFavoritesController_1.add
 router.delete("/remove/:productId", verifyJWT_1.authenticateToken, userFavoritesController_1.removeFavorite);
 router.get("/", verifyJWT_1.authenticateToken, userFavoritesController_1.getFavorites);
 exports.default = router;
+//# sourceMappingURL=userFavoritesRoute.js.map

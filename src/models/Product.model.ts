@@ -22,7 +22,7 @@ interface IProduct extends Document {
   productCode: string;
   slug: string;
 
-  // Review and rating related fields
+ 
   averageRating: number;
   ratingsCount: {
     total: number;

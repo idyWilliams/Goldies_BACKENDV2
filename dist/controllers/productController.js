@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -18,7 +9,7 @@ const Category_model_1 = __importDefault(require("../models/Category.model"));
 const SubCategory_model_1 = __importDefault(require("../models/SubCategory.model"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const slugify_1 = __importDefault(require("slugify"));
-const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const createProduct = async (req, res) => {
     try {
         const { name, description, shapes, sizes, productType, toppings, category, subCategories, minPrice, maxPrice, images, flavour, status } = req.body;
         if (!name || !description || !category || !subCategories || !minPrice || !maxPrice || !status) {
@@ -39,12 +30,12 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             return res.status(400).json({ message: "One or more subcategories have an invalid ID format." });
         }
         // Check if category exists
-        const existingCategory = yield Category_model_1.default.findOne({ _id: category });
+        const existingCategory = await Category_model_1.default.findOne({ _id: category });
         if (!existingCategory) {
             return res.status(404).json({ message: "Category not found." });
         }
         // Check if subCategories exist
-        const existingSubCategories = yield SubCategory_model_1.default.find({ _id: { $in: subCategoryIds } });
+        const existingSubCategories = await SubCategory_model_1.default.find({ _id: { $in: subCategoryIds } });
         if (existingSubCategories.length !== subCategories.length) {
             return res.status(400).json({ message: "One or more subcategories do not exist." });
         }
@@ -73,15 +64,15 @@ const createProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             slug
         });
         // Save product to database
-        const product = yield newProduct.save();
-        const productDetails = yield Product_model_1.default.findOne({ _id: product.id }).populate('category').populate('subCategories');
+        const product = await newProduct.save();
+        const productDetails = await Product_model_1.default.findOne({ _id: product.id }).populate('category').populate('subCategories');
         return res.status(201).json({ message: "Product created successfully", product: productDetails });
     }
     catch (error) {
         console.error("Error creating product:", error);
         return res.status(500).json({ message: "Internal Server Error" });
     }
-});
+};
 exports.createProduct = createProduct;
 const generatedIds = new Set(); // Store unique IDs
 function generateUniqueId() {
@@ -94,11 +85,11 @@ function generateUniqueId() {
     generatedIds.add(uniqueId); // Add the new unique ID to the set
     return uniqueId;
 }
-const editProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const editProduct = async (req, res) => {
     const { productId } = req.params;
     const { name, description, shapes, sizes, productType, toppings, category, subCategories, minPrice, maxPrice, images, flavour, status } = req.body;
     try {
-        const productDetails = yield Product_model_1.default.findOne({ _id: productId });
+        const productDetails = await Product_model_1.default.findOne({ _id: productId });
         if (!productDetails) {
             return res.status(400).json({
                 error: true,
@@ -134,7 +125,7 @@ const editProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             productDetails.flavour = flavour;
         if (status)
             productDetails.status = status;
-        yield productDetails.save();
+        await productDetails.save();
         res.json({
             error: false,
             productDetails,
@@ -148,12 +139,12 @@ const editProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             message: "Internal server Error",
         });
     }
-});
+};
 exports.editProduct = editProduct;
-const getProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getProduct = async (req, res) => {
     try {
         const { productId } = req.params;
-        const productDetails = yield Product_model_1.default.findOne({ _id: productId }).populate('category').populate('subCategories');
+        const productDetails = await Product_model_1.default.findOne({ _id: productId }).populate('category').populate('subCategories');
         if (!productDetails) {
             return res.status(400).json({
                 error: true,
@@ -173,9 +164,9 @@ const getProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             message: "Internal Server error",
         });
     }
-});
+};
 exports.getProduct = getProduct;
-const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getAllProducts = async (req, res) => {
     try {
         const { subCategoryIds, categoryIds, minPrice, maxPrice, searchQuery, page = 1, limit = 10, sortBy = "createdAt", // Default sorting by createdAt
         order = "desc", // Default order is descending
@@ -212,14 +203,14 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
         const validSortBy = typeof sortBy === 'string' ? sortBy : 'createdAt';
         const sortOrder = order === "asc" ? 1 : -1;
         // Apply sorting and populate category and subCategories
-        const productDetails = yield Product_model_1.default.find(filters)
+        const productDetails = await Product_model_1.default.find(filters)
             .populate('category') // Populate the category
             .populate('subCategories') // Populate subCategories
             .sort({ [validSortBy]: sortOrder }) // Sort by the specified field and order
             .skip(skip)
             .limit(parseInt(limit))
             .exec();
-        const totalProducts = yield Product_model_1.default.countDocuments(filters);
+        const totalProducts = await Product_model_1.default.countDocuments(filters);
         const totalPages = Math.ceil(totalProducts / parseInt(limit));
         return res.status(200).json({
             error: false,
@@ -237,12 +228,12 @@ const getAllProducts = (req, res) => __awaiter(void 0, void 0, void 0, function*
             message: "Internal Server error",
         });
     }
-});
+};
 exports.getAllProducts = getAllProducts;
-const deleteProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const deleteProduct = async (req, res) => {
     const { productId } = req.params;
     try {
-        const productDetails = yield Product_model_1.default.deleteOne({ _id: productId });
+        const productDetails = await Product_model_1.default.deleteOne({ _id: productId });
         if (!productDetails) {
             return res.status(404).json({
                 error: true,
@@ -261,13 +252,13 @@ const deleteProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             message: "Internal server Error",
         });
     }
-});
+};
 exports.deleteProduct = deleteProduct;
-const getProductBySlug = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getProductBySlug = async (req, res) => {
     const { slug } = req.params; // Get the slug from the URL parameter
     try {
         // Find the product by slug
-        const product = yield Product_model_1.default.findOne({ slug: slug }).populate('category').populate('subCategories');
+        const product = await Product_model_1.default.findOne({ slug: slug }).populate('category').populate('subCategories');
         if (!product) {
             return res.status(404).json({
                 error: true,
@@ -287,5 +278,6 @@ const getProductBySlug = (req, res) => __awaiter(void 0, void 0, void 0, functio
             err: error,
         });
     }
-});
+};
 exports.getProductBySlug = getProductBySlug;
+//# sourceMappingURL=productController.js.map

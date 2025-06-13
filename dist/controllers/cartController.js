@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -15,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.mergeLocalCart = exports.getCart = exports.clearCart = exports.removeCartItem = exports.updateCartItem = exports.addToCart = void 0;
 const Cart_model_1 = __importDefault(require("../models/Cart.model"));
 const Product_model_1 = __importDefault(require("../models/Product.model"));
-const addToCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const addToCart = async (req, res) => {
     try {
         const { product, size, toppings, flavour, shape, dateNeeded, details, quantity, } = req.body;
         const userId = req.id;
@@ -25,7 +16,7 @@ const addToCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 .json({ error: true, message: "Unauthorized. Please log in." });
         }
         // Check if the product exists
-        const checkProduct = yield Product_model_1.default.findOne({ _id: product });
+        const checkProduct = await Product_model_1.default.findOne({ _id: product });
         if (!checkProduct) {
             return res
                 .status(404)
@@ -44,7 +35,7 @@ const addToCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             //     .json({ error: true, message: "All fields are required." });
             // }
         }
-        let cart = yield Cart_model_1.default.findOne({ userId });
+        let cart = await Cart_model_1.default.findOne({ userId });
         if (!cart) {
             // Create new cart if user has no cart yet
             cart = new Cart_model_1.default({
@@ -82,8 +73,8 @@ const addToCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 });
             }
         }
-        yield cart.save();
-        const populatedCart = yield Cart_model_1.default.findOne({ userId })
+        await cart.save();
+        const populatedCart = await Cart_model_1.default.findOne({ userId })
             .populate("products.product") // Populate product field with full product details
             .exec();
         return res.status(200).json({
@@ -98,15 +89,15 @@ const addToCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             .status(500)
             .json({ error: true, message: "Internal server error.", err: error });
     }
-});
+};
 exports.addToCart = addToCart;
-const updateCartItem = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateCartItem = async (req, res) => {
     try {
         const { product, quantity } = req.body;
         const userId = req.id;
         if (!userId)
             return res.status(401).json({ error: true, message: "Unauthorized." });
-        const cart = yield Cart_model_1.default.findOne({ userId });
+        const cart = await Cart_model_1.default.findOne({ userId });
         if (!cart)
             return res.status(404).json({ error: true, message: "Cart not found." });
         const cartProduct = cart.products.find((p) => p.product.toString() === product);
@@ -115,7 +106,7 @@ const updateCartItem = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 .status(404)
                 .json({ error: true, message: "Product not found in cart." });
         cartProduct.quantity = quantity;
-        yield cart.save();
+        await cart.save();
         return res
             .status(200)
             .json({ error: false, message: "Cart updated successfully.", cart });
@@ -125,19 +116,19 @@ const updateCartItem = (req, res) => __awaiter(void 0, void 0, void 0, function*
             .status(500)
             .json({ error: true, message: "Internal server error.", err: error });
     }
-});
+};
 exports.updateCartItem = updateCartItem;
-const removeCartItem = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const removeCartItem = async (req, res) => {
     try {
         const { productId } = req.params;
         const userId = req.id;
         if (!userId)
             return res.status(401).json({ error: true, message: "Unauthorized." });
-        const cart = yield Cart_model_1.default.findOne({ userId });
+        const cart = await Cart_model_1.default.findOne({ userId });
         if (!cart)
             return res.status(404).json({ error: true, message: "Cart not found." });
         cart.products = cart.products.filter((p) => p.product.toString() !== productId);
-        yield cart.save();
+        await cart.save();
         return res
             .status(200)
             .json({ error: false, message: "Product removed from cart.", cart });
@@ -147,14 +138,14 @@ const removeCartItem = (req, res) => __awaiter(void 0, void 0, void 0, function*
             .status(500)
             .json({ error: true, message: "Internal server error.", err: error });
     }
-});
+};
 exports.removeCartItem = removeCartItem;
-const clearCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const clearCart = async (req, res) => {
     try {
         const userId = req.id;
         if (!userId)
             return res.status(401).json({ error: true, message: "Unauthorized." });
-        yield Cart_model_1.default.findOneAndDelete({ userId });
+        await Cart_model_1.default.findOneAndDelete({ userId });
         return res
             .status(200)
             .json({ error: false, message: "Cart cleared successfully." });
@@ -164,14 +155,14 @@ const clearCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             .status(500)
             .json({ error: true, message: "Internal server error.", err: error });
     }
-});
+};
 exports.clearCart = clearCart;
-const getCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getCart = async (req, res) => {
     try {
         const userId = req.id;
         if (!userId)
             return res.status(401).json({ error: true, message: "Unauthorized." });
-        const cart = yield Cart_model_1.default.findOne({ userId }).populate("products.product");
+        const cart = await Cart_model_1.default.findOne({ userId }).populate("products.product");
         return res.status(200).json({ error: false, cart });
     }
     catch (error) {
@@ -179,10 +170,10 @@ const getCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             .status(500)
             .json({ error: true, message: "Internal server error.", err: error });
     }
-});
+};
 exports.getCart = getCart;
 // New Merge Cart Endpoint
-const mergeLocalCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const mergeLocalCart = async (req, res) => {
     console.log("Merge Cart Request Body:", req.body);
     console.log("User ID:", req.id);
     try {
@@ -194,7 +185,7 @@ const mergeLocalCart = (req, res) => __awaiter(void 0, void 0, void 0, function*
                 .json({ error: true, message: "Unauthorized. Please log in." });
         }
         // Find or create user's cart
-        let cart = yield Cart_model_1.default.findOne({ userId });
+        let cart = await Cart_model_1.default.findOne({ userId });
         if (!cart) {
             cart = new Cart_model_1.default({ userId, products: [] });
         }
@@ -202,7 +193,7 @@ const mergeLocalCart = (req, res) => __awaiter(void 0, void 0, void 0, function*
         if (!localCartItems ||
             !Array.isArray(localCartItems) ||
             localCartItems.length === 0) {
-            const populatedCart = yield Cart_model_1.default.findOne({ userId }).populate("products.product");
+            const populatedCart = await Cart_model_1.default.findOne({ userId }).populate("products.product");
             return res.status(200).json({
                 error: false,
                 message: "No local cart items to merge.",
@@ -214,7 +205,7 @@ const mergeLocalCart = (req, res) => __awaiter(void 0, void 0, void 0, function*
         // Validate and process each local cart item
         for (const item of localCartItems) {
             // Check if the product exists
-            const checkProduct = yield Product_model_1.default.findOne({ _id: item.product });
+            const checkProduct = await Product_model_1.default.findOne({ _id: item.product });
             if (!checkProduct) {
                 continue; // Skip invalid products
             }
@@ -231,9 +222,9 @@ const mergeLocalCart = (req, res) => __awaiter(void 0, void 0, void 0, function*
             });
         }
         // Save the updated cart
-        yield cart.save();
+        await cart.save();
         // Populate and return the updated cart
-        const populatedCart = yield Cart_model_1.default.findOne({ userId })
+        const populatedCart = await Cart_model_1.default.findOne({ userId })
             .populate("products.product")
             .exec();
         return res.status(200).json({
@@ -250,5 +241,6 @@ const mergeLocalCart = (req, res) => __awaiter(void 0, void 0, void 0, function*
             err: error,
         });
     }
-});
+};
 exports.mergeLocalCart = mergeLocalCart;
+//# sourceMappingURL=cartController.js.map

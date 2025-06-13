@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -16,16 +7,16 @@ exports.deleteSubCategory = exports.getSubCategory = exports.getAllSubCategory =
 const SubCategory_model_1 = __importDefault(require("../models/SubCategory.model"));
 const Category_model_1 = __importDefault(require("../models/Category.model"));
 // Create SubCategories
-const createSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const createSubCategory = async (req, res) => {
     const { name, description, image, status, categoryId } = req.body;
     try {
-        const category = yield Category_model_1.default.findOne({ _id: categoryId });
+        const category = await Category_model_1.default.findOne({ _id: categoryId });
         if (!category)
             return res.status(404).json({
                 error: true,
                 message: "Wrong category id provided"
             });
-        const subCategory = yield SubCategory_model_1.default.create({
+        const subCategory = await SubCategory_model_1.default.create({
             name,
             description,
             image,
@@ -45,14 +36,14 @@ const createSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
             message: "Internal server error, Please try again",
         });
     }
-});
+};
 exports.createSubCategory = createSubCategory;
 // Update subCategory
-const updateSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateSubCategory = async (req, res) => {
     const { subCategoryId } = req.params;
     const { name, description, image, status } = req.body;
     try {
-        const subCategory = yield SubCategory_model_1.default.findOne({ _id: subCategoryId });
+        const subCategory = await SubCategory_model_1.default.findOne({ _id: subCategoryId });
         if (!subCategory) {
             return res.status(200).json({
                 error: true,
@@ -66,7 +57,7 @@ const updateSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
         if (image)
             subCategory.image = image;
         subCategory.status = status;
-        yield subCategory.save();
+        await subCategory.save();
         return res.status(200).json({
             error: false,
             subCategory,
@@ -80,17 +71,17 @@ const updateSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
             message: "Internal server error, Please try again",
         });
     }
-});
+};
 exports.updateSubCategory = updateSubCategory;
 // Get all subCategories with pagination
-const getAllSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getAllSubCategory = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
-        const totalSubCategories = yield SubCategory_model_1.default.countDocuments();
+        const totalSubCategories = await SubCategory_model_1.default.countDocuments();
         // Get paginated subcategories
-        const subCategories = yield SubCategory_model_1.default.find().skip(skip).limit(limit).lean();
+        const subCategories = await SubCategory_model_1.default.find().skip(skip).limit(limit).lean();
         res.status(200).json({
             error: false,
             subCategories,
@@ -107,13 +98,13 @@ const getAllSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
             message: "Internal server error, please try again",
         });
     }
-});
+};
 exports.getAllSubCategory = getAllSubCategory;
 // Get sub category
-const getSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getSubCategory = async (req, res) => {
     const { subCategoryId } = req.params;
     try {
-        const subCategory = yield SubCategory_model_1.default.findOne({ _id: subCategoryId });
+        const subCategory = await SubCategory_model_1.default.findOne({ _id: subCategoryId });
         if (!subCategory) {
             return res.status(200).json({
                 error: true,
@@ -133,13 +124,13 @@ const getSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
             message: "Internal server error, Please try again",
         });
     }
-});
+};
 exports.getSubCategory = getSubCategory;
 // delete subCategory
-const deleteSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const deleteSubCategory = async (req, res) => {
     const { subCategoryId } = req.params;
     try {
-        const subCategory = yield SubCategory_model_1.default.deleteOne({ _id: subCategoryId });
+        const subCategory = await SubCategory_model_1.default.deleteOne({ _id: subCategoryId });
         if (!subCategory) {
             return res.status(404).json({
                 error: true,
@@ -158,5 +149,6 @@ const deleteSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
             message: "Internal server Error",
         });
     }
-});
+};
 exports.deleteSubCategory = deleteSubCategory;
+//# sourceMappingURL=subCategoryController.js.map

@@ -1,7 +1,5 @@
 import express from "express";
-import dotenv from "dotenv";
-dotenv.config();
-const app = express();
+import "dotenv/config";
 import { Server } from "socket.io";
 import authRouter from "./routes/authRoute";
 import userRouter from "./routes/userRoute";
@@ -24,12 +22,23 @@ import { createServer } from "http";
 import { notificationRouter } from "./routes/notificationRoute";
 import AdminModel from "./models/Admin.model";
 import adminAnalytics from "./routes/adminAnalytics.route";
-const PORT = process.env.PORT || 2030;
+
+// dotenv.config();
+const app = express();
+
+// const PORT = process.env.PORT || 2030;
+
+const { MONGO_URI, PORT = "2030" } = process.env;
 const httpServer = createServer(app);
 const allowedOrigins = [
   "https://goldies-frontend-v3.vercel.app",
   "http://localhost:7009",
 ];
+
+console.log("Environment Variables:", {
+  MONGO_URI: MONGO_URI ? "Exists" : "Missing",
+  PORT: PORT,
+});
 
 const io = new Server(httpServer, {
   cors: {
@@ -113,7 +122,6 @@ io.on("connection", (socket) => {
     socket.join(roomId);
     console.log(`Admin ${roomId} joined room: ${roomId}`);
 
-    // Send a test notification to confirm room joining
     socket.emit("connection-success", {
       message: "Successfully connected to notification service",
       userId: roomId,
@@ -172,11 +180,63 @@ app.use(
 
 app.use(express.json());
 
-mongoose
-  .connect(process.env.connectionString as string)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err: any) => console.log(err));
+if (!MONGO_URI) {
+  console.error("Missing MONGO_URI environment variable");
+  process.exit(1);
+}
 
+async function connectDB() {
+  try {
+    if (!process.env.MONGO_URI) {
+      throw new Error("MongoDB URI is not defined in environment variables");
+    }
+
+    console.log(
+      "Connecting to MongoDB with URI:",
+      process.env.MONGO_URI.replace(/:[^@]*@/, ":*****@")
+    );
+
+    await mongoose.connect(process.env.MONGO_URI, {
+      serverSelectionTimeoutMS: 10000, // Increased timeout
+      socketTimeoutMS: 45000,
+      retryWrites: true,
+      w: "majority",
+    });
+
+    console.log("✅ MongoDB connected successfully");
+  } catch (error) {
+    console.error("❌ MongoDB connection error:", error);
+    // More detailed error handling
+    if (error instanceof mongoose.Error.MongooseServerSelectionError) {
+      console.error("Network-related error:");
+      console.error("- Verify your IP is whitelisted in Atlas");
+      console.error("- Check your internet connection");
+      console.error("- Verify the MongoDB URI is correct");
+    }
+    process.exit(1);
+  }
+}
+// Handle database connection events
+mongoose.connection.on("connected", () => {
+  console.log("Mongoose connected to DB");
+});
+
+mongoose.connection.on("error", (err) => {
+  console.error("Mongoose connection error:", err);
+});
+
+mongoose.connection.on("disconnected", () => {
+  console.log("Mongoose disconnected");
+});
+
+// Handle process termination
+process.on("SIGINT", async () => {
+  await mongoose.connection.close();
+  console.log("Mongoose connection closed due to app termination");
+  process.exit(0);
+});
+
+connectDB();
 app.get("/", (req: Request, res: Response) => {
   res.send("backend connected successfully");
 });

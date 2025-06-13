@@ -6,3 +6,4 @@ const router = (0, express_1.Router)();
 router.post("/newsletter_subscriptions", mailController_1.newsLetterSubscription);
 router.post("/contact_us", mailController_1.contactUs);
 exports.default = router;
+//# sourceMappingURL=mailRoute.js.map

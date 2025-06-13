@@ -78,7 +78,8 @@ adminSchema.pre("save", function (next) {
 // Create an index on isDeleted and createdAt to optimize queries
 adminSchema.index({ isDeleted: 1, createdAt: -1 });
 // Create an index on email for faster lookups
-adminSchema.index({ email: 1 });
+// adminSchema.index({ email: 1 });
 // Create a compound index on common query patterns
 adminSchema.index({ isBlocked: 1, role: 1 });
 exports.default = mongoose_1.default.model("Admin", adminSchema);
+//# sourceMappingURL=Admin.model.js.map

@@ -39,3 +39,4 @@ const notificationRouter = (io) => {
     return router;
 };
 exports.notificationRouter = notificationRouter;
+//# sourceMappingURL=notificationRoute.js.map

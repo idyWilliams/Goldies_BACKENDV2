@@ -19,3 +19,4 @@ router.get("/top-product-sales", adminAnalytics_controller_1.default.getTopProdu
 router.get("/dashboard", adminAnalytics_controller_1.default.getDashboardData);
 router.get("/extended-dashboard", adminAnalytics_controller_1.default.getExtendedDashboardData);
 exports.default = router;
+//# sourceMappingURL=adminAnalytics.route.js.map

@@ -1,20 +1,11 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.contactUs = exports.newsLetterSubscription = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
-const newsLetterSubscription = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const newsLetterSubscription = async (req, res) => {
     try {
         const { email } = req.body;
         if (!email) {
@@ -84,7 +75,7 @@ const newsLetterSubscription = (req, res) => __awaiter(void 0, void 0, void 0, f
             text: "🍰 Welcome to Cake App 🍰",
             html: subscriberEmailContent,
         };
-        yield transporter.sendMail(subscriberMailOptions);
+        await transporter.sendMail(subscriberMailOptions);
         // Send email to the company
         const companyMailOptions = {
             from: `Goldies <${process.env.EMAIL}>`,
@@ -93,7 +84,7 @@ const newsLetterSubscription = (req, res) => __awaiter(void 0, void 0, void 0, f
             text: `A new subscriber has joined the Goldies newsletter: ${email}`,
             html: companyEmailContent,
         };
-        yield transporter.sendMail(companyMailOptions);
+        await transporter.sendMail(companyMailOptions);
         // Respond with success
         return res
             .status(200)
@@ -109,9 +100,9 @@ const newsLetterSubscription = (req, res) => __awaiter(void 0, void 0, void 0, f
             error: "Failed to send subscription email. Please try again later.",
         });
     }
-});
+};
 exports.newsLetterSubscription = newsLetterSubscription;
-const contactUs = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const contactUs = async (req, res) => {
     try {
         const { fullName, email, phoneNumber, message } = req.body;
         if (!fullName || !email || !phoneNumber || !message) {
@@ -156,7 +147,7 @@ const contactUs = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             text: `A new contact us message has been received: ${fullName} - ${email} - ${phoneNumber} - ${message}`,
             html: emailContent,
         };
-        yield transporter.sendMail(mailOptions);
+        await transporter.sendMail(mailOptions);
         // Respond with success
         return res
             .status(200)
@@ -170,5 +161,6 @@ const contactUs = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             error: "Failed to send contact us message. Please try again later.",
         });
     }
-});
+};
 exports.contactUs = contactUs;
+//# sourceMappingURL=mailController.js.map

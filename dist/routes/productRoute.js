@@ -11,3 +11,4 @@ router.put("/edit_product/:productId", verifyJWT_1.authenticateToken, productCon
 router.delete("/delete_product/:productId", verifyJWT_1.authenticateToken, productController_1.deleteProduct);
 router.get("/slug/:slug", productController_1.getProductBySlug);
 exports.default = router;
+//# sourceMappingURL=productRoute.js.map

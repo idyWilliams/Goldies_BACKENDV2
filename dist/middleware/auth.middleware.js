@@ -1,14 +1,5 @@
 "use strict";
 // middleware/auth.middleware.ts
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -16,7 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.isAdmin = exports.getAdminIdentifier = exports.isSuperAdmin = exports.authorize = exports.protect = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const Admin_model_1 = __importDefault(require("../models/Admin.model"));
-const protect = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const protect = async (req, res, next) => {
     let token;
     if (req.headers.authorization &&
         req.headers.authorization.startsWith("Bearer")) {
@@ -26,7 +17,7 @@ const protect = (req, res, next) => __awaiter(void 0, void 0, void 0, function* 
             // Verify token
             const decoded = jsonwebtoken_1.default.verify(token, process.env.ACCESS_SECRET_TOKEN);
             // Get admin from token - include userName for status changes
-            const admin = yield Admin_model_1.default.findById(decoded.id).select("-password");
+            const admin = await Admin_model_1.default.findById(decoded.id).select("-password");
             if (!admin) {
                 return res.status(401).json({
                     error: true,
@@ -74,7 +65,7 @@ const protect = (req, res, next) => __awaiter(void 0, void 0, void 0, function* 
         });
         return; // Add return to prevent further execution
     }
-});
+};
 exports.protect = protect;
 const authorize = (...roles) => {
     return (req, res, next) => {
@@ -94,7 +85,7 @@ const authorize = (...roles) => {
     };
 };
 exports.authorize = authorize;
-const isSuperAdmin = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+const isSuperAdmin = async (req, res, next) => {
     // Check if admin exists in request (protect middleware should be called first)
     if (!req.admin || (!req.admin.id && !req.admin._id)) {
         return res.status(401).json({
@@ -104,7 +95,7 @@ const isSuperAdmin = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
     }
     const adminId = req.admin.id || req.admin._id;
     try {
-        const admin = yield Admin_model_1.default.findById(adminId);
+        const admin = await Admin_model_1.default.findById(adminId);
         if (!admin) {
             return res.status(401).json({
                 error: true,
@@ -125,7 +116,7 @@ const isSuperAdmin = (req, res, next) => __awaiter(void 0, void 0, void 0, funct
             message: "Internal server error",
         });
     }
-});
+};
 exports.isSuperAdmin = isSuperAdmin;
 // Helper function to get admin name for status changes
 const getAdminIdentifier = (req) => {
@@ -154,3 +145,4 @@ const isAdmin = (req, res, next) => {
     next();
 };
 exports.isAdmin = isAdmin;
+//# sourceMappingURL=auth.middleware.js.map

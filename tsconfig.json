@@ -1,14 +1,21 @@
 {
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
     "outDir": "./dist",
     "rootDir": "./src",
-    "target": "ES6",
-    "module": "commonjs",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "typeRoots": ["node_modules/@types"]
+    "moduleResolution": "node",
+    "types": ["node"],
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
-  "include": ["src/**/*.ts", "src/scripts/migrateAdminStatus.ts"],
+  "include": ["src/**/*.ts", ".env.d.ts"],
   "exclude": ["node_modules"]
 }

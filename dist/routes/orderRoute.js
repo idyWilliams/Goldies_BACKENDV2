@@ -11,3 +11,4 @@ router.delete("/delete_order/:orderId", verifyJWT_1.authenticateToken, orderCont
 router.get("/get_order/:orderId", verifyJWT_1.authenticateToken, orderController_1.getOrder);
 router.get("/get_specific_user_order", verifyJWT_1.authenticateToken, orderController_1.getSpecificUserOrder);
 exports.default = router;
+//# sourceMappingURL=orderRoute.js.map

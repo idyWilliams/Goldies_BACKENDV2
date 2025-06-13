@@ -1,13 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -17,113 +8,31 @@ const Order_model_1 = __importDefault(require("../models/Order.model"));
 const User_model_1 = __importDefault(require("../models/User.model"));
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const mongoose_1 = __importDefault(require("mongoose"));
-// const createOrder = async (req: CustomRequest, res: Response) => {
-//     const { firstName, lastName, email, country, state, cityOrTown, streetAddress, phoneNumber, orderedItems, fee } = req.body;
-//     try {
-//       // Validate required fields
-//       if (!firstName || !lastName || !email || !country || !state || !cityOrTown || !streetAddress || !phoneNumber || !orderedItems || !fee) {
-//         return res.status(400).json({
-//           error: true,
-//           message: "All order information fields are required."
-//         });
-//       }
-//       console.log("User ID from token:", req.id);
-//       const user = req.id;
-//       const userDetails = await User.findOne({ _id: user });
-//       if (!userDetails) {
-//         return res.status(404).json({
-//           error: true,
-//           message: "User not found, please login and try again"
-//         });
-//       }
-//       // Generate a unique order ID
-//       const orderId = generateUniqueId();
-//       // Create the order, storing only product._id and other fields separately
-//       const newOrder = new Order({
-//         user,
-//         firstName,
-//         lastName,
-//         email,
-//         country,
-//         state,
-//         cityOrTown,
-//         streetAddress,
-//         phoneNumber,
-//         orderedItems,
-//         fee,
-//         orderId
-//       });
-//       // Save the order
-//       await newOrder.save();
-//       // Populate orderedItems with full product details after saving
-//       const populatedOrder = await Order.findById(newOrder._id).populate("orderedItems.product").exec();
-//       const transporter = nodemailer.createTransport({
-//         host: "smtp.gmail.com",
-//         port: 465,
-//         secure: true,
-//         auth: {
-//           user: process.env.EMAIL,
-//           pass: process.env.PASSWORD,
-//         },
-//         tls: {
-//           rejectUnauthorized: false,
-//         },
-//       });
-//       // Function to send the verification email
-//       const sendVerificationEmail = async () => {
-//         const emailContent = `
-//         <div style="font-family: Arial, sans-serif; color: #333;">
-//           <h2 style="color: #007bff;">Email Verification</h2>
-//           <p>Do not share this with anyone.</p>
-//           <p>Verification code: <strong>${OTP}</strong></p>
-//           <p>If you did not request this, please ignore this email.</p>
-//         </div>
-//       `;
-//         const mailOptions = {
-//           from: process.env.EMAIL,
-//           to: email,
-//           subject: "Goldies Team - Email Verification",
-//           text: "Email verification.",
-//           html: emailContent,
-//         };
-//         try {
-//           const info = await transporter.sendMail(mailOptions);
-//           console.log("Message sent: %s", info.messageId, OTP);
-//         } catch (err) {
-//           console.error("Error sending email: ", err);
-//           throw new Error("Failed to send verification email.");
-//         }
-//       };
-//       return res.status(201).json({
-//         error: false,
-//         message: "Order created successfully",
-//         order: populatedOrder,
-//       });
-//     } catch (error) {
-//       console.error("Error creating order:", error);
-//       return res.status(500).json({
-//         error: true,
-//         message: "Internal server error, please try again",
-//         err: error,
-//       });
-//     }
-//   };
-const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { firstName, lastName, email, country, state, cityOrTown, streetAddress, phoneNumber, orderedItems, fee } = req.body;
+const createOrder = async (req, res) => {
+    const { firstName, lastName, email, country, state, cityOrTown, streetAddress, phoneNumber, orderedItems, fee, } = req.body;
     try {
         // Validate required fields
-        if (!firstName || !lastName || !email || !country || !state || !cityOrTown || !streetAddress || !phoneNumber || !orderedItems || !fee) {
+        if (!firstName ||
+            !lastName ||
+            !email ||
+            !country ||
+            !state ||
+            !cityOrTown ||
+            !streetAddress ||
+            !phoneNumber ||
+            !orderedItems ||
+            !fee) {
             return res.status(400).json({
                 error: true,
-                message: "All order information fields are required."
+                message: "All order information fields are required.",
             });
         }
         const user = req.id;
-        const userDetails = yield User_model_1.default.findOne({ _id: user });
+        const userDetails = await User_model_1.default.findOne({ _id: user });
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
-                message: "User not found, please login and try again"
+                message: "User not found, please login and try again",
             });
         }
         // Generate a unique order ID
@@ -141,12 +50,14 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             phoneNumber,
             orderedItems,
             fee,
-            orderId
+            orderId,
         });
         // Save the order
-        yield newOrder.save();
+        await newOrder.save();
         // Populate orderedItems with full product details
-        const populatedOrder = yield Order_model_1.default.findById(newOrder._id).populate("orderedItems.product").exec();
+        const populatedOrder = await Order_model_1.default.findById(newOrder._id)
+            .populate("orderedItems.product")
+            .exec();
         // Create email transporter
         const transporter = nodemailer_1.default.createTransport({
             host: "smtp.gmail.com",
@@ -161,18 +72,18 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             },
         });
         // Function to send email to admins
-        const sendAdminNotification = () => __awaiter(void 0, void 0, void 0, function* () {
+        const sendAdminNotification = async () => {
             try {
                 // Get admin emails
-                const admins = yield User_model_1.default.find({
-                    role: { $in: ['admin', 'super_admin'] },
-                    isActive: true
-                }).select('email');
+                const admins = await User_model_1.default.find({
+                    role: { $in: ["admin", "super_admin"] },
+                    isActive: true,
+                }).select("email");
                 if (admins.length === 0) {
                     console.warn("No admin emails found to notify");
                     return;
                 }
-                const adminEmails = admins.map(admin => admin.email).join(', ');
+                const adminEmails = admins.map((admin) => admin.email).join(", ");
                 const emailContent = `
                   <div style="font-family: Arial, sans-serif; color: #333;">
                       <h2 style="color: #007bff;">New Order Notification</h2>
@@ -192,14 +103,14 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                     subject: `New Order #${orderId} - ${firstName} ${lastName}`,
                     html: emailContent,
                 };
-                yield transporter.sendMail(mailOptions);
+                await transporter.sendMail(mailOptions);
                 console.log("Admin notification sent for order:", orderId);
             }
             catch (err) {
                 console.error("Error sending admin notification:", err);
                 // Don't fail the order creation if email fails
             }
-        });
+        };
         // Send notification to admins (don't await to avoid delaying response)
         sendAdminNotification();
         return res.status(201).json({
@@ -215,7 +126,7 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             message: "Internal server error, please try again",
         });
     }
-});
+};
 exports.createOrder = createOrder;
 const generatedIds = new Set(); // Store unique IDs
 function generateUniqueId() {
@@ -228,7 +139,7 @@ function generateUniqueId() {
     generatedIds.add(uniqueId); // Add the new unique ID to the set
     return uniqueId;
 }
-const updateOrderStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateOrderStatus = async (req, res) => {
     const { orderStatus } = req.body;
     const { orderId } = req.params;
     try {
@@ -236,49 +147,33 @@ const updateOrderStatus = (req, res) => __awaiter(void 0, void 0, void 0, functi
         const queryConditions = isValidObjectId
             ? [{ _id: orderId }, { orderId: orderId }] // Match both _id and orderId
             : [{ orderId: orderId }]; // Match only orderId
-        const order = yield Order_model_1.default.findOne({ $or: queryConditions });
+        const order = await Order_model_1.default.findOne({ $or: queryConditions });
         if (!order) {
             return res.status(404).json({
                 error: true,
-                message: "Order details not found, please provide the correct order id"
+                message: "Order details not found, please provide the correct order id",
             });
         }
         if (orderStatus)
             order.orderStatus = orderStatus;
-        yield order.save();
+        await order.save();
         return res.status(200).json({
             error: false,
             updatedOrder: order,
-            message: "Order updated successfully"
+            message: "Order updated successfully",
         });
     }
     catch (error) {
         return res.status(500).json({
             error: true,
             err: error,
-            message: "Internal server error, please try again"
+            message: "Internal server error, please try again",
         });
     }
-});
+};
 exports.updateOrderStatus = updateOrderStatus;
-// const getAllOrders = async (req: Request, res: Response) => {
-//     try {
-//         const orders = await Order.find().sort({ createdAt: -1 })
-//         return res.status(200).json({
-//             error: false,
-//             orders,
-//             message: "All order data fetched successfully"
-//         })
-//     } catch(error) {
-//         return res.status(500).json({
-//             error: true,
-//             err: error,
-//             message: "Internal server error, please try again"
-//         })
-//     }
-// }
-const getAllOrders = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { page = 1, limit = 10, searchQuery = '', status, minPrice, maxPrice, startDate, endDate } = req.query;
+const getAllOrders = async (req, res) => {
+    const { page = 1, limit = 10, searchQuery = "", status, minPrice, maxPrice, startDate, endDate, } = req.query;
     try {
         const pageNumber = parseInt(page, 10);
         const limitNumber = parseInt(limit, 10);
@@ -288,9 +183,9 @@ const getAllOrders = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         // Search by orderId or billing name (firstName, lastName)
         if (searchQuery) {
             filters.$or = [
-                { orderId: { $regex: searchQuery, $options: 'i' } },
-                { firstName: { $regex: searchQuery, $options: 'i' } },
-                { lastName: { $regex: searchQuery, $options: 'i' } }
+                { orderId: { $regex: searchQuery, $options: "i" } },
+                { firstName: { $regex: searchQuery, $options: "i" } },
+                { lastName: { $regex: searchQuery, $options: "i" } },
             ];
         }
         // Filter by status
@@ -314,14 +209,14 @@ const getAllOrders = (req, res) => __awaiter(void 0, void 0, void 0, function* (
                 filters.createdAt.$lte = new Date(endDate);
         }
         // Fetch the orders with pagination and search
-        const orders = yield Order_model_1.default.find(filters)
+        const orders = await Order_model_1.default.find(filters)
             .skip(skip)
             .limit(limitNumber)
             .sort({ createdAt: -1 }) // Sort by createdAt in descending order
-            .populate('user', 'firstName lastName')
+            .populate("user", "firstName lastName")
             .exec();
         // Get the total count of orders for pagination
-        const totalOrders = yield Order_model_1.default.countDocuments(filters);
+        const totalOrders = await Order_model_1.default.countDocuments(filters);
         const totalPages = Math.ceil(totalOrders / limitNumber);
         return res.status(200).json({
             error: false,
@@ -339,26 +234,26 @@ const getAllOrders = (req, res) => __awaiter(void 0, void 0, void 0, function* (
             err: error,
         });
     }
-});
+};
 exports.getAllOrders = getAllOrders;
-const getOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getOrder = async (req, res) => {
     const { orderId } = req.params;
     try {
         const isValidObjectId = mongoose_1.default.Types.ObjectId.isValid(orderId);
         const queryConditions = isValidObjectId
-            ? [{ _id: orderId }, { orderId: orderId }] // Match both _id and orderId
-            : [{ orderId: orderId }]; // Match only orderId
-        const order = yield Order_model_1.default.findOne({ $or: queryConditions }).populate('orderedItems.product');
+            ? [{ _id: orderId }, { orderId: orderId }]
+            : [{ orderId: orderId }];
+        const order = await Order_model_1.default.findOne({ $or: queryConditions }).populate("orderedItems.product");
         if (!order) {
             return res.status(404).json({
                 error: true,
-                message: "Order not found, Please provide the correct order id"
+                message: "Order not found, Please provide the correct order id",
             });
         }
         return res.status(200).json({
             error: false,
             order,
-            message: "Order details fetched successfully"
+            message: "Order details fetched successfully",
         });
     }
     catch (error) {
@@ -366,28 +261,28 @@ const getOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(500).json({
             error: true,
             err: error,
-            message: "Internal server error, please try again"
+            message: "Internal server error, please try again",
         });
     }
-});
+};
 exports.getOrder = getOrder;
-const deleteOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const deleteOrder = async (req, res) => {
     try {
         const { orderId } = req.params;
         const isValidObjectId = mongoose_1.default.Types.ObjectId.isValid(orderId);
         const queryConditions = isValidObjectId
             ? [{ _id: orderId }, { orderId: orderId }] // Match both _id and orderId
             : [{ orderId: orderId }]; // Match only orderId
-        const result = yield Order_model_1.default.deleteOne({ $or: queryConditions });
+        const result = await Order_model_1.default.deleteOne({ $or: queryConditions });
         if (!result) {
             return res.status(404).json({
                 error: true,
-                message: "Order not found, Please provide the correct order id"
+                message: "Order not found, Please provide the correct order id",
             });
         }
         return res.status(200).json({
             error: false,
-            message: "Order details deleted successfully"
+            message: "Order details deleted successfully",
         });
     }
     catch (error) {
@@ -395,12 +290,12 @@ const deleteOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         return res.status(500).json({
             error: true,
             err: error,
-            message: "Internal server error, please try again"
+            message: "Internal server error, please try again",
         });
     }
-});
+};
 exports.deleteOrder = deleteOrder;
-const getSpecificUserOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getSpecificUserOrder = async (req, res) => {
     try {
         const userId = req.id; // Get the authenticated user's ID
         const { page = 1, limit = 10, status, startDate, endDate } = req.query;
@@ -420,34 +315,35 @@ const getSpecificUserOrder = (req, res) => __awaiter(void 0, void 0, void 0, fun
                 query.createdAt.$lte = new Date(endDate);
         }
         // Fetch user details
-        const userDetails = yield User_model_1.default.findById(userId);
+        const userDetails = await User_model_1.default.findById(userId);
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
-                message: "User not found, please login and try again"
+                message: "User not found, please login and try again",
             });
         }
         // Fetch orders only for this user
-        const userOrders = yield Order_model_1.default.find(query)
+        const userOrders = await Order_model_1.default.find(query)
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(Number(limit));
-        const totalOrders = yield Order_model_1.default.countDocuments(query);
+        const totalOrders = await Order_model_1.default.countDocuments(query);
         return res.status(200).json({
             error: false,
             userOrders,
             totalOrders,
             currentPage: Number(page),
             totalPages: Math.ceil(totalOrders / Number(limit)),
-            message: `${userDetails.firstName} ${userDetails.lastName}'s orders retrieved successfully`
+            message: `${userDetails.firstName} ${userDetails.lastName}'s orders retrieved successfully`,
         });
     }
     catch (error) {
         return res.status(500).json({
             error: true,
             message: "Internal server error, please try again",
-            details: error instanceof Error ? error.message : 'Unknown error'
+            details: error instanceof Error ? error.message : "Unknown error",
         });
     }
-});
+};
 exports.getSpecificUserOrder = getSpecificUserOrder;
+//# sourceMappingURL=orderController.js.map

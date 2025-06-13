@@ -10,3 +10,4 @@ const router = express_1.default.Router();
 router.post("/initialize_payment", verifyJWT_1.authenticateToken, paystackController_1.PaymentController.initializePayment);
 router.post("/verify_payment/:reference", verifyJWT_1.authenticateToken, paystackController_1.PaymentController.verifyPayment);
 exports.default = router;
+//# sourceMappingURL=paystackRoute.js.map

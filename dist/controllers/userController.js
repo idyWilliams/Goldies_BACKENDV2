@@ -1,24 +1,4 @@
 "use strict";
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __rest = (this && this.__rest) || function (s, e) {
-    var t = {};
-    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
-        t[p] = s[p];
-    if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
-            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
-                t[p[i]] = s[p[i]];
-        }
-    return t;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -26,17 +6,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserById = exports.deleteAccount = exports.getBillingInfo = exports.updateProfile = exports.getAllUSers = exports.updateDefaultBillingInfo = exports.deleteBillingInfo = exports.updateBillingInfo = exports.getUser = exports.saveBillingInfo = void 0;
 const User_model_1 = __importDefault(require("../models/User.model"));
 const Admin_model_1 = __importDefault(require("../models/Admin.model"));
-const getUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getUser = async (req, res) => {
     const user = req.id;
     try {
-        const isUser = yield User_model_1.default.findOne({ _id: user });
+        const isUser = await User_model_1.default.findOne({ _id: user });
         if (!isUser) {
             return res.sendStatus(401);
         }
         // Convert the Mongoose document to a plain object
         const userObject = isUser.toObject();
         // Destructure to remove the password
-        const { password } = userObject, rest = __rest(userObject, ["password"]);
+        const { password, ...rest } = userObject;
         return res.json({
             user: rest,
             message: "This is from the backend just now",
@@ -50,7 +30,7 @@ const getUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             message: "Internal server error, please try again"
         });
     }
-});
+};
 exports.getUser = getUser;
 // const getAllUSers = async (req: CustomRequest, res: Response) => {
 //   const id  = req.id
@@ -74,13 +54,13 @@ exports.getUser = getUser;
 //     });
 //   }
 // }
-const getAllUSers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getAllUSers = async (req, res) => {
     const id = req.id;
     const { page = 1, limit = 10, search = '', sortBy = 'name', sortOrder = 'asc' } = req.query;
     const pageNumber = parseInt(page, 10);
     const limitNumber = parseInt(limit, 10);
     try {
-        const admin = yield Admin_model_1.default.findOne({ _id: id });
+        const admin = await Admin_model_1.default.findOne({ _id: id });
         if (!admin) {
             return res.status(404).json({
                 error: true,
@@ -102,13 +82,13 @@ const getAllUSers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const sortField = sortBy === 'name' ? 'name' : sortBy === 'date' ? 'createdAt' : 'name';
         const sortDirection = sortOrder === 'desc' ? -1 : 1;
         // Query users with pagination, search, and sorting
-        const users = yield User_model_1.default.find(searchQuery)
+        const users = await User_model_1.default.find(searchQuery)
             .select('-password')
             .skip(skip) // Pagination
             .limit(limitNumber) // Limit
             .sort({ [sortField]: sortDirection }); // Sorting by field and direction
         // Get the total count for pagination metadata
-        const totalUsers = yield User_model_1.default.countDocuments(searchQuery);
+        const totalUsers = await User_model_1.default.countDocuments(searchQuery);
         return res.status(200).json({
             error: false,
             users,
@@ -128,12 +108,12 @@ const getAllUSers = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             message: "Internal server error, please try again",
         });
     }
-});
+};
 exports.getAllUSers = getAllUSers;
-const getUserById = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getUserById = async (req, res) => {
     try {
         const { userId } = req.params;
-        const userDetails = yield User_model_1.default.findOne({ _id: userId }).select("-password");
+        const userDetails = await User_model_1.default.findOne({ _id: userId }).select("-password");
         if (!userDetails) {
             return res.status(400).json({
                 error: true,
@@ -153,9 +133,9 @@ const getUserById = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             message: "Internal Server error",
         });
     }
-});
+};
 exports.getUserById = getUserById;
-const saveBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const saveBillingInfo = async (req, res) => {
     const { firstName, lastName, email, country, state, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
     const user = req.id;
     if (!firstName || !lastName || !email || !country || !state || !cityOrTown || !streetAddress || !phoneNumber) {
@@ -165,7 +145,7 @@ const saveBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function
         });
     }
     try {
-        const userDetails = yield User_model_1.default.findOne({ _id: user });
+        const userDetails = await User_model_1.default.findOne({ _id: user });
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
@@ -191,9 +171,9 @@ const saveBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function
             defaultBillingInfo: defaultBillingInfo || false, // Set default if not provided
         });
         // Save user with the updated billing info
-        yield userDetails.save();
+        await userDetails.save();
         const userObject = userDetails.toObject();
-        const { password } = userObject, rest = __rest(userObject, ["password"]);
+        const { password, ...rest } = userObject;
         return res.status(200).json({
             error: false,
             user: rest,
@@ -208,12 +188,12 @@ const saveBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function
             message: "Internal server error, please try again"
         });
     }
-});
+};
 exports.saveBillingInfo = saveBillingInfo;
-const getBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const getBillingInfo = async (req, res) => {
     const user = req.id;
     try {
-        const userDetails = yield User_model_1.default.findOne({ _id: user });
+        const userDetails = await User_model_1.default.findOne({ _id: user });
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
@@ -235,14 +215,14 @@ const getBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function*
             message: "Internal server error, please try again"
         });
     }
-});
+};
 exports.getBillingInfo = getBillingInfo;
-const updateBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateBillingInfo = async (req, res) => {
     const { firstName, lastName, email, country, state, cityOrTown, streetAddress, phoneNumber, defaultBillingInfo } = req.body;
     const { billingId } = req.params;
     const user = req.id;
     try {
-        const userDetails = yield User_model_1.default.findOne({ _id: user });
+        const userDetails = await User_model_1.default.findOne({ _id: user });
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
@@ -257,7 +237,7 @@ const updateBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, functi
             });
         }
         // Find the billing info to be updated
-        const billingDoc = userDetails.billingInfo.find((info) => { var _a; return ((_a = info._id) === null || _a === void 0 ? void 0 : _a.toString()) === billingId; });
+        const billingDoc = userDetails.billingInfo.find((info) => info._id?.toString() === billingId);
         if (!billingDoc) {
             return res.status(404).json({
                 error: true,
@@ -267,8 +247,7 @@ const updateBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, functi
         // If updating to default, set all other defaultBillingInfo to false
         if (defaultBillingInfo) {
             userDetails.billingInfo.forEach((info) => {
-                var _a;
-                if (((_a = info._id) === null || _a === void 0 ? void 0 : _a.toString()) !== billingId) {
+                if (info._id?.toString() !== billingId) {
                     info.defaultBillingInfo = false;
                 }
             });
@@ -295,9 +274,9 @@ const updateBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, functi
                 billingDoc.defaultBillingInfo = defaultBillingInfo || billingDoc.defaultBillingInfo;
         }
         // Save updated user details
-        yield userDetails.save();
+        await userDetails.save();
         const userObject = userDetails.toObject();
-        const { password } = userObject, rest = __rest(userObject, ["password"]);
+        const { password, ...rest } = userObject;
         return res.status(200).json({
             error: false,
             user: rest,
@@ -312,13 +291,13 @@ const updateBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, functi
             message: "Internal server error, please try again",
         });
     }
-});
+};
 exports.updateBillingInfo = updateBillingInfo;
-const deleteBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const deleteBillingInfo = async (req, res) => {
     const { billingId } = req.params;
     const user = req.id;
     try {
-        const userDetails = yield User_model_1.default.findOne({ _id: user });
+        const userDetails = await User_model_1.default.findOne({ _id: user });
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
@@ -333,7 +312,7 @@ const deleteBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, functi
             });
         }
         // Find the index of the billing info to be removed
-        const billingIndex = userDetails.billingInfo.findIndex((info) => { var _a; return ((_a = info._id) === null || _a === void 0 ? void 0 : _a.toString()) === billingId; });
+        const billingIndex = userDetails.billingInfo.findIndex((info) => info._id?.toString() === billingId);
         if (billingIndex === -1) {
             return res.status(404).json({
                 error: true,
@@ -342,7 +321,7 @@ const deleteBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, functi
         }
         // Remove the billing info from the array
         userDetails.billingInfo.splice(billingIndex, 1);
-        yield userDetails.save();
+        await userDetails.save();
         return res.status(200).json({
             error: false,
             message: "Billing info deleted successfully.",
@@ -356,13 +335,13 @@ const deleteBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, functi
             message: "Internal server error, please try again",
         });
     }
-});
+};
 exports.deleteBillingInfo = deleteBillingInfo;
-const updateDefaultBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateDefaultBillingInfo = async (req, res) => {
     const { billingId } = req.params;
     const user = req.id;
     try {
-        const userDetails = yield User_model_1.default.findOne({ _id: user });
+        const userDetails = await User_model_1.default.findOne({ _id: user });
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
@@ -378,8 +357,7 @@ const updateDefaultBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0,
         }
         // Update billingInfo entries
         userDetails.billingInfo.forEach((info) => {
-            var _a;
-            if (((_a = info._id) === null || _a === void 0 ? void 0 : _a.toString()) === billingId) {
+            if (info._id?.toString() === billingId) {
                 info.defaultBillingInfo = true;
             }
             else {
@@ -387,7 +365,7 @@ const updateDefaultBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0,
             }
         });
         // Save updated user details
-        yield userDetails.save();
+        await userDetails.save();
         return res.status(200).json({
             error: false,
             message: "Default billing info updated successfully.",
@@ -401,13 +379,13 @@ const updateDefaultBillingInfo = (req, res) => __awaiter(void 0, void 0, void 0,
             message: "Internal server error, please try again",
         });
     }
-});
+};
 exports.updateDefaultBillingInfo = updateDefaultBillingInfo;
-const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const updateProfile = async (req, res) => {
     const { firstName, lastName, phone } = req.body;
     const user = req.id;
     try {
-        const userDetails = yield User_model_1.default.findOne({ _id: user });
+        const userDetails = await User_model_1.default.findOne({ _id: user });
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
@@ -420,7 +398,7 @@ const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             userDetails.lastName = lastName;
         if (phone)
             userDetails.phoneNumber = phone;
-        yield userDetails.save();
+        await userDetails.save();
         return res.status(200).json({
             error: false,
             message: "Profile updated successfully.",
@@ -441,19 +419,19 @@ const updateProfile = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             message: "Internal server error, please try again",
         });
     }
-});
+};
 exports.updateProfile = updateProfile;
-const deleteAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const deleteAccount = async (req, res) => {
     const user = req.id;
     try {
-        const userDetails = yield User_model_1.default.findOne({ _id: user });
+        const userDetails = await User_model_1.default.findOne({ _id: user });
         if (!userDetails) {
             return res.status(404).json({
                 error: true,
                 message: "User not found, please log in and try again.",
             });
         }
-        yield User_model_1.default.findOneAndDelete({ _id: user });
+        await User_model_1.default.findOneAndDelete({ _id: user });
         return res.status(200).json({
             error: false,
             message: "Account deleted successfully.",
@@ -467,5 +445,6 @@ const deleteAccount = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             message: "Internal server error, please try again",
         });
     }
-});
+};
 exports.deleteAccount = deleteAccount;
+//# sourceMappingURL=userController.js.map

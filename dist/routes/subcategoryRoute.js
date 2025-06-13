@@ -10,3 +10,4 @@ router.get("/get_subcategory/:subCategoryId", subCategoryController_1.getSubCate
 router.put("/edit_subcategory/:subCategoryId", verifyJWT_1.authenticateToken, subCategoryController_1.updateSubCategory);
 router.delete("/delete_subcategory/:subCategoryId", verifyJWT_1.authenticateToken, subCategoryController_1.deleteSubCategory);
 exports.default = router;
+//# sourceMappingURL=subcategoryRoute.js.map

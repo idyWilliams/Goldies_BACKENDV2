@@ -12,3 +12,4 @@ reviewSchema.index({ product: 1 });
 reviewSchema.index({ user: 1 });
 const Review = (0, mongoose_1.model)("Review", reviewSchema);
 exports.default = Review;
+//# sourceMappingURL=Review.model.js.map

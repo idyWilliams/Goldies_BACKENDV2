@@ -29,3 +29,4 @@ router.delete("/:id", auth_middleware_1.protect, auth_middleware_1.isSuperAdmin,
 router.get("/orders/:id", adminController_1.getUserOrderByUserId);
 // router.get("/:id", protect, getAdmin);
 exports.default = router;
+//# sourceMappingURL=adminRoute.js.map

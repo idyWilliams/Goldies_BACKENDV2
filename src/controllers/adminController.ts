@@ -1,8 +1,7 @@
 import Admin from "../models/Admin.model";
 import { Request, Response } from "express";
-import dotenv from "dotenv";
+import * as dotenv from "dotenv";
 import jwt from "jsonwebtoken";
-dotenv.config();
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
 import bcryptjs from "bcryptjs";
@@ -10,6 +9,7 @@ import Order from "../models/Order.model";
 import { AuthRequest, getAdminIdentifier } from "../middleware/auth.middleware";
 import { NotificationService } from "../service/notificationService";
 
+dotenv.config();
 // Configure transporter for sending emails
 const configureTransporter = () => {
   return nodemailer.createTransport({
@@ -575,8 +575,133 @@ const refreshAccessToken = async (req: Request, res: Response) => {
   }
 };
 
+// const adminLogin = async (req: Request, res: Response) => {
+//   const { email, password } = req.body;
+
+//   if (!email || !password) {
+//     return res.status(400).json({
+//       error: true,
+//       message: `${!email ? "Email" : "Password"} is required`,
+//     });
+//   }
+
+//   try {
+//     const admin = await Admin.findOne({ email });
+//     const OTP = generateOtp(); // Generates a 6-digit OTP
+
+//     // Create transporter for sending email
+//     const transporter = nodemailer.createTransport({
+//       host: "smtp.gmail.com",
+//       port: 465,
+//       secure: true,
+//       auth: {
+//         user: process.env.EMAIL,
+//         pass: process.env.PASSWORD,
+//       },
+//       tls: {
+//         rejectUnauthorized: false,
+//       },
+//       pool: true,
+//       maxConnections: 1,
+//       maxMessages: 100,
+//       rateDelta: 20000,
+//       rateLimit: 5,
+//     });
+//     transporter.verify((error, success) => {
+//       if (error) {
+//         console.error("SMTP connection error:", error);
+//       } else {
+//         console.log("SMTP server is ready to take our messages");
+//       }
+//     });
+
+//     // Function to send the verification email
+//     const sendVerificationEmail = async () => {
+//       const emailContent = `
+//       <div style="font-family: Arial, sans-serif; color: #333;">
+//         <h2 style="color: #007bff;">Email Verification</h2>
+//         <p>Do not share this with anyone.</p>
+//         <p>Verification code: <strong>${OTP}</strong></p>
+//         <p>If you did not request this, please ignore this email.</p>
+//       </div>
+//     `;
+
+//       const mailOptions = {
+//         from: process.env.EMAIL,
+//         to: email,
+//         subject: "Cake App Team - Email Verification",
+//         text: "Email verification.",
+//         html: emailContent,
+//       };
+
+//       try {
+//         const info = await transporter.sendMail(mailOptions);
+//         console.log("Message sent: %s", info.messageId, OTP);
+//       } catch (err) {
+//         console.error("Error sending email: ", err);
+//         throw new Error("Failed to send verification email.");
+//       }
+//     };
+
+//     if (!admin) {
+//       return res.status(404).json({
+//         error: true,
+//         message: "Admin not found",
+//       });
+//     }
+
+//     if (admin.isBlocked) {
+//       return res.status(403).json({
+//         error: true,
+//         message: "Your account has been blocked. Contact the super admin.",
+//       });
+//     }
+
+//     if (!admin.isVerified) {
+//       return res.status(401).json({
+//         error: true,
+//         message: "Please verify your email first",
+//       });
+//     }
+
+//     const isValidPassword = await bcryptjs.compare(password, admin.password);
+//     if (!isValidPassword) {
+//       return res.status(401).json({
+//         error: true,
+//         message: "Incorrect Password",
+//       });
+//     }
+
+//     admin.OTP = OTP;
+//     await admin.save();
+//     await sendVerificationEmail();
+
+//     const token = generateToken(admin._id);
+
+//     return res.status(200).json({
+//       error: false,
+//       data: {
+//         id: admin._id,
+//         userName: admin.userName,
+//         email: admin.email,
+//         role: admin.role,
+//       },
+//       token,
+//       message: "Login successful",
+//     });
+//   } catch (error) {
+//     console.error("Login error:", error);
+//     return res.status(500).json({
+//       error: true,
+//       message: "Internal server error",
+//     });
+//   }
+// };
+
 const adminLogin = async (req: Request, res: Response) => {
   const { email, password } = req.body;
+
+  console.log("🔍 Login attempt for email:", email);
 
   if (!email || !password) {
     return res.status(400).json({
@@ -586,50 +711,9 @@ const adminLogin = async (req: Request, res: Response) => {
   }
 
   try {
+    console.log("📋 Step 1: Finding admin in database...");
     const admin = await Admin.findOne({ email });
-    const OTP = generateOtp(); // Generates a 6-digit OTP
-
-    // Create transporter for sending email
-    const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.PASSWORD,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
-
-    // Function to send the verification email
-    const sendVerificationEmail = async () => {
-      const emailContent = `
-      <div style="font-family: Arial, sans-serif; color: #333;">
-        <h2 style="color: #007bff;">Email Verification</h2>
-        <p>Do not share this with anyone.</p>
-        <p>Verification code: <strong>${OTP}</strong></p>
-        <p>If you did not request this, please ignore this email.</p>
-      </div>
-    `;
-
-      const mailOptions = {
-        from: process.env.EMAIL,
-        to: email,
-        subject: "Cake App Team - Email Verification",
-        text: "Email verification.",
-        html: emailContent,
-      };
-
-      try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log("Message sent: %s", info.messageId, OTP);
-      } catch (err) {
-        console.error("Error sending email: ", err);
-        throw new Error("Failed to send verification email.");
-      }
-    };
+    console.log("✅ Admin found:", admin ? "Yes" : "No");
 
     if (!admin) {
       return res.status(404).json({
@@ -637,6 +721,10 @@ const adminLogin = async (req: Request, res: Response) => {
         message: "Admin not found",
       });
     }
+
+    console.log("📋 Step 2: Checking admin status...");
+    console.log("- isBlocked:", admin.isBlocked);
+    console.log("- isVerified:", admin.isVerified);
 
     if (admin.isBlocked) {
       return res.status(403).json({
@@ -652,7 +740,10 @@ const adminLogin = async (req: Request, res: Response) => {
       });
     }
 
+    console.log("📋 Step 3: Validating password...");
     const isValidPassword = await bcryptjs.compare(password, admin.password);
+    console.log("✅ Password valid:", isValidPassword);
+
     if (!isValidPassword) {
       return res.status(401).json({
         error: true,
@@ -660,12 +751,88 @@ const adminLogin = async (req: Request, res: Response) => {
       });
     }
 
+    console.log("📋 Step 4: Generating OTP...");
+    const OTP = generateOtp();
+    console.log("✅ OTP generated:", OTP);
+
+    console.log("📋 Step 5: Checking email environment variables...");
+    console.log("- EMAIL exists:", !!process.env.EMAIL);
+    console.log("- PASSWORD exists:", !!process.env.PASSWORD);
+    console.log("- EMAIL value:", process.env.EMAIL);
+
+    if (!process.env.EMAIL || !process.env.PASSWORD) {
+      throw new Error(
+        "Email configuration missing: EMAIL or PASSWORD environment variables not set"
+      );
+    }
+
+    console.log("📋 Step 6: Creating email transporter...");
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.PASSWORD,
+      },
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 100,
+      rateDelta: 20000,
+      rateLimit: 5,
+      connectionTimeout: 60000,
+      greetingTimeout: 30000,
+      socketTimeout: 60000,
+    });
+
+    const sendVerificationEmail = async () => {
+      try {
+        console.log("📧 Verifying SMTP connection...");
+        await transporter.verify();
+        console.log("✅ SMTP connection verified");
+
+        const emailContent = `
+          <div style="font-family: Arial, sans-serif; color: #333;">
+            <h2 style="color: #007bff;">Email Verification</h2>
+            <p>Do not share this with anyone.</p>
+            <p>Verification code: <strong>${OTP}</strong></p>
+            <p>If you did not request this, please ignore this email.</p>
+          </div>
+        `;
+
+        const mailOptions = {
+          from: process.env.EMAIL,
+          to: email,
+          subject: "Cake App Team - Email Verification",
+          text: `Your verification code is: ${OTP}`,
+          html: emailContent,
+        };
+
+        console.log("📧 Sending email...");
+        const info = await transporter.sendMail(mailOptions);
+        console.log("✅ Email sent successfully:", info.messageId);
+      } catch (emailError: any) {
+        console.error("❌ Email sending failed:", {
+          message: emailError.message,
+          code: emailError.code,
+          command: emailError.command,
+          response: emailError.response,
+        });
+        throw emailError;
+      }
+    };
+
+    console.log("📋 Step 7: Saving OTP to admin...");
     admin.OTP = OTP;
     await admin.save();
+    console.log("✅ OTP saved to admin");
+
+    console.log("📋 Step 8: Sending verification email...");
     await sendVerificationEmail();
 
+    console.log("📋 Step 9: Generating token...");
     const token = generateToken(admin._id);
+    console.log("✅ Token generated");
 
+    console.log("✅ Login successful for:", email);
     return res.status(200).json({
       error: false,
       data: {
@@ -675,16 +842,33 @@ const adminLogin = async (req: Request, res: Response) => {
         role: admin.role,
       },
       token,
-      message: "Login successful",
+      message: "Login successful. Verification email sent.",
     });
-  } catch (error) {
-    console.error("Login error:", error);
+  } catch (error: any) {
+    console.error("❌ DETAILED LOGIN ERROR:");
+    console.error("- Error message:", error.message);
+    console.error("- Error stack:", error.stack);
+    console.error("- Error name:", error.name);
+    console.error("- Error code:", error.code);
+
+    // Return more specific error message in development
     return res.status(500).json({
       error: true,
-      message: "Internal server error",
+      message:
+        process.env.NODE_ENV === "development"
+          ? `Internal server error: ${error.message}`
+          : "Internal server error",
+      ...(process.env.NODE_ENV === "development" && {
+        debug: {
+          message: error.message,
+          stack: error.stack,
+        },
+      }),
     });
   }
 };
+
+
 const adminLogout = async (req: Request, res: Response) => {
   const { id } = req.params;
 

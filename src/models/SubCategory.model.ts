@@ -1,37 +1,64 @@
 import { model, Document, Schema } from "mongoose";
 
-export interface subCategorySchemaI extends Document {
+export interface SubCategorySchemaI extends Document {
   name: string;
   description: string;
+  subCategorySlug: string;
   image: string;
-  status: Boolean;
-  categoryId: Schema.Types.ObjectId
+  status: boolean;
+  categoryId: Schema.Types.ObjectId;
+  // Virtual field for product count
+  productCount?: number;
 }
 
-const subCategorySchema = new Schema<subCategorySchemaI>(
+const subCategorySchema = new Schema<SubCategorySchemaI>(
   {
     name: {
       type: String,
-      require: [true, "Please provide a sub category name"],
+      required: [true, "Please provide a sub category name"],
+      trim: true,
     },
     description: {
       type: String,
-      require: [true, "Please provide subCategory description"],
+      required: [true, "Please provide subCategory description"],
+      trim: true,
+    },
+    subCategorySlug: {
+      type: String,
+      unique: true,
+      trim: true,
+      lowercase: true,
     },
     image: {
       type: String,
-      require: [true, "Please provide sub category images"],
+      required: [true, "Please provide sub category image"],
     },
     status: {
       type: Boolean,
-      require: [true, "SubCategory status is not provided"],
+      required: [true, "SubCategory status is required"],
+      default: true,
     },
-    categoryId: { type: Schema.Types.ObjectId, ref: "Category", required: true },
+    categoryId: {
+      type: Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+    },
   },
   {
     timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 
-const SubCategory = model<subCategorySchemaI>("SubCategory", subCategorySchema);
+
+subCategorySchema.virtual("products", {
+  ref: "Product",
+  localField: "_id",
+  foreignField: "subCategories",
+  justOne: false,
+  count: true,
+});
+
+const SubCategory = model<SubCategorySchemaI>("SubCategory", subCategorySchema);
 export default SubCategory;

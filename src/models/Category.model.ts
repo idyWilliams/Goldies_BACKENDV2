@@ -1,28 +1,67 @@
 import { model, Document, Schema } from "mongoose";
 
-export interface categorySchemaI extends Document {
+export interface CategorySchemaI extends Document {
   name: string;
   description: string;
   categorySlug: string;
   image: string;
-  status: Boolean
+  status: boolean;
+  // Virtual fields for counts
+  productCount?: number;
+  subCategoryCount?: number;
 }
 
-const categorySchema = new Schema<categorySchemaI>({
-  name: { type: String, require: [true, "Please provide a category name"] },
-  description: {
-    type: String,
-    require: [true, "Please provide category description"],
-  },
-  categorySlug: { type: String, unique: true },
-  image: { type: String, require: [true, "Please provide category image"] },
-  status: {
-      type: Boolean,
-      require: [true, "SubCategory status is not provided"],
+const categorySchema = new Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Please provide a category name"],
+      trim: true,
     },
-}, {
-  timestamps: true
+    description: {
+      type: String,
+      required: [true, "Please provide category description"],
+      trim: true,
+    },
+    categorySlug: {
+      type: String,
+      unique: true,
+      trim: true,
+      lowercase: true,
+    },
+    image: {
+      type: String,
+      required: [true, "Please provide category image"],
+    },
+    status: {
+      type: Boolean,
+      required: [true, "Category status is required"],
+      default: true,
+    },
+  },
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
+
+// Virtual fields for counts
+categorySchema.virtual("subCategories", {
+  ref: "SubCategory",
+  localField: "_id",
+  foreignField: "categoryId",
+  justOne: false,
+  count: true,
 });
 
-const Category = model<categorySchemaI>("Category", categorySchema);
+categorySchema.virtual("products", {
+  ref: "Product",
+  localField: "_id",
+  foreignField: "category",
+  justOne: false,
+  count: true,
+});
+
+const Category = model<CategorySchemaI>("Category", categorySchema);
 export default Category;

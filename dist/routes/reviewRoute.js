@@ -18,3 +18,4 @@ router.get("/product/:productId", verifyJWT_1.optionalAuthenticateToken, reviewC
 router.get("/user/:userId", reviewController_1.getUserReviews);
 router.get("/stats", reviewController_1.getReviewStats);
 exports.default = router;
+//# sourceMappingURL=reviewRoute.js.map

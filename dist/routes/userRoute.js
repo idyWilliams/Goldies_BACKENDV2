@@ -15,3 +15,4 @@ router.patch("/profile", verifyJWT_1.authenticateToken, userController_1.updateP
 router.delete("/my_account", verifyJWT_1.authenticateToken, userController_1.deleteAccount);
 router.get("/:userId", verifyJWT_1.authenticateToken, userController_1.getUserById);
 exports.default = router;
+//# sourceMappingURL=userRoute.js.map

@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "main": "dist/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/server.js",
-    "build": "tsc --build",
-    "dev": "nodemon src/server.ts",
-    "push": "tsc --build & git add . & git commit -m \"Compiled code to javaScript for Deployment\" & git push -u origin main"
+    "build": "tsc && cp .env dist/ && cp src/env.d.ts dist/",
+    "dev": "nodemon --exec ts-node src/server.ts",
+    "clean": "rm -rf dist/",
+    "rebuild": "yarn clean && yarn build",
+    "test:env": "node -e \"console.log(require('dotenv').config())\""
   },
   "author": "Derrick",
   "license": "ISC",
@@ -32,11 +33,11 @@
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
-    "@types/dotenv": "^8.2.0",
+    "@types/dotenv": "^8.2.3",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/mongoose": "^5.11.97",
-    "@types/node": "^22.0.0",
+    "@types/node": "^24.0.1",
     "nodemon": "^3.1.7",
     "ts-node": "^10.9.2"
   }

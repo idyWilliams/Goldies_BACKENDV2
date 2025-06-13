@@ -49,3 +49,4 @@ const cartSchema = new mongoose_1.Schema({
 }, { timestamps: true });
 const Cart = mongoose_1.default.model("Cart", cartSchema);
 exports.default = Cart;
+//# sourceMappingURL=Cart.model.js.map

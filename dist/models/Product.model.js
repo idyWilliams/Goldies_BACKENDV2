@@ -49,3 +49,4 @@ productSchema.index({ averageRating: -1 });
 productSchema.index({ reviewsCount: -1 });
 const Product = (0, mongoose_1.model)("Product", productSchema);
 exports.default = Product;
+//# sourceMappingURL=Product.model.js.map
