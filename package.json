@@ -4,8 +4,9 @@
   "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
-    "build": "tsc && cp .env dist/ && cp src/env.d.ts dist/",
-    "dev": "nodemon --exec ts-node src/server.ts",
+    "build": "tsc --build",
+    "dev": "nodemon src/server.ts",
+    "push": "tsc --build & git add . & git commit -m \"Compiled code to javaScript for Deployment\" & git push -u origin main",
     "clean": "rm -rf dist/",
     "rebuild": "yarn clean && yarn build",
     "test:env": "node -e \"console.log(require('dotenv').config())\""
